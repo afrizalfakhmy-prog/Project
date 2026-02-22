@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Daftar PJA — A-IOS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Daftar PJA</h1>
+    
+    <section id="pja-management">
+      <div class="form-section">
+        <button id="add-pja-btn" class="primary">+ Tambah PJA</button>
+        
+        <form id="pja-form" class="hidden">
+          <h4 id="pja-form-title">Tambah PJA</h4>
+          <input type="hidden" id="pja-id" />
+          <label>User <small style="color:#666;font-weight:normal;">(Pilih dari daftar pengguna)</small>
+            <select id="field-pja-user" required>
+              <option value="">(Pilih User)</option>
+            </select>
+          </label>
+          
+          <div class="form-actions">
+            <button type="button" id="save-pja-btn" class="primary">Simpan</button>
+            <button type="button" id="cancel-pja-btn">Batal</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-section">
+        <input type="text" id="pja-search" placeholder="Cari user..." style="margin-bottom:16px;padding:10px;width:100%;border:1px solid #ddd;border-radius:8px;" />
+        <table id="pja-list">
+          <thead>
+            <tr><th>No</th><th>Nama User</th><th>Username</th><th>Kategori</th><th>Aksi</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p><a href="index.html">← Kembali ke Dashboard</a></p>
+  </main>
+  <script src="nav.js"></script>
+  <script src="app-config.js"></script>
+  <script src="api-client.js"></script>
+  <script src="script.js"></script>
+  <script>
+    console.log('Initializing daftar_pja page...');
+    
+    // Check session and access control
+    const s = localStorage.getItem('aios_session');
+    const session = s ? JSON.parse(s) : null;
+    if (!session || session.role !== 'Super Admin') {
+      console.error('Access denied. User role:', session ? session.role : 'none');
+      alert('Akses ditolak: Halaman ini hanya untuk Super Admin');
+      window.location.href = 'index.html';
+    } else {
+      console.log('Access granted for Super Admin');
+      if (typeof initPjaManagement === 'function') {
+        initPjaManagement();
+      }
+    }
+  </script>
+</body>
+</html>

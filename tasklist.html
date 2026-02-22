@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tasklist — A-IOS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Tasklist</h1>
+
+    <section>
+      <p id="tasklist-meta" class="muted"></p>
+
+      <div class="tasklist-filters">
+        <label>
+          Tipe
+          <select id="filter-source">
+            <option value="ALL">Semua</option>
+            <option value="KTA">KTA</option>
+            <option value="TTA">TTA</option>
+          </select>
+        </label>
+
+        <label>
+          Status
+          <select id="filter-status">
+            <option value="ALL">Semua</option>
+            <option value="Open">Open</option>
+            <option value="Progress">Progress</option>
+            <option value="Close">Close</option>
+            <option value="-">-</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="tasklist-cards" class="tasklist-grid"></div>
+    </section>
+  </main>
+  <script src="app-config.js"></script>
+  <script src="api-client.js"></script>
+  <script src="nav.js"></script>
+  <script src="tasklist.js"></script>
+</body>
+</html>

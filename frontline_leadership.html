@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Frontline Leadership — A-IOS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Frontline Leadership</h1>
+    <div class="user-actions">
+      <button id="kta-btn" class="menu-item">KTA</button>
+      <button id="tta-btn" class="menu-item">TTA</button>
+    </div>
+  </main>
+  <script src="nav.js"></script>
+  <script>
+    (function () {
+      const ktaBtn = document.getElementById('kta-btn');
+      const ttaBtn = document.getElementById('tta-btn');
+      if (ktaBtn) {
+        ktaBtn.addEventListener('click', function () {
+          window.location.href = 'kta.html';
+        });
+      }
+      if (ttaBtn) {
+        ttaBtn.addEventListener('click', function () {
+          window.location.href = 'tta.html';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

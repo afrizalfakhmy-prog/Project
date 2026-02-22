@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>A-IOS — All In One OHS Solution</title>
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<div id="app">
+		<section id="login-screen">
+			<div class="login-header">
+				<div class="logos-container">
+					<img src="assets/Logo Azam.jpg" alt="Logo Azam" class="logo-item logo-azam" />
+					<img src="assets/Logo Alamtri.png" alt="Logo Alamtri" class="logo-item logo-alamtri" />
+				</div>
+			</div>
+			<h1>A-IOS</h1>
+				<p class="muted">All In One OHS Solution</p>
+				<div id="login-msg" role="status" aria-live="polite"></div>
+				<label>Username atau Email
+					<input id="username" autocomplete="username" placeholder="Username/Email dari Daftar User atau superadmin" />
+				</label>
+				<label>Password
+					<input id="password" type="password" autocomplete="current-password" placeholder="Sesuai Daftar User atau superadmin" />
+				</label>
+				<button id="login-btn">Login</button>
+			</section>
+
+			<section id="main-screen" class="hidden">
+				<div class="main-grid">
+					<aside id="admin-sidebar" class="hidden">
+						<h3>Admin Menu</h3>
+						<ul>
+							<li><button id="admin-profile" class="sidebar-btn">My Profile</button></li>
+							<li><button id="admin-achievement" class="sidebar-btn">Achievement</button></li>
+							<li><button id="admin-tasklist" class="sidebar-btn">Tasklist</button></li>
+							<li><button id="admin-users" class="sidebar-btn">Daftar User</button></li>
+
+							<li><button id="admin-logout" class="sidebar-btn">Logout</button></li>
+						</ul>
+
+						<!-- Daftar User panel in sidebar -->
+						<section id="user-management" class="hidden sidebar-panel">
+							<h4>Daftar User</h4>
+							<div class="user-actions">
+								<button id="add-user-btn">Tambah User</button>
+								<input id="user-search" placeholder="Cari nama atau nomor karyawan..." />
+							</div>
+							<div id="user-list-container">
+								<table id="user-list">
+									<thead>
+										<tr>
+											<th>Username</th>
+											<th>Nama</th>
+											<th>No Karyawan</th>
+											<th>Departemen</th>
+											<th>Perusahaan</th>
+											<th>Aksi</th>
+										</tr>
+									</thead>
+									<tbody></tbody>
+								</table>
+							</div>
+
+							<form id="user-form" class="hidden">
+								<h4 id="user-form-title">Tambah User</h4>
+								<input type="hidden" id="user-id" />
+								<label>Username<input id="field-username" /></label>
+								<label>Password<input id="field-password" type="password" minlength="8" placeholder="Minimal 8 karakter" /></label>
+								<label>Kategori
+									<select id="field-kategori">
+										<option value="User">User</option>
+										<option value="Admin">Admin</option>
+									</select>
+								</label>
+								<label>Nama Lengkap<input id="field-nama" /></label>
+								<label>Tempat Lahir<input id="field-tempat" /></label>
+								<label>Tanggal Lahir<input id="field-tgl" type="date" /></label>
+								<label>No HP<input id="field-hp" maxlength="13" /></label>
+								<label>Alamat Email<input id="field-email" type="email" /></label>
+								<label>Alamat Lengkap<textarea id="field-alamat" rows="3"></textarea></label>
+								<label>No KTP<input id="field-ktp" maxlength="17" /></label>
+								<label>No Karyawan<input id="field-karyawan" /></label>
+								<label>No Mine Permit<input id="field-mine" /></label>
+								<label>Jabatan<input id="field-jabatan" /></label>
+								<label>Kelompok Jabatan<input id="field-kelompok" /></label>
+								<label>Departemen
+									<select id="field-departemen">
+										<option value="">(Pilih Departemen)</option>
+									</select>
+								</label>
+								<label>Perusahaan
+									<select id="field-perusahaan">
+										<option value="">(Pilih Perusahaan)</option>
+									</select>
+								</label>
+								<label>CCOW
+									<select id="field-ccow">
+										<option value="">(Pilih CCOW)</option>
+										<option value="PT. Maruwai Coal">PT. Maruwai Coal</option>
+										<option value="PT. Lahai Coal">PT. Lahai Coal</option>
+									</select>
+								</label>
+								<div class="form-actions">
+									<button type="button" id="save-user-btn">Simpan</button>
+									<button type="button" id="cancel-user-btn">Batal</button>
+								</div>
+							</form>
+						</section>
+					</aside>
+					<aside id="superadmin-sidebar" class="hidden">
+						<h3>Super Admin Menu</h3>
+						<ul>
+							<li><button id="superadmin-profile" class="sidebar-btn">My Profile</button></li>
+							<li><button id="superadmin-achievement" class="sidebar-btn">Achievement</button></li>
+							<li><button id="superadmin-tasklist" class="sidebar-btn">Tasklist</button></li>
+							<li><button id="superadmin-users" class="sidebar-btn">Daftar User</button></li>
+							<li><button id="superadmin-departemen" class="sidebar-btn">Daftar Departemen</button></li>
+							<li><button id="superadmin-perusahaan" class="sidebar-btn">Daftar Perusahaan</button></li>
+							<li><button id="superadmin-pja" class="sidebar-btn">Daftar PJA</button></li>
+							<li><button id="superadmin-logout" class="sidebar-btn">Logout</button></li>
+						</ul>
+					</aside>
+					<aside id="user-sidebar" class="hidden">
+						<h3>User Menu</h3>
+						<ul>
+							<li><button id="user-profile" class="sidebar-btn">My Profile</button></li>
+							<li><button id="user-achievement" class="sidebar-btn">Achievement</button></li>
+							<li><button id="user-tasklist" class="sidebar-btn">Tasklist</button></li>
+							<li><button id="user-logout" class="sidebar-btn">Logout</button></li>
+						</ul>
+					</aside>
+					<div class="main-content">
+						<header>
+					<div>
+						Logged in as: <span id="role-label"></span>
+					</div>
+					<div>
+						<button id="logout-btn">Logout</button>
+					</div>
+						</header>
+
+						<nav id="menu">
+					<button id="frontline-leadership-btn" class="menu-item">Frontline Leadership</button>
+					<button class="menu-item">Inspeksi</button>
+					<button class="menu-item">Observasi</button>
+					<button class="menu-item">OHS Talk</button>
+					<button class="menu-item">JSA</button>
+					<button class="menu-item">Work Permit</button>
+					<button class="menu-item">SPIP</button>
+					<button class="menu-item">OSPEK</button>
+				</nav>
+
+					</div>
+
+					<aside id="chat-panel">
+					<h3>Chat</h3>
+						<div id="presence-counts">
+							Online: <strong id="count-online">0</strong>
+							&nbsp;|&nbsp; Offline: <strong id="count-offline">0</strong>
+						</div>
+						<ul id="presence-list"></ul>
+
+						<hr />
+
+						<div id="chat-area">
+							<div id="chat-messages" aria-live="polite"></div>
+
+							<div id="chat-input">
+								<input id="chat-text" placeholder="Tulis pesan..." autocomplete="off" />
+								<button id="chat-send">Kirim</button>
+							</div>
+						</div>
+					</aside>
+				</div>
+			</section>
+		</div>
+
+			<script src="app-config.js"></script>
+			<script src="api-client.js"></script>
+			<script src="nav.js"></script>
+			<script src="script.js"></script>
+	</body>
+</html>

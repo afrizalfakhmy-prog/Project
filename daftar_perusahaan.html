@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Daftar Perusahaan — A-IOS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Daftar Perusahaan</h1>
+    <p>Halaman Daftar Perusahaan. Kembali ke <a href="index.html">Dashboard</a>.</p>
+
+    <section id="perusahaan-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2>Kelola Perusahaan</h2>
+        <button id="add-company-btn" class="primary">Tambah Perusahaan</button>
+      </div>
+
+      <table class="simple-table" style="width:100%;margin-bottom:12px;">
+        <thead><tr><th>Perusahaan</th><th style="width:160px">Aksi</th></tr></thead>
+        <tbody id="company-list">
+          <!-- rows inserted by script.js -->
+        </tbody>
+      </table>
+
+      <form id="company-form" class="hidden" style="background:#f9f9f9;padding:12px;border-radius:6px;border:1px solid #eee;">
+        <h3 id="company-form-title">Tambah Perusahaan</h3>
+        <input type="hidden" id="company-id" />
+        <div style="margin-bottom:8px;">
+          <label for="company-name">Perusahaan</label><br />
+          <input id="company-name" type="text" placeholder="Nama Perusahaan" style="width:100%;padding:8px;" />
+        </div>
+        <div style="text-align:right;">
+          <button type="button" id="save-company-btn" class="primary">Simpan</button>
+          <button type="button" id="cancel-company-btn">Batal</button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <script src="nav.js"></script>
+  <script src="app-config.js"></script>
+  <script src="api-client.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // protect: only Super Admin can access this page
+    try {
+      const s = localStorage.getItem('aios_session');
+      const session = s ? JSON.parse(s) : null;
+      if (!session || session.role !== 'Super Admin') {
+        alert('Akses ditolak. Hanya Super Admin.');
+        window.location.href = 'index.html';
+      } else {
+        if (typeof renderCompanyList === 'function') renderCompanyList();
+      }
+    } catch (e) {
+      console.warn('perusahaan page init error', e);
+    }
+  </script>
+</body>
+</html>

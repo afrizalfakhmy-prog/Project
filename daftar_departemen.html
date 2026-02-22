@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Daftar Departemen — A-IOS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Daftar Departemen</h1>
+    <p>Halaman Daftar Departemen. Kembali ke <a href="index.html">Dashboard</a>.</p>
+
+    <section id="departemen-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2>Kelola Departemen</h2>
+        <button id="add-dept-btn" class="primary">Tambah Departemen</button>
+      </div>
+
+      <table class="simple-table" style="width:100%;margin-bottom:12px;">
+        <thead><tr><th>Departemen</th><th style="width:160px">Aksi</th></tr></thead>
+        <tbody id="dept-list">
+          <!-- rows inserted by script.js -->
+        </tbody>
+      </table>
+
+      <form id="dept-form" class="hidden" style="background:#f9f9f9;padding:12px;border-radius:6px;border:1px solid #eee;">
+        <h3 id="dept-form-title">Tambah Departemen</h3>
+        <input type="hidden" id="dept-id" />
+        <div style="margin-bottom:8px;">
+          <label for="dept-name">Departemen</label><br />
+          <input id="dept-name" type="text" placeholder="Nama Departemen" style="width:100%;padding:8px;" />
+        </div>
+        <div style="text-align:right;">
+          <button type="button" id="save-dept-btn" class="primary">Simpan</button>
+          <button type="button" id="cancel-dept-btn">Batal</button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <script src="nav.js"></script>
+  <script src="app-config.js"></script>
+  <script src="api-client.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // protect: only Super Admin can access this page
+    try {
+      const s = localStorage.getItem('aios_session');
+      const session = s ? JSON.parse(s) : null;
+      if (!session || session.role !== 'Super Admin') {
+        alert('Akses ditolak. Hanya Super Admin.');
+        window.location.href = 'index.html';
+      } else {
+        // render department list if script functions available
+        if (typeof renderDeptList === 'function') renderDeptList();
+      }
+    } catch (e) {
+      console.warn('departemen page init error', e);
+    }
+  </script>
+</body>
+</html>

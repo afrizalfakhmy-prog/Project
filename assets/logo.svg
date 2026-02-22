@@ -1,0 +1,15 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular background -->
+  <circle cx="40" cy="40" r="38" fill="#0b63ff" opacity="0.1" stroke="#0b63ff" stroke-width="2"/>
+  
+  <!-- Shield shape - OHS safety symbol -->
+  <g transform="translate(40, 40)">
+    <!-- Shield -->
+    <path d="M 0,-20 L 12,-12 L 12,5 Q 0,18 0,18 Q 0,18 -12,5 L -12,-12 Z" 
+          fill="#0b63ff" stroke="#0b63ff" stroke-width="1.5" stroke-linejoin="round"/>
+    
+    <!-- Check mark inside shield -->
+    <path d="M -5,2 L -1,6 L 5,-2" 
+          stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
