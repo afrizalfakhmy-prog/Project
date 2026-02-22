@@ -1,0 +1,14 @@
+﻿# dependencies
+backend/node_modules/
+
+# env files
+backend/.env
+
+# logs
+*.log
+npm-debug.log*
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/
