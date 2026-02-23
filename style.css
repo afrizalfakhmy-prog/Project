@@ -343,6 +343,7 @@ main, #app{padding-top:calc(var(--top-nav-height) + 18px)}
 	position:relative;
 	width:160px;
 	height:160px;
+	margin:0 auto;
 	border-radius:50%;
 	overflow:hidden;
 	border:1px solid rgba(15,23,32,0.12);
