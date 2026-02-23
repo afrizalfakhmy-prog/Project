@@ -177,9 +177,10 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 @media(min-width:1024px){#app{max-width:1200px;margin:0 auto;padding:40px}}
 
 /* layout for main + chat column */
+:root{--side-panel-width:260px}
 .main-grid{display:flex;gap:clamp(8px,1.2vw,24px)}
 .main-content{flex:1;display:flex;flex-direction:column;gap:16px}
-#chat-panel{width:clamp(180px,22vw,320px);background:var(--card);border-left:1px solid rgba(15,23,32,0.04);padding:14px;border-radius:10px}
+#chat-panel{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);background:var(--card);border-left:1px solid rgba(15,23,32,0.04);padding:12px 12px;border-radius:10px}
 #chat-panel h3{margin-top:0}
 #presence-list{list-style:none;padding:0;margin:8px 0;font-size:13px}
 #presence-list li{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f0f0f0;font-size:13px}
@@ -220,18 +221,18 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 #chat-input input{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
 #chat-input button{padding:7px 10px;font-size:12px}
 
-#admin-sidebar{width:clamp(180px,20vw,280px);padding:14px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
+#admin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
 #admin-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
-#admin-sidebar ul{list-style:none;padding:0;margin:0}
+#admin-sidebar ul{list-style:none;padding:0;margin:0;display:grid;width:max-content;max-width:100%}
 #admin-sidebar li{margin:8px 0}
 
 /* superadmin sidebar */
-#superadmin-sidebar{width:clamp(180px,20vw,280px);padding:14px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
+#superadmin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
 #superadmin-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
-#superadmin-sidebar ul{list-style:none;padding:0;margin:0}
+#superadmin-sidebar ul{list-style:none;padding:0;margin:0;display:grid;width:max-content;max-width:100%}
 #superadmin-sidebar li{margin:8px 0}
 
-.sidebar-btn{width:auto;max-width:100%;display:inline-flex;text-align:left;padding:7px 10px;border:1px solid rgba(15,23,32,0.04);border-radius:10px;background:linear-gradient(180deg,var(--surface),#fbfdff);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;color:#000;font-size:12px;line-height:1.2}
+.sidebar-btn{width:100%;max-width:100%;display:flex;align-items:center;justify-content:flex-start;text-align:left;padding:7px 12px;border:1px solid rgba(15,23,32,0.04);border-radius:10px;background:linear-gradient(180deg,var(--surface),#fbfdff);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;color:#000;font-size:12px;line-height:1.2;white-space:nowrap}
 .sidebar-btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(16,24,40,0.06);color:#000}
 .sidebar-btn:active{transform:translateY(0);color:#000}
 .sidebar-btn:focus{outline:3px solid rgba(11,99,255,0.12);outline-offset:2px;color:#000}
@@ -246,9 +247,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 }
 
 /* user sidebar uses same layout as admin */
-#user-sidebar{width:clamp(180px,20vw,280px);padding:14px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
+#user-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
 #user-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
-#user-sidebar ul{list-style:none;padding:0;margin:0}
+#user-sidebar ul{list-style:none;padding:0;margin:0;display:grid;width:max-content;max-width:100%}
 #user-sidebar li{margin:8px 0}
 
 @media(max-width:1024px){

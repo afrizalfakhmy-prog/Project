@@ -870,6 +870,23 @@ function showLoginError(msg) {
 	}
 }
 
+function updateSidePanelWidth() {
+	const sidebars = [adminSidebar, superadminSidebar, userSidebar].filter((el) => el && !el.classList.contains('hidden'));
+	if (!sidebars.length) return;
+
+	let longestButtonWidth = 0;
+	sidebars.forEach((sidebar) => {
+		const buttons = Array.from(sidebar.querySelectorAll('.sidebar-btn'));
+		buttons.forEach((btn) => {
+			longestButtonWidth = Math.max(longestButtonWidth, Math.ceil(btn.scrollWidth));
+		});
+	});
+
+	if (!longestButtonWidth) return;
+	const panelWidth = Math.min(300, Math.max(190, longestButtonWidth + 34));
+	document.documentElement.style.setProperty('--side-panel-width', panelWidth + 'px');
+}
+
 function showScreenForRole(role) {
 	if (roleLabel) roleLabel.textContent = `${role}`;
 	if (loginScreen) loginScreen.classList.add('hidden');
@@ -884,7 +901,10 @@ function showScreenForRole(role) {
 	if (userSidebar) {
 		if (role === 'User') userSidebar.classList.remove('hidden'); else userSidebar.classList.add('hidden');
 	}
+	setTimeout(updateSidePanelWidth, 0);
 }
+
+window.addEventListener('resize', updateSidePanelWidth);
 
 if (loginBtn) {
 loginBtn.addEventListener('click', async () => {
