@@ -724,6 +724,16 @@ main h4{
 	color:var(--muted);
 }
 
+.achievement-chart-axis{
+	margin:0 0 6px 0;
+	font-size:12px;
+	color:#334155;
+}
+
+.achievement-chart-axis strong{
+	color:#0f172a;
+}
+
 .achievement-bars{
 	display:grid;
 	gap:8px;

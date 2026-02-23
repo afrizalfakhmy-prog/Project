@@ -281,16 +281,20 @@
                 <span class="achievement-bar-label">${escapeHtml(row.label)}</span>
                 <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
                 <span class="achievement-bar-value">${row.value}</span>
-                <span class="achievement-bar-detail">Open: ${row.open} • Progress: ${row.progress} • Close: ${row.close} • ${percent}%</span>
+                <span class="achievement-bar-detail">${percent}% dari total data pada grafik ini</span>
               </button>
             `;
           }).join('')
         : '<div class="muted">Belum ada data.</div>';
 
+      const axisYLabel = dimension.title.replace('Berdasarkan ', '') || dimension.title;
+
       return `
         <section class="achievement-chart-card">
           <h4>${escapeHtml(dimension.title)}</h4>
           <p class="achievement-chart-note">Total data pada grafik ini: ${totalGroup} temuan. Klik bar untuk memfilter dashboard.</p>
+          <p class="achievement-chart-axis"><strong>Sumbu X:</strong> Jumlah temuan (frekuensi).</p>
+          <p class="achievement-chart-axis"><strong>Sumbu Y:</strong> ${escapeHtml(axisYLabel)}.</p>
           <div class="achievement-bars" role="group">${body}</div>
         </section>
       `;
