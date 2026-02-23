@@ -8,6 +8,7 @@
     identity: null,
     activeTab: 'KTA',
     monthlyFilter: null,
+    monthlyYear: null,
     records: {
       KTA: [],
       TTA: []
@@ -159,6 +160,7 @@
       state.filters[key] = null;
     });
     state.monthlyFilter = null;
+    state.monthlyYear = null;
   }
 
   function filteredRecords(excludeDimension, ignoreMonthlyFilter) {
@@ -283,9 +285,15 @@
       })
       .filter(Boolean);
 
-    const targetYear = validDates.length
-      ? Math.max.apply(null, validDates.map(function (date) { return date.getFullYear(); }))
-      : new Date().getFullYear();
+    const years = Array.from(new Set(validDates.map(function (date) { return date.getFullYear(); }))).sort(function (a, b) { return b - a; });
+
+    const latestYear = years.length ? years[0] : new Date().getFullYear();
+    let targetYear = state.monthlyYear || latestYear;
+    if (years.length && !years.includes(targetYear)) {
+      targetYear = latestYear;
+      state.monthlyYear = latestYear;
+    }
+    if (!state.monthlyYear) state.monthlyYear = targetYear;
 
     const values = new Array(12).fill(0);
     validDates.forEach(function (date) {
@@ -298,6 +306,7 @@
 
     return {
       targetYear: targetYear,
+      years: years.length ? years : [targetYear],
       maxValue: maxValue,
       items: monthNames.map(function (name, index) {
         return { month: name, value: values[index] };
@@ -311,6 +320,11 @@
 
     const filtered = filteredRecords(null, true);
     const monthlySeries = buildMonthlySeries(filtered);
+    const yearOptions = monthlySeries.years.map(function (year) {
+      const selectedAttr = year === monthlySeries.targetYear ? 'selected' : '';
+      return `<option value="${year}" ${selectedAttr}>${year}</option>`;
+    }).join('');
+
     const monthlyBars = monthlySeries.items.map(function (item, monthIndex) {
       const height = Math.max(8, Math.round((item.value / monthlySeries.maxValue) * 100));
       const isActiveMonth = !!(state.monthlyFilter && state.monthlyFilter.year === monthlySeries.targetYear && state.monthlyFilter.month === monthIndex);
@@ -327,7 +341,12 @@
 
     const monthlyChartHtml = `
       <section class="achievement-chart-card achievement-chart-card--monthly">
-        <h4>Pencapaian Bulanan ${escapeHtml(state.activeTab)} (${monthlySeries.targetYear})</h4>
+        <div class="achievement-monthly-head">
+          <h4>Pencapaian Bulanan ${escapeHtml(state.activeTab)} (${monthlySeries.targetYear})</h4>
+          <label class="achievement-year-filter">Tahun
+            <select id="achievement-year-select" class="achievement-year-select">${yearOptions}</select>
+          </label>
+        </div>
         <p class="achievement-chart-note">Ringkasan jumlah temuan per bulan. Grafik ini selalu ditampilkan paling atas.</p>
         <div class="achievement-monthly-chart" role="img" aria-label="Grafik pencapaian bulanan ${escapeHtml(state.activeTab)} tahun ${monthlySeries.targetYear}">
           ${monthlyBars}
@@ -457,6 +476,17 @@
     }
 
     if (chartWrap) {
+      chartWrap.addEventListener('change', function (event) {
+        const yearSelect = event.target.closest('#achievement-year-select');
+        if (!yearSelect) return;
+        const year = Number(yearSelect.value);
+        if (!Number.isNaN(year)) {
+          state.monthlyYear = year;
+          state.monthlyFilter = null;
+          renderAll();
+        }
+      });
+
       chartWrap.addEventListener('click', function (event) {
         const monthBtn = event.target.closest('[data-month][data-year]');
         if (monthBtn) {
