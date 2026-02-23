@@ -7,6 +7,7 @@
 
   let currentRole = '';
   let editingId = null;
+  let followUpMode = false;
 
   function readJson(key) {
     try {
@@ -25,6 +26,14 @@
     const el = document.getElementById(id);
     if (!el) return;
     el.value = value || '';
+  }
+
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function isOpenOrProgress(status) {
+    return status === 'Open' || status === 'Progress';
   }
 
   function todayInputValue() {
@@ -190,8 +199,41 @@
     if (form) form.classList.add('hidden');
   }
 
+  function setFollowUpFieldMode(enabled) {
+    const form = document.getElementById('kta-form');
+    if (!form) return;
+
+    const editableIds = new Set(['tindakan-perbaikan', 'tanggal-perbaikan', 'status-perbaikan']);
+    const controls = form.querySelectorAll('input, select, textarea');
+    controls.forEach(function (control) {
+      if (!control || !control.id) return;
+      if (enabled) {
+        control.disabled = !editableIds.has(control.id);
+      } else {
+        control.disabled = false;
+      }
+    });
+  }
+
+  function getLoggedUserNama() {
+    const session = getSession();
+    const users = readJson(USER_KEY) || [];
+    const loginIdentity = (session.username || '').trim();
+    const matchedUser = users.find((user) => user.username === loginIdentity || user.email === loginIdentity);
+    return (matchedUser && matchedUser.nama) || session.nama || '';
+  }
+
+  function canFollowUpAsPja(record) {
+    if (!record) return false;
+    const namaUser = normalizeName(getLoggedUserNama());
+    const namaPja = normalizeName(record.namaPja);
+    if (!namaUser || !namaPja) return false;
+    return namaUser === namaPja && isOpenOrProgress(record.status);
+  }
+
   function resetFormForNew() {
     editingId = null;
+    followUpMode = false;
     const form = document.getElementById('kta-form');
     if (form) form.reset();
 
@@ -201,6 +243,7 @@
     setValue('perbaikan-langsung', 'Tidak');
     setValue('status-perbaikan', '');
     togglePerbaikanSection();
+    setFollowUpFieldMode(false);
     setSaveButtonText('Simpan');
   }
 
@@ -262,6 +305,58 @@
   }
 
   async function saveFormData() {
+    if (followUpMode) {
+      if (!editingId) {
+        alert('Data follow-up tidak valid.');
+        return;
+      }
+
+      const list = readKtaRecords();
+      const idx = list.findIndex((item) => item.id === editingId);
+      if (idx < 0) {
+        alert('Data KTA tidak ditemukan.');
+        return;
+      }
+
+      const previous = list[idx];
+      if (!canFollowUpAsPja(previous)) {
+        alert('Anda tidak memiliki akses follow-up untuk data ini.');
+        return;
+      }
+
+      const tindakanPerbaikan = (document.getElementById('tindakan-perbaikan') || {}).value || '';
+      const tanggalPerbaikan = (document.getElementById('tanggal-perbaikan') || {}).value || '';
+      const status = (document.getElementById('status-perbaikan') || {}).value || '';
+
+      if (!tindakanPerbaikan) return alert('Tindakan Perbaikan wajib diisi');
+      if (!tanggalPerbaikan) return alert('Tanggal Perbaikan wajib diisi');
+      if (!status) return alert('Status wajib dipilih');
+
+      const updated = {
+        ...previous,
+        tindakanPerbaikan,
+        tanggalPerbaikan,
+        status,
+        perbaikanLangsung: 'Ya'
+      };
+
+      list[idx] = updated;
+      writeKtaRecords(list);
+      try {
+        if (window.AIOSApi && typeof window.AIOSApi.updateKta === 'function' && window.AIOSApi.getToken && window.AIOSApi.getToken()) {
+          await window.AIOSApi.updateKta(updated.id, updated);
+        }
+      } catch (err) {
+        console.warn('KTA follow-up API update failed:', err && err.message ? err.message : err);
+      }
+
+      renderTable();
+      resetFormForNew();
+      hideForm();
+      alert('Follow-up KTA berhasil disimpan.');
+      return;
+    }
+
     const data = collectFormData();
     const validationMessage = validateForm(data);
     if (validationMessage) {
@@ -448,6 +543,31 @@
     hideForm();
     togglePerbaikanSection();
     renderTable();
+
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      if (params.get('action') === 'followup') {
+        const targetId = params.get('id') || '';
+        if (targetId) {
+          const list = readKtaRecords();
+          const target = list.find((item) => item.id === targetId);
+          if (target && canFollowUpAsPja(target)) {
+            editingId = target.id;
+            followUpMode = true;
+            fillForm(target);
+            setValue('perbaikan-langsung', 'Ya');
+            togglePerbaikanSection();
+            setFollowUpFieldMode(true);
+            setSaveButtonText('Simpan Follow-up');
+            showForm();
+          } else if (target) {
+            alert('Notifikasi ini tidak dapat ditindaklanjuti oleh akun Anda.');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('KTA follow-up open from URL failed:', err && err.message ? err.message : err);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);

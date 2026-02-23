@@ -4,17 +4,39 @@ const { readJson } = require('../utils/store');
 
 const router = express.Router();
 
+function normalizeName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isOpenOrProgress(status) {
+  return status === 'Open' || status === 'Progress';
+}
+
+function isAssignedToPja(userName, item) {
+  const a = normalizeName(userName);
+  const b = normalizeName(item && item.namaPja);
+  return !!a && !!b && a === b;
+}
+
 router.get('/', authRequired, (req, res) => {
   const kta = readJson('kta.json', []);
   const tta = readJson('tta.json', []);
 
+  const currentNama = req.user && req.user.nama;
+
   const scopedKta = isPrivileged(req.user.role)
     ? kta
-    : kta.filter((item) => item.reporterUsername === req.user.username);
+    : kta.filter((item) => {
+      if (item.reporterUsername === req.user.username) return true;
+      return isOpenOrProgress(item.status) && isAssignedToPja(currentNama, item);
+    });
 
   const scopedTta = isPrivileged(req.user.role)
     ? tta
-    : tta.filter((item) => item.reporterUsername === req.user.username);
+    : tta.filter((item) => {
+      if (item.reporterUsername === req.user.username) return true;
+      return isOpenOrProgress(item.status) && isAssignedToPja(currentNama, item);
+    });
 
   const list = [
     ...scopedKta.map((item) => ({ type: 'KTA', ...item })),

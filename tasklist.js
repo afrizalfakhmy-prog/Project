@@ -52,18 +52,36 @@
     };
   }
 
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function isOpenOrProgress(status) {
+    return status === 'Open' || status === 'Progress';
+  }
+
+  function isPjaAssignee(identity, item) {
+    const userName = normalizeName(identity && identity.nama);
+    const pjaName = normalizeName(item && item.namaPja);
+    if (!userName || !pjaName) return false;
+    return userName === pjaName;
+  }
+
   function buildItems(identity) {
     if (Array.isArray(remoteItems)) {
       const mapped = remoteItems.map(function (item) {
-        return {
+        const mappedItem = {
           source: item.type || item.source || '-',
           id: item.id || '-',
           tanggalLaporan: item.tanggalLaporan || '',
           namaPelapor: item.namaPelapor || '-',
           perusahaanPelapor: item.perusahaan || item.perusahaanPelapor || '-',
           status: item.status || '-',
+          namaPja: item.namaPja || '-',
           fotoTemuanPreview: (item.fotoTemuanPreview && item.fotoTemuanPreview[0]) || ''
         };
+        mappedItem.followUpEligible = isOpenOrProgress(mappedItem.status) && isPjaAssignee(identity, mappedItem);
+        return mappedItem;
       });
 
       mapped.sort(function (a, b) {
@@ -86,20 +104,26 @@
       if (isAdminScope) return true;
       const reporterUsername = String(item.reporterUsername || '').toLowerCase();
       const reporterName = String(item.namaPelapor || '').toLowerCase();
+      const pjaName = String(item.namaPja || '').toLowerCase();
+      const isPjaNotificationTarget = isOpenOrProgress(item.status || '-') && !!pjaName && nameSet.has(pjaName);
       if (identity.username && reporterUsername === identity.username.toLowerCase()) return true;
+      if (isPjaNotificationTarget) return true;
       return nameSet.has(reporterName);
     }
 
     function mapItem(source, item) {
-      return {
+      const mappedItem = {
         source: source,
         id: item.id || '-',
         tanggalLaporan: item.tanggalLaporan || '',
         namaPelapor: item.namaPelapor || '-',
         perusahaanPelapor: item.perusahaan || item.perusahaanPelapor || '-',
         status: item.status || '-',
+        namaPja: item.namaPja || '-',
         fotoTemuanPreview: (item.fotoTemuanPreview && item.fotoTemuanPreview[0]) || ''
       };
+      mappedItem.followUpEligible = isOpenOrProgress(mappedItem.status) && isPjaAssignee(identity, mappedItem);
+      return mappedItem;
     }
 
     const merged = [];
@@ -157,7 +181,7 @@
     if (identity.role === 'Admin' || identity.role === 'Super Admin') {
       meta.textContent = `Notifikasi semua user (${identity.role})`;
     } else {
-      meta.textContent = `Notifikasi untuk login: ${identity.username}`;
+      meta.textContent = `Notifikasi untuk login: ${identity.username} (termasuk tugas follow-up sebagai PJA)`;
     }
 
     if (items.length === 0) {
@@ -183,11 +207,32 @@
             <li><span>Tanggal Laporan</span><strong>${escapeHtml(normalizeDate(item.tanggalLaporan) || '-')}</strong></li>
             <li><span>Nama Pelapor</span><strong>${escapeHtml(item.namaPelapor)}</strong></li>
             <li><span>Perusahaan Pelapor</span><strong>${escapeHtml(item.perusahaanPelapor)}</strong></li>
+            <li><span>Nama PJA</span><strong>${escapeHtml(item.namaPja || '-')}</strong></li>
             <li><span>Status</span><strong>${escapeHtml(item.status)}</strong></li>
           </ul>
+
+          ${item.followUpEligible ? `<div class="form-actions"><button type="button" class="small task-followup-btn" data-source="${escapeHtml(item.source)}" data-id="${escapeHtml(item.id)}">Tindak Lanjut</button></div>` : ''}
         </article>
       `;
     }).join('');
+  }
+
+  function handleCardActions(event) {
+    const followupBtn = event.target.closest('.task-followup-btn');
+    if (!followupBtn) return;
+
+    const source = followupBtn.getAttribute('data-source') || '';
+    const id = followupBtn.getAttribute('data-id') || '';
+    if (!source || !id) return;
+
+    if (source === 'KTA') {
+      window.location.href = `kta.html?action=followup&id=${encodeURIComponent(id)}`;
+      return;
+    }
+
+    if (source === 'TTA') {
+      window.location.href = `tta.html?action=followup&id=${encodeURIComponent(id)}`;
+    }
   }
 
   async function init() {
@@ -208,6 +253,9 @@
         render(identity);
       });
     }
+
+    const cards = document.getElementById('tasklist-cards');
+    if (cards) cards.addEventListener('click', handleCardActions);
 
     await syncTasklistFromApi();
     render(identity);

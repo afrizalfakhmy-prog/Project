@@ -4,6 +4,21 @@ const { readJson, writeJson } = require('../utils/store');
 
 const router = express.Router();
 
+function normalizeName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isOpenOrProgress(status) {
+  return status === 'Open' || status === 'Progress';
+}
+
+function isAssignedPjaFollowUpAllowed(user, item) {
+  const namaUser = normalizeName(user && user.nama);
+  const namaPja = normalizeName(item && item.namaPja);
+  if (!namaUser || !namaPja) return false;
+  return namaUser === namaPja && isOpenOrProgress(item && item.status);
+}
+
 router.get('/', authRequired, (req, res) => {
   const list = readJson('tta.json', []);
   if (isPrivileged(req.user.role)) return res.json(list);
@@ -33,13 +48,27 @@ router.put('/:id', authRequired, (req, res) => {
   if (idx < 0) return res.status(404).json({ message: 'Data not found' });
 
   const existing = list[idx];
-  if (!isPrivileged(req.user.role) && existing.reporterUsername !== req.user.username) {
+  const privileged = isPrivileged(req.user.role);
+  const isOwner = existing.reporterUsername === req.user.username;
+  const isPjaFollowUp = !privileged && !isOwner && isAssignedPjaFollowUpAllowed(req.user, existing);
+
+  if (!privileged && !isOwner && !isPjaFollowUp) {
     return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  let payload = req.body || {};
+  if (isPjaFollowUp) {
+    payload = {
+      tindakanPerbaikan: payload.tindakanPerbaikan || existing.tindakanPerbaikan || '',
+      tanggalPerbaikan: payload.tanggalPerbaikan || existing.tanggalPerbaikan || '',
+      status: payload.status || existing.status || 'Open',
+      perbaikanLangsung: 'Ya'
+    };
   }
 
   list[idx] = {
     ...existing,
-    ...req.body,
+    ...payload,
     id: existing.id,
     reporterUsername: existing.reporterUsername,
     updatedAt: new Date().toISOString()

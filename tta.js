@@ -7,6 +7,7 @@
 
   let currentRole = '';
   let editingId = null;
+  let followUpMode = false;
 
   function readJson(key) {
     try {
@@ -25,6 +26,14 @@
     const el = document.getElementById(id);
     if (!el) return;
     el.value = value || '';
+  }
+
+  function normalizeName(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function isOpenOrProgress(status) {
+    return status === 'Open' || status === 'Progress';
   }
 
   function todayInputValue() {
@@ -144,6 +153,40 @@
   function hideForm() {
     const form = document.getElementById('tta-form');
     if (form) form.classList.add('hidden');
+  }
+
+  function setFollowUpFieldMode(enabled) {
+    const form = document.getElementById('tta-form');
+    if (!form) return;
+
+    const editableIds = new Set(['tta-tindakan-perbaikan', 'tta-tanggal-perbaikan', 'tta-status-perbaikan']);
+    const controls = form.querySelectorAll('input, select, textarea');
+    controls.forEach(function (control) {
+      if (!control || !control.id) return;
+      if (enabled) {
+        control.disabled = !editableIds.has(control.id);
+      } else {
+        control.disabled = false;
+      }
+    });
+  }
+
+  function getLoggedUserNama() {
+    const session = getSession();
+    const users = getUsers();
+    const loginIdentity = (session.username || '').trim();
+    const matchedUser = users.find(function (user) {
+      return user.username === loginIdentity || user.email === loginIdentity;
+    });
+    return (matchedUser && matchedUser.nama) || session.nama || '';
+  }
+
+  function canFollowUpAsPja(record) {
+    if (!record) return false;
+    const namaUser = normalizeName(getLoggedUserNama());
+    const namaPja = normalizeName(record.namaPja);
+    if (!namaUser || !namaPja) return false;
+    return namaUser === namaPja && isOpenOrProgress(record.status);
   }
 
   function autofillReporter() {
@@ -317,6 +360,7 @@
 
   function resetFormForNew() {
     editingId = null;
+    followUpMode = false;
     const form = document.getElementById('tta-form');
     if (form) form.reset();
 
@@ -329,6 +373,7 @@
     setValue('tta-departemen-pelaku', '');
     setValue('tta-perusahaan-pelaku', '');
     togglePerbaikanSection();
+    setFollowUpFieldMode(false);
     setSaveButtonText('Simpan');
   }
 
@@ -395,6 +440,58 @@
   }
 
   async function saveFormData() {
+    if (followUpMode) {
+      if (!editingId) {
+        alert('Data follow-up tidak valid.');
+        return;
+      }
+
+      const list = readTtaRecords();
+      const idx = list.findIndex(function (item) { return item.id === editingId; });
+      if (idx < 0) {
+        alert('Data TTA tidak ditemukan.');
+        return;
+      }
+
+      const previous = list[idx];
+      if (!canFollowUpAsPja(previous)) {
+        alert('Anda tidak memiliki akses follow-up untuk data ini.');
+        return;
+      }
+
+      const tindakanPerbaikan = (document.getElementById('tta-tindakan-perbaikan') || {}).value || '';
+      const tanggalPerbaikan = (document.getElementById('tta-tanggal-perbaikan') || {}).value || '';
+      const status = (document.getElementById('tta-status-perbaikan') || {}).value || '';
+
+      if (!tindakanPerbaikan) return alert('Tindakan Perbaikan wajib diisi');
+      if (!tanggalPerbaikan) return alert('Tanggal Perbaikan wajib diisi');
+      if (!status) return alert('Status wajib dipilih');
+
+      const updated = {
+        ...previous,
+        tindakanPerbaikan,
+        tanggalPerbaikan,
+        status,
+        perbaikanLangsung: 'Ya'
+      };
+
+      list[idx] = updated;
+      writeTtaRecords(list);
+      try {
+        if (window.AIOSApi && typeof window.AIOSApi.updateTta === 'function' && window.AIOSApi.getToken && window.AIOSApi.getToken()) {
+          await window.AIOSApi.updateTta(updated.id, updated);
+        }
+      } catch (err) {
+        console.warn('TTA follow-up API update failed:', err && err.message ? err.message : err);
+      }
+
+      renderTable();
+      resetFormForNew();
+      hideForm();
+      alert('Follow-up TTA berhasil disimpan.');
+      return;
+    }
+
     const data = collectFormData();
     const validationMessage = validateForm(data);
     if (validationMessage) {
@@ -532,6 +629,31 @@
     hideForm();
     togglePerbaikanSection();
     renderTable();
+
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      if (params.get('action') === 'followup') {
+        const targetId = params.get('id') || '';
+        if (targetId) {
+          const list = readTtaRecords();
+          const target = list.find(function (item) { return item.id === targetId; });
+          if (target && canFollowUpAsPja(target)) {
+            editingId = target.id;
+            followUpMode = true;
+            fillForm(target);
+            setValue('tta-perbaikan-langsung', 'Ya');
+            togglePerbaikanSection();
+            setFollowUpFieldMode(true);
+            setSaveButtonText('Simpan Follow-up');
+            showForm();
+          } else if (target) {
+            alert('Notifikasi ini tidak dapat ditindaklanjuti oleh akun Anda.');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('TTA follow-up open from URL failed:', err && err.message ? err.message : err);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);
