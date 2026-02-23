@@ -20,7 +20,11 @@
       kategoriTemuan: null,
       lokasiTemuan: null,
       riskLevel: null,
-      namaPja: null
+      namaPja: null,
+      namaPelaku: null,
+      jabatanPelaku: null,
+      departemenPelaku: null,
+      perusahaanPelaku: null
     }
   };
 
@@ -31,6 +35,13 @@
     { key: 'lokasiTemuan', title: 'Berdasarkan Lokasi Temuan' },
     { key: 'riskLevel', title: 'Berdasarkan Risk Level' },
     { key: 'namaPja', title: 'Berdasarkan Nama PJA' }
+  ];
+
+  const ttaPelakuDimensions = [
+    { key: 'namaPelaku', title: 'Berdasarkan Nama Pelaku TTA' },
+    { key: 'jabatanPelaku', title: 'Berdasarkan Jabatan Pelaku TTA' },
+    { key: 'departemenPelaku', title: 'Berdasarkan Departemen Pelaku TTA' },
+    { key: 'perusahaanPelaku', title: 'Berdasarkan Perusahaan Pelaku TTA' }
   ];
 
   function readJson(key) {
@@ -120,6 +131,10 @@
       lokasiTemuan: normalizeLabel(item.lokasiTemuan),
       riskLevel: normalizeLabel(item.riskLevel),
       namaPja: normalizeLabel(item.namaPja),
+      namaPelaku: normalizeLabel(item.namaPelaku),
+      jabatanPelaku: normalizeLabel(item.jabatanPelaku),
+      departemenPelaku: normalizeLabel(item.departemenPelaku),
+      perusahaanPelaku: normalizeLabel(item.perusahaanPelaku),
       status: normalizeStatus(item.status),
       detailTemuan: normalizeLabel(item.detailTemuan)
     };
@@ -542,7 +557,11 @@
       </section>
     `;
 
-    const dimensionChartsHtml = chartDimensions.map(function (dimension) {
+    const activeDimensions = state.activeTab === 'TTA'
+      ? chartDimensions.concat(ttaPelakuDimensions)
+      : chartDimensions;
+
+    const dimensionChartsHtml = activeDimensions.map(function (dimension) {
       const baseRecords = filteredRecords(dimension.key);
       const rows = aggregateByDimension(baseRecords, dimension.key);
       const max = Math.max(1, ...rows.map(function (row) { return row.value; }), 1);
