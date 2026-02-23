@@ -750,6 +750,9 @@ main h4{
 
 .achievement-bar-label{
 	font-size:12px;
+	font-weight:700;
+	color:#0b1220;
+	letter-spacing:0.1px;
 	white-space:nowrap;
 	overflow:hidden;
 	text-overflow:ellipsis;
@@ -758,12 +761,12 @@ main h4{
 .achievement-bar-track{
 	height:10px;
 	border-radius:999px;
-	background:#e2e8f0;
+	gap:10px;
 	overflow:hidden;
 	display:block;
 }
 
-.achievement-bar-fill{
+	padding:8px 10px;
 	height:100%;
 	background:var(--accent);
 	border-radius:999px;
