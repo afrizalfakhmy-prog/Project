@@ -203,7 +203,7 @@
     const form = document.getElementById('kta-form');
     if (!form) return;
 
-    const editableIds = new Set(['tindakan-perbaikan', 'tanggal-perbaikan', 'status-perbaikan']);
+    const editableIds = new Set(['tindakan-perbaikan', 'foto-perbaikan', 'tanggal-perbaikan', 'status-perbaikan']);
     const controls = form.querySelectorAll('input, select, textarea');
     controls.forEach(function (control) {
       if (!control || !control.id) return;
@@ -325,8 +325,10 @@
       }
 
       const tindakanPerbaikan = (document.getElementById('tindakan-perbaikan') || {}).value || '';
+      const fotoPerbaikan = toFileNameList('foto-perbaikan');
       const tanggalPerbaikan = (document.getElementById('tanggal-perbaikan') || {}).value || '';
       const status = (document.getElementById('status-perbaikan') || {}).value || '';
+      const fotoPerbaikanPreviewList = await readImageDataUrls('foto-perbaikan', 6);
 
       if (!tindakanPerbaikan) return alert('Tindakan Perbaikan wajib diisi');
       if (!tanggalPerbaikan) return alert('Tanggal Perbaikan wajib diisi');
@@ -335,6 +337,8 @@
       const updated = {
         ...previous,
         tindakanPerbaikan,
+        fotoPerbaikan: fotoPerbaikan.length ? fotoPerbaikan : (previous.fotoPerbaikan || []),
+        fotoPerbaikanPreview: fotoPerbaikanPreviewList.length ? fotoPerbaikanPreviewList : (previous.fotoPerbaikanPreview || []),
         tanggalPerbaikan,
         status,
         perbaikanLangsung: 'Ya'

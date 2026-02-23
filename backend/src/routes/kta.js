@@ -60,6 +60,8 @@ router.put('/:id', authRequired, (req, res) => {
   if (isPjaFollowUp) {
     payload = {
       tindakanPerbaikan: payload.tindakanPerbaikan || existing.tindakanPerbaikan || '',
+      fotoPerbaikan: payload.fotoPerbaikan || existing.fotoPerbaikan || [],
+      fotoPerbaikanPreview: payload.fotoPerbaikanPreview || existing.fotoPerbaikanPreview || [],
       tanggalPerbaikan: payload.tanggalPerbaikan || existing.tanggalPerbaikan || '',
       status: payload.status || existing.status || 'Open',
       perbaikanLangsung: 'Ya'

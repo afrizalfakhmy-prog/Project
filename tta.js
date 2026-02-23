@@ -159,7 +159,7 @@
     const form = document.getElementById('tta-form');
     if (!form) return;
 
-    const editableIds = new Set(['tta-tindakan-perbaikan', 'tta-tanggal-perbaikan', 'tta-status-perbaikan']);
+    const editableIds = new Set(['tta-tindakan-perbaikan', 'tta-foto-perbaikan', 'tta-tanggal-perbaikan', 'tta-status-perbaikan']);
     const controls = form.querySelectorAll('input, select, textarea');
     controls.forEach(function (control) {
       if (!control || !control.id) return;
@@ -460,8 +460,10 @@
       }
 
       const tindakanPerbaikan = (document.getElementById('tta-tindakan-perbaikan') || {}).value || '';
+      const fotoPerbaikan = toFileNameList('tta-foto-perbaikan');
       const tanggalPerbaikan = (document.getElementById('tta-tanggal-perbaikan') || {}).value || '';
       const status = (document.getElementById('tta-status-perbaikan') || {}).value || '';
+      const fotoPerbaikanPreviewList = await readImageDataUrls('tta-foto-perbaikan', 6);
 
       if (!tindakanPerbaikan) return alert('Tindakan Perbaikan wajib diisi');
       if (!tanggalPerbaikan) return alert('Tanggal Perbaikan wajib diisi');
@@ -470,6 +472,8 @@
       const updated = {
         ...previous,
         tindakanPerbaikan,
+        fotoPerbaikan: fotoPerbaikan.length ? fotoPerbaikan : (previous.fotoPerbaikan || []),
+        fotoPerbaikanPreview: fotoPerbaikanPreviewList.length ? fotoPerbaikanPreviewList : (previous.fotoPerbaikanPreview || []),
         tanggalPerbaikan,
         status,
         perbaikanLangsung: 'Ya'
