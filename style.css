@@ -629,9 +629,9 @@ main h4{
 .ach-bar-kta{background:#0b63ff}
 .ach-bar-tta{background:#6b8cff}
 
-.ach-values{font-size:11px;color:var(--muted);margin-top:6px}
+.ach-values{font-size:11px;color:#0f172a;margin-top:6px;font-weight:600}
 .ach-status-detail{font-size:10px;color:#475569;margin-top:2px;line-height:1.2}
-.ach-label{font-size:12px;margin-top:2px}
+.ach-label{font-size:12px;margin-top:2px;color:#0f172a;font-weight:600}
 
 .achievement-status-grid{
 	display:grid;
