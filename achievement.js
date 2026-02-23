@@ -7,6 +7,7 @@
   const state = {
     identity: null,
     activeTab: 'KTA',
+    monthlyFilter: null,
     records: {
       KTA: [],
       TTA: []
@@ -157,17 +158,24 @@
     Object.keys(state.filters).forEach(function (key) {
       state.filters[key] = null;
     });
+    state.monthlyFilter = null;
   }
 
-  function filteredRecords(excludeDimension) {
+  function filteredRecords(excludeDimension, ignoreMonthlyFilter) {
     const list = state.records[state.activeTab] || [];
     return list.filter(function (item) {
-      return Object.keys(state.filters).every(function (key) {
+      const passedDimensionFilter = Object.keys(state.filters).every(function (key) {
         if (excludeDimension && key === excludeDimension) return true;
         const selected = state.filters[key];
         if (!selected) return true;
         return normalizeLabel(item[key]) === selected;
       });
+      if (!passedDimensionFilter) return false;
+
+      if (ignoreMonthlyFilter || !state.monthlyFilter) return true;
+      const date = new Date(item.tanggalLaporan);
+      if (Number.isNaN(date.getTime())) return false;
+      return date.getFullYear() === state.monthlyFilter.year && date.getMonth() === state.monthlyFilter.month;
     });
   }
 
@@ -255,6 +263,12 @@
         return `<button type="button" class="achievement-filter-chip" data-remove-filter="${escapeHtml(key)}">${escapeHtml(title)}: ${escapeHtml(state.filters[key])} ✕</button>`;
       });
 
+    if (state.monthlyFilter) {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const monthText = `${monthNames[state.monthlyFilter.month]} ${state.monthlyFilter.year}`;
+      active.push(`<button type="button" class="achievement-filter-chip" data-remove-month="1">Bulan: ${escapeHtml(monthText)} ✕</button>`);
+    }
+
     wrap.innerHTML = active.length
       ? `${active.join('')}<button type="button" id="achievement-reset-filter" class="achievement-filter-reset">Reset Semua</button>`
       : '<span class="muted">Tidak ada filter aktif.</span>';
@@ -295,18 +309,19 @@
     const charts = document.getElementById('achievement-charts');
     if (!charts) return;
 
-    const filtered = filteredRecords();
+    const filtered = filteredRecords(null, true);
     const monthlySeries = buildMonthlySeries(filtered);
-    const monthlyBars = monthlySeries.items.map(function (item) {
+    const monthlyBars = monthlySeries.items.map(function (item, monthIndex) {
       const height = Math.max(8, Math.round((item.value / monthlySeries.maxValue) * 100));
+      const isActiveMonth = !!(state.monthlyFilter && state.monthlyFilter.year === monthlySeries.targetYear && state.monthlyFilter.month === monthIndex);
       return `
-        <div class="ach-month-col" title="${escapeHtml(item.month)} ${monthlySeries.targetYear}: ${item.value}">
+        <button type="button" class="ach-month-col ${isActiveMonth ? 'active' : ''}" data-month="${monthIndex}" data-year="${monthlySeries.targetYear}" title="${escapeHtml(item.month)} ${monthlySeries.targetYear}: ${item.value}">
           <div class="ach-bars">
             <span class="ach-bar" style="height:${height}%"></span>
           </div>
           <div class="ach-values">${item.value}</div>
           <div class="ach-label">${escapeHtml(item.month)}</div>
-        </div>
+        </button>
       `;
     }).join('');
 
@@ -443,6 +458,18 @@
 
     if (chartWrap) {
       chartWrap.addEventListener('click', function (event) {
+        const monthBtn = event.target.closest('[data-month][data-year]');
+        if (monthBtn) {
+          const month = Number(monthBtn.getAttribute('data-month'));
+          const year = Number(monthBtn.getAttribute('data-year'));
+          if (!Number.isNaN(month) && !Number.isNaN(year)) {
+            const same = state.monthlyFilter && state.monthlyFilter.month === month && state.monthlyFilter.year === year;
+            state.monthlyFilter = same ? null : { month: month, year: year };
+            renderAll();
+          }
+          return;
+        }
+
         const row = event.target.closest('[data-dim][data-val]');
         if (!row) return;
         const dim = row.getAttribute('data-dim') || '';
@@ -456,6 +483,13 @@
 
     if (activeFilterWrap) {
       activeFilterWrap.addEventListener('click', function (event) {
+        const removeMonthBtn = event.target.closest('[data-remove-month]');
+        if (removeMonthBtn) {
+          state.monthlyFilter = null;
+          renderAll();
+          return;
+        }
+
         const removeBtn = event.target.closest('[data-remove-filter]');
         if (removeBtn) {
           const key = removeBtn.getAttribute('data-remove-filter');

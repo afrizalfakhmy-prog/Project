@@ -589,7 +589,20 @@ main h4{
 	width:100%;
 }
 
-.ach-month-col{min-width:56px;text-align:center}
+.ach-month-col{
+	min-width:56px;
+	text-align:center;
+	border:1px solid transparent;
+	background:transparent;
+	border-radius:10px;
+	padding:6px 4px;
+	cursor:pointer;
+}
+
+.ach-month-col.active{
+	border-color:var(--accent);
+	background:#eef5ff;
+}
 
 .ach-bars{
 	height:150px;
