@@ -272,13 +272,13 @@
       const totalGroup = rows.reduce(function (sum, row) { return sum + row.value; }, 0);
 
       const body = rows.length
-        ? rows.map(function (row, index) {
+        ? rows.map(function (row) {
             const width = Math.max(8, Math.round((row.value / max) * 100));
             const isActive = selected === row.label;
             const percent = totalGroup > 0 ? ((row.value / totalGroup) * 100).toFixed(1) : '0.0';
             return `
               <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}">
-                <span class="achievement-bar-label"><span class="achievement-bar-rank">${index + 1}.</span> ${escapeHtml(row.label)} (${row.value})</span>
+                <span class="achievement-bar-label">${escapeHtml(row.label)} (${row.value})</span>
                 <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
                 <span class="achievement-bar-value">${row.value}</span>
                 <span class="achievement-bar-detail">${percent}% dari total data pada grafik ini</span>
@@ -287,10 +287,27 @@
           }).join('')
         : '<div class="muted">Belum ada data.</div>';
 
+      const miniBars = rows.length
+        ? rows.slice(0, 8).map(function (row) {
+            const height = Math.max(12, Math.round((row.value / max) * 100));
+            const shortLabel = row.label.length > 14 ? row.label.slice(0, 14) + '…' : row.label;
+            return `
+              <div class="achievement-mini-col" title="${escapeHtml(row.label)}: ${row.value}">
+                <div class="achievement-mini-bar-wrap">
+                  <span class="achievement-mini-bar" style="height:${height}%"></span>
+                </div>
+                <span class="achievement-mini-value">${row.value}</span>
+                <span class="achievement-mini-label">${escapeHtml(shortLabel)}</span>
+              </div>
+            `;
+          }).join('')
+        : '';
+
       return `
         <section class="achievement-chart-card">
           <h4>${escapeHtml(dimension.title)}</h4>
           <p class="achievement-chart-note">Total data pada grafik ini: ${totalGroup} temuan. Klik bar untuk memfilter dashboard.</p>
+          <div class="achievement-mini-chart" role="img" aria-label="Grafik batang ${escapeHtml(dimension.title)}">${miniBars}</div>
           <div class="achievement-bars" role="group">${body}</div>
         </section>
       `;
