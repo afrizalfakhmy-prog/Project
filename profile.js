@@ -144,6 +144,56 @@
     msg.classList.toggle('error', !!isError);
   }
 
+  function optimizeProfilePhoto(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const image = new Image();
+        image.onload = function () {
+          const targetSize = 320;
+          const canvas = document.createElement('canvas');
+          canvas.width = targetSize;
+          canvas.height = targetSize;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas context tidak tersedia'));
+            return;
+          }
+
+          const srcWidth = image.width;
+          const srcHeight = image.height;
+          const srcSize = Math.min(srcWidth, srcHeight);
+          const srcX = Math.floor((srcWidth - srcSize) / 2);
+          const srcY = Math.floor((srcHeight - srcSize) / 2);
+
+          ctx.drawImage(
+            image,
+            srcX,
+            srcY,
+            srcSize,
+            srcSize,
+            0,
+            0,
+            targetSize,
+            targetSize
+          );
+
+          const optimized = canvas.toDataURL('image/jpeg', 0.82);
+          resolve(optimized);
+        };
+        image.onerror = function () {
+          reject(new Error('Gagal memproses gambar'));
+        };
+        image.src = String(reader.result || '');
+      };
+      reader.onerror = function () {
+        reject(new Error('Gagal membaca file gambar'));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function initPhotoUpload(user) {
     const input = document.getElementById('profile-photo-input');
     const removeBtn = document.getElementById('profile-photo-remove');
@@ -157,19 +207,16 @@
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = async function () {
-        const photoData = String(reader.result || '');
+      try {
+        const photoData = await optimizeProfilePhoto(file);
         if (!user) return;
         user.profilePhoto = photoData;
         renderPhoto(user);
         await saveUserProfile(user);
-        setMessage('Foto profil berhasil diperbarui.', false);
-      };
-      reader.onerror = function () {
-        setMessage('Gagal membaca file gambar.', true);
-      };
-      reader.readAsDataURL(file);
+        setMessage('Foto profil berhasil diperbarui (otomatis resize & kompres).', false);
+      } catch (err) {
+        setMessage(err && err.message ? err.message : 'Gagal memproses file gambar.', true);
+      }
     });
 
     removeBtn.addEventListener('click', async function () {
