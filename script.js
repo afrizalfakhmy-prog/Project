@@ -892,6 +892,7 @@ function initEmojiPicker() {
 		const nextPos = start + emoji.length;
 		input.focus();
 		try { input.setSelectionRange(nextPos, nextPos); } catch (e) {}
+		chatEmojiPicker.classList.add('hidden');
 	});
 
 	document.addEventListener('click', (event) => {
