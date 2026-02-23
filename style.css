@@ -180,7 +180,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 :root{--side-panel-width:260px}
 .main-grid{display:flex;gap:clamp(8px,1.2vw,24px)}
 .main-content{flex:1;display:flex;flex-direction:column;gap:16px}
-#chat-panel{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);background:var(--card);border-left:1px solid rgba(15,23,32,0.04);padding:12px 12px;border-radius:10px}
+#chat-panel{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);background:var(--card);border-left:1px solid rgba(15,23,32,0.04);padding:12px 12px;border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #chat-panel h3{margin-top:0}
 #presence-list{list-style:none;padding:0;margin:8px 0;font-size:13px}
 #presence-list li{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f0f0f0;font-size:13px}
@@ -221,13 +221,13 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 #chat-input input{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
 #chat-input button{padding:7px 10px;font-size:12px}
 
-#admin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
+#admin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #admin-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
 #admin-sidebar ul{list-style:none;padding:0;margin:0;display:grid;width:max-content;max-width:100%}
 #admin-sidebar li{margin:8px 0}
 
 /* superadmin sidebar */
-#superadmin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
+#superadmin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #superadmin-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
 #superadmin-sidebar ul{list-style:none;padding:0;margin:0;display:grid;width:max-content;max-width:100%}
 #superadmin-sidebar li{margin:8px 0}
@@ -247,7 +247,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 }
 
 /* user sidebar uses same layout as admin */
-#user-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px}
+#user-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #user-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
 #user-sidebar ul{list-style:none;padding:0;margin:0;display:grid;width:max-content;max-width:100%}
 #user-sidebar li{margin:8px 0}
