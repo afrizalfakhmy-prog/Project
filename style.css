@@ -265,12 +265,32 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
 #menu.store-category-list{display:grid;grid-template-columns:1fr;gap:8px;margin:0}
 #menu.store-category-list .menu-item{
-	min-height:42px;
-	font-size:13px;
-	font-weight:600;
+	min-height:58px;
+	font-size:16px;
+	font-weight:700;
 	justify-content:flex-start;
 	padding:10px 12px;
+	border-radius:14px;
+	background:#ffffff;
+	color:#0f172a;
+	border:1px solid rgba(15,23,32,0.1);
+	box-shadow:0 6px 16px rgba(15,23,32,0.05);
+	gap:10px;
+}
+
+#menu.store-category-list .menu-item::before{
+	content:'';
+	width:34px;
+	height:34px;
 	border-radius:10px;
+	background:#eef2f7;
+	border:1px solid rgba(15,23,32,0.08);
+	flex-shrink:0;
+}
+
+#menu.store-category-list .menu-item:hover{
+	transform:translateY(-2px);
+	box-shadow:0 10px 20px rgba(15,23,32,0.08);
 }
 
 .store-products-panel{
