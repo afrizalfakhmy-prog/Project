@@ -177,10 +177,10 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 @media(min-width:1024px){#app{max-width:1200px;margin:0 auto;padding:40px}}
 
 /* layout for main + chat column */
-:root{--side-panel-width:260px}
+:root{--side-panel-width:260px;--chat-panel-width:300px}
 .main-grid{display:flex;gap:clamp(8px,1.2vw,24px)}
 .main-content{flex:1;display:flex;flex-direction:column;gap:16px}
-#chat-panel{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);background:var(--card);border-left:1px solid rgba(15,23,32,0.04);padding:12px 12px;border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
+#chat-panel{width:min(var(--chat-panel-width),100%);min-width:var(--chat-panel-width);max-width:var(--chat-panel-width);background:var(--card);border-left:1px solid rgba(15,23,32,0.04);padding:12px 12px;border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #chat-panel h3{margin-top:0}
 #presence-list{list-style:none;padding:0;margin:8px 0;font-size:13px}
 #presence-list li{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f0f0f0;font-size:13px}
@@ -220,6 +220,10 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 #chat-input{display:flex;gap:8px;margin-top:8px}
 #chat-input input{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
 #chat-input button{padding:7px 10px;font-size:12px}
+#chat-emoji-toggle{padding:7px 8px;min-width:36px;line-height:1}
+#chat-emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
+.chat-emoji-btn{border:1px solid rgba(15,23,32,0.08);background:#f8fafc;color:#0f172a;border-radius:8px;padding:4px 6px;font-size:16px;line-height:1;cursor:pointer;box-shadow:none}
+.chat-emoji-btn:hover{background:#eef4ff}
 
 #admin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #admin-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}

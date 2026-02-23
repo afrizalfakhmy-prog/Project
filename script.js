@@ -18,6 +18,8 @@ const roleLabel = document.getElementById('role-label');
 const chatMessagesEl = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-text');
 const chatSendBtn = document.getElementById('chat-send');
+const chatEmojiToggleBtn = document.getElementById('chat-emoji-toggle');
+const chatEmojiPicker = document.getElementById('chat-emoji-picker');
 const adminSidebar = document.getElementById('admin-sidebar');
 const adminProfileBtn = document.getElementById('admin-profile');
 const adminAchievementBtn = document.getElementById('admin-achievement');
@@ -870,6 +872,37 @@ function showLoginError(msg) {
 	}
 }
 
+function initEmojiPicker() {
+	if (!chatEmojiToggleBtn || !chatEmojiPicker || !chatInput) return;
+	const emojiList = ['😀','😁','😂','😊','😍','😎','🤝','👍','🙏','🎉','✅','⚠️','🔥','💡','📌','📣'];
+	chatEmojiPicker.innerHTML = emojiList.map((emoji) => `<button type="button" class="chat-emoji-btn" data-emoji="${emoji}" title="${emoji}">${emoji}</button>`).join('');
+
+	chatEmojiToggleBtn.addEventListener('click', () => {
+		chatEmojiPicker.classList.toggle('hidden');
+	});
+
+	chatEmojiPicker.addEventListener('click', (event) => {
+		const emojiBtn = event.target.closest('[data-emoji]');
+		if (!emojiBtn) return;
+		const emoji = emojiBtn.getAttribute('data-emoji') || '';
+		const input = chatInput;
+		const start = input.selectionStart || input.value.length;
+		const end = input.selectionEnd || input.value.length;
+		input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+		const nextPos = start + emoji.length;
+		input.focus();
+		try { input.setSelectionRange(nextPos, nextPos); } catch (e) {}
+	});
+
+	document.addEventListener('click', (event) => {
+		if (!chatEmojiPicker.classList.contains('hidden')) {
+			const insidePicker = event.target.closest('#chat-emoji-picker');
+			const insideToggle = event.target.closest('#chat-emoji-toggle');
+			if (!insidePicker && !insideToggle) chatEmojiPicker.classList.add('hidden');
+		}
+	});
+}
+
 function updateSidePanelWidth() {
 	const sidebars = [adminSidebar, superadminSidebar, userSidebar].filter((el) => el && !el.classList.contains('hidden'));
 	if (!sidebars.length) return;
@@ -885,6 +918,8 @@ function updateSidePanelWidth() {
 	if (!longestButtonWidth) return;
 	const panelWidth = Math.min(300, Math.max(190, longestButtonWidth + 34));
 	document.documentElement.style.setProperty('--side-panel-width', panelWidth + 'px');
+	const chatWidth = Math.min(360, panelWidth + 44);
+	document.documentElement.style.setProperty('--chat-panel-width', chatWidth + 'px');
 }
 
 function showScreenForRole(role) {
@@ -947,6 +982,8 @@ loginBtn.addEventListener('click', async () => {
 	}, 10000);
 });
 }
+
+initEmojiPicker();
 
 
 if (logoutBtn) {
