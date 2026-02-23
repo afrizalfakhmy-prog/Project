@@ -561,27 +561,33 @@ main h4{
 }
 
 .achievement-card{
-	background:#fff;
+	height:12px;
 	border:1px solid rgba(15,23,32,0.08);
-	border-radius:12px;
+	background:#dbe7ff;
 	padding:12px;
 	box-shadow:0 6px 18px rgba(16,24,40,0.04);
+	border:1px solid rgba(11,99,255,0.2);
 	display:flex;
 	flex-direction:column;
 	gap:6px;
 }
-
+	background:linear-gradient(90deg,#0b63ff 0%, #2d7eff 100%);
 .achievement-card span{color:var(--muted);font-size:13px}
 .achievement-card strong{font-size:28px;line-height:1.1;color:var(--accent)}
 
 .achievement-section{margin-top:16px}
 
-.achievement-monthly-chart{
+	font-size:13px;
 	display:grid;
-	grid-template-columns:repeat(12,minmax(0,1fr));
+	color:#0b1220;
 	gap:8px;
 	align-items:end;
 	padding:12px;
+
+.achievement-bar-rank{
+	color:#0b63ff;
+	font-weight:800;
+}
 	border:1px solid rgba(15,23,32,0.08);
 	border-radius:12px;
 	background:#fff;

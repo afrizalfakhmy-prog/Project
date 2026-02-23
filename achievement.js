@@ -272,13 +272,13 @@
       const totalGroup = rows.reduce(function (sum, row) { return sum + row.value; }, 0);
 
       const body = rows.length
-        ? rows.map(function (row) {
+        ? rows.map(function (row, index) {
             const width = Math.max(8, Math.round((row.value / max) * 100));
             const isActive = selected === row.label;
             const percent = totalGroup > 0 ? ((row.value / totalGroup) * 100).toFixed(1) : '0.0';
             return `
               <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}">
-                <span class="achievement-bar-label">${escapeHtml(row.label)} (${row.value})</span>
+                <span class="achievement-bar-label"><span class="achievement-bar-rank">${index + 1}.</span> ${escapeHtml(row.label)} (${row.value})</span>
                 <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
                 <span class="achievement-bar-value">${row.value}</span>
                 <span class="achievement-bar-detail">${percent}% dari total data pada grafik ini</span>
