@@ -724,38 +724,6 @@ main h4{
 	color:var(--muted);
 }
 
-.achievement-chart-axis{
-	margin:0 0 6px 0;
-	font-size:12px;
-	color:#334155;
-}
-
-.achievement-chart-axis strong{
-	color:#0f172a;
-}
-
-.achievement-label-list{
-	margin:0 0 10px 0;
-	font-size:12px;
-	color:#334155;
-	display:flex;
-	gap:6px;
-	flex-wrap:wrap;
-	align-items:center;
-}
-
-.achievement-label-chip{
-	display:inline-flex;
-	align-items:center;
-	padding:4px 8px;
-	border-radius:999px;
-	border:1px solid rgba(15,23,32,0.12);
-	background:#f8fafc;
-	color:#0f172a;
-	font-size:11px;
-	line-height:1.2;
-}
-
 .achievement-bars{
 	display:grid;
 	gap:8px;

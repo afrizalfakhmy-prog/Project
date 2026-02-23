@@ -278,7 +278,7 @@
             const percent = totalGroup > 0 ? ((row.value / totalGroup) * 100).toFixed(1) : '0.0';
             return `
               <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}">
-                <span class="achievement-bar-label">${escapeHtml(row.label)}</span>
+                <span class="achievement-bar-label">${escapeHtml(row.label)} (${row.value})</span>
                 <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
                 <span class="achievement-bar-value">${row.value}</span>
                 <span class="achievement-bar-detail">${percent}% dari total data pada grafik ini</span>
@@ -287,21 +287,10 @@
           }).join('')
         : '<div class="muted">Belum ada data.</div>';
 
-      const labelsHtml = rows.length
-        ? rows.map(function (row) {
-            return `<span class="achievement-label-chip">${escapeHtml(row.label)} (${row.value})</span>`;
-          }).join('')
-        : '<span class="muted">Belum ada label.</span>';
-
-      const axisYLabel = dimension.title.replace('Berdasarkan ', '') || dimension.title;
-
       return `
         <section class="achievement-chart-card">
           <h4>${escapeHtml(dimension.title)}</h4>
           <p class="achievement-chart-note">Total data pada grafik ini: ${totalGroup} temuan. Klik bar untuk memfilter dashboard.</p>
-          <p class="achievement-chart-axis"><strong>Sumbu X:</strong> Jumlah temuan (frekuensi).</p>
-          <p class="achievement-chart-axis"><strong>Sumbu Y:</strong> ${escapeHtml(axisYLabel)}.</p>
-          <div class="achievement-label-list"><strong>Label Grafik:</strong> ${labelsHtml}</div>
           <div class="achievement-bars" role="group">${body}</div>
         </section>
       `;
