@@ -224,7 +224,8 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 	box-shadow:0 8px 20px rgba(15,23,32,0.05);
 }
 
-.store-brand{font-size:20px;font-weight:800;color:#0f172a}
+.store-brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;color:#0f172a}
+.store-brand-logo{height:34px;width:auto;display:block;object-fit:contain}
 .store-links{display:flex;gap:18px;align-items:center}
 .store-links a{font-size:13px;color:#334155;text-decoration:none}
 .store-links a:hover{color:var(--accent)}
