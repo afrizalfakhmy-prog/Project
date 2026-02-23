@@ -18,8 +18,6 @@ const roleLabel = document.getElementById('role-label');
 const chatMessagesEl = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-text');
 const chatSendBtn = document.getElementById('chat-send');
-const chatEmojiToggleBtn = document.getElementById('chat-emoji-toggle');
-const chatEmojiPicker = document.getElementById('chat-emoji-picker');
 const adminSidebar = document.getElementById('admin-sidebar');
 const adminProfileBtn = document.getElementById('admin-profile');
 const adminAchievementBtn = document.getElementById('admin-achievement');
@@ -872,49 +870,6 @@ function showLoginError(msg) {
 	}
 }
 
-function initEmojiPicker() {
-	const toggleBtn = document.getElementById('chat-emoji-toggle');
-	const picker = document.getElementById('chat-emoji-picker');
-	const inputEl = document.getElementById('chat-text');
-	if (!toggleBtn || !picker || !inputEl) return;
-	if (picker.dataset.initialized === 'true') return;
-	picker.dataset.initialized = 'true';
-
-	const emojiList = ['😀','😁','😂','😊','😍','😎','🤝','👍','🙏','🎉','✅','⚠️','🔥','💡','📌','📣'];
-	picker.innerHTML = emojiList.map((emoji) => `<button type="button" class="chat-emoji-btn" data-emoji="${emoji}" title="${emoji}">${emoji}</button>`).join('');
-
-	picker.addEventListener('click', (event) => {
-		const emojiBtn = event.target.closest('[data-emoji]');
-		if (!emojiBtn) return;
-		const emoji = emojiBtn.getAttribute('data-emoji') || '';
-		const input = document.getElementById('chat-text');
-		if (!input) return;
-		const start = input.selectionStart || input.value.length;
-		const end = input.selectionEnd || input.value.length;
-		input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
-		const nextPos = start + emoji.length;
-		input.focus();
-		try { input.setSelectionRange(nextPos, nextPos); } catch (e) {}
-		picker.classList.add('hidden');
-	});
-
-	document.addEventListener('click', (event) => {
-		const livePicker = document.getElementById('chat-emoji-picker');
-		if (!livePicker) return;
-
-		const toggleClick = event.target.closest('#chat-emoji-toggle');
-		if (toggleClick) {
-			livePicker.classList.toggle('hidden');
-			return;
-		}
-
-		if (!livePicker.classList.contains('hidden')) {
-			const insidePicker = event.target.closest('#chat-emoji-picker');
-			if (!insidePicker) livePicker.classList.add('hidden');
-		}
-	});
-}
-
 function updateSidePanelWidth() {
 	const sidebars = [adminSidebar, superadminSidebar, userSidebar].filter((el) => el && !el.classList.contains('hidden'));
 	if (!sidebars.length) return;
@@ -994,13 +949,6 @@ loginBtn.addEventListener('click', async () => {
 	}, 10000);
 });
 }
-
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', initEmojiPicker);
-} else {
-	initEmojiPicker();
-}
-
 
 if (logoutBtn) {
 logoutBtn.addEventListener('click', () => {

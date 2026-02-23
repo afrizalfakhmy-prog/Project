@@ -220,10 +220,6 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 #chat-input{display:flex;gap:8px;margin-top:8px}
 #chat-input input{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
 #chat-input button{padding:7px 10px;font-size:12px}
-#chat-emoji-toggle{padding:7px 8px;min-width:36px;line-height:1}
-#chat-emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
-.chat-emoji-btn{border:1px solid rgba(15,23,32,0.08);background:#f8fafc;color:#0f172a;border-radius:8px;padding:4px 6px;font-size:16px;line-height:1;cursor:pointer;box-shadow:none}
-.chat-emoji-btn:hover{background:#eef4ff}
 
 #admin-sidebar{width:min(var(--side-panel-width),100%);min-width:var(--side-panel-width);max-width:var(--side-panel-width);padding:12px 12px;background:var(--card);border:1px solid rgba(15,23,32,0.04);border-radius:10px;transition:min-width .2s ease,max-width .2s ease,width .2s ease}
 #admin-sidebar h3{margin-top:0;margin-bottom:8px;font-size:15px}
