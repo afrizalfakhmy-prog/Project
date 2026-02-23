@@ -271,20 +271,6 @@
       const selected = state.filters[dimension.key];
       const totalGroup = rows.reduce(function (sum, row) { return sum + row.value; }, 0);
 
-      const body = rows.length
-        ? rows.map(function (row) {
-            const width = Math.max(8, Math.round((row.value / max) * 100));
-            const isActive = selected === row.label;
-            return `
-              <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}" title="${escapeHtml(row.label)}: ${row.value}">
-                <span class="achievement-bar-label">${escapeHtml(row.label)} (${row.value})</span>
-                <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
-                <span class="achievement-bar-value">${row.value}</span>
-              </button>
-            `;
-          }).join('')
-        : '<div class="muted">Belum ada data.</div>';
-
       const miniBars = rows.length
         ? rows.slice(0, 8).map(function (row) {
             const height = Math.max(12, Math.round((row.value / max) * 100));
@@ -307,7 +293,6 @@
           <h4>${escapeHtml(dimension.title)}</h4>
           <p class="achievement-chart-note">Total data pada grafik ini: ${totalGroup} temuan. Klik bar untuk memfilter dashboard.</p>
           <div class="achievement-mini-chart" role="img" aria-label="Grafik batang ${escapeHtml(dimension.title)}">${miniBars}</div>
-          <div class="achievement-bars" role="group">${body}</div>
         </section>
       `;
     }).join('');
