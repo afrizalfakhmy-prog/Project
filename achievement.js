@@ -287,6 +287,12 @@
           }).join('')
         : '<div class="muted">Belum ada data.</div>';
 
+      const labelsHtml = rows.length
+        ? rows.map(function (row) {
+            return `<span class="achievement-label-chip">${escapeHtml(row.label)} (${row.value})</span>`;
+          }).join('')
+        : '<span class="muted">Belum ada label.</span>';
+
       const axisYLabel = dimension.title.replace('Berdasarkan ', '') || dimension.title;
 
       return `
@@ -295,6 +301,7 @@
           <p class="achievement-chart-note">Total data pada grafik ini: ${totalGroup} temuan. Klik bar untuk memfilter dashboard.</p>
           <p class="achievement-chart-axis"><strong>Sumbu X:</strong> Jumlah temuan (frekuensi).</p>
           <p class="achievement-chart-axis"><strong>Sumbu Y:</strong> ${escapeHtml(axisYLabel)}.</p>
+          <div class="achievement-label-list"><strong>Label Grafik:</strong> ${labelsHtml}</div>
           <div class="achievement-bars" role="group">${body}</div>
         </section>
       `;
