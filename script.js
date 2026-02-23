@@ -90,6 +90,19 @@ function writeUsers(list) {
 	localStorage.setItem(USER_KEY, JSON.stringify(list));
 }
 
+function getUserRole(user) {
+	if (!user) return 'User';
+	return (user.role || user.kategori || 'User').trim();
+}
+
+function isPrivilegedRole(role) {
+	return role === 'Admin' || role === 'Super Admin';
+}
+
+function isProtectedUserForAdmin(user) {
+	return !!(currentUser && currentUser.role === 'Admin' && isPrivilegedRole(getUserRole(user)));
+}
+
 async function syncUsersFromApi() {
 	if (!isApiReady() || !window.AIOSApi.listUsers) return;
 	try {
@@ -121,7 +134,11 @@ function renderUserList(filter) {
 	userListTableBody.innerHTML = '';
 	users.filter(u => !q || (u.username && u.username.toLowerCase().includes(q)) || (u.nama && u.nama.toLowerCase().includes(q)) || (u.karyawan && u.karyawan.toLowerCase().includes(q))).forEach(u => {
 		const tr = document.createElement('tr');
-		tr.innerHTML = `<td>${u.username||''}</td><td>${u.nama||''}</td><td>${u.karyawan||''}</td><td>${u.departemen||''}</td><td>${u.perusahaan||''}</td><td><button class="small edit-user" data-id="${u.id}">Edit</button> <button class="small delete-user" data-id="${u.id}">Hapus</button></td>`;
+		const protectedForAdmin = isProtectedUserForAdmin(u);
+		const actionHtml = protectedForAdmin
+			? '<button class="small" disabled title="Admin tidak dapat mengubah role Admin/Super Admin">Edit</button> <button class="small" disabled title="Admin tidak dapat menghapus role Admin/Super Admin">Hapus</button>'
+			: `<button class="small edit-user" data-id="${u.id}">Edit</button> <button class="small delete-user" data-id="${u.id}">Hapus</button>`;
+		tr.innerHTML = `<td>${u.username||''}</td><td>${u.nama||''}</td><td>${u.karyawan||''}</td><td>${u.departemen||''}</td><td>${u.perusahaan||''}</td><td>${actionHtml}</td>`;
 		userListTableBody.appendChild(tr);
 	});
 }
@@ -261,6 +278,9 @@ async function saveUserFromForm() {
 		// handle password: for both new and edit users, password is now required
 		const list = existingUsers;
 		const idx = list.findIndex(x => x.id === id);
+		if (idx >= 0 && isProtectedUserForAdmin(list[idx])) {
+			return alert('Admin tidak dapat mengubah user dengan role Admin atau Super Admin');
+		}
 		let user = null;
 		if (idx >= 0) {
 			// update existing - password is now always updated
@@ -297,6 +317,11 @@ async function saveUserFromForm() {
 }
 
 async function deleteUser(id) {
+	const targetUser = readUsers().find((u) => u.id === id);
+	if (isProtectedUserForAdmin(targetUser)) {
+		alert('Admin tidak dapat menghapus user dengan role Admin atau Super Admin');
+		return;
+	}
 	if (!confirm('Hapus user ini?')) return;
 	const list = readUsers().filter(u => u.id !== id);
 	writeUsers(list);
@@ -984,6 +1009,10 @@ document.addEventListener('click', (e) => {
 	if (edit) {
 		const id = edit.getAttribute('data-id');
 		const u = readUsers().find(x => x.id === id);
+		if (isProtectedUserForAdmin(u)) {
+			alert('Admin tidak dapat mengubah user dengan role Admin atau Super Admin');
+			return;
+		}
 		if (u) openUserForm(u);
 	}
 	if (del) {

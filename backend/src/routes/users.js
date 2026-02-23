@@ -13,6 +13,14 @@ function normalizeUserPayload(payload) {
   };
 }
 
+function getUserRole(user) {
+  return (user && (user.role || user.kategori)) || 'User';
+}
+
+function isProtectedTargetForAdmin(actorRole, targetUser) {
+  return actorRole === 'Admin' && isPrivileged(getUserRole(targetUser));
+}
+
 router.get('/', authRequired, (req, res) => {
   const users = readJson('users.json', []);
   if (isPrivileged(req.user.role)) return res.json(users);
@@ -37,6 +45,9 @@ router.put('/:id', authRequired, (req, res) => {
   const list = readJson('users.json', []);
   const idx = list.findIndex((u) => u.id === req.params.id);
   if (idx < 0) return res.status(404).json({ message: 'Not found' });
+  if (isProtectedTargetForAdmin(req.user.role, list[idx])) {
+    return res.status(403).json({ message: 'Admin cannot modify Admin/Super Admin users' });
+  }
   list[idx] = { ...list[idx], ...normalizeUserPayload(req.body || {}), id: list[idx].id };
   writeJson('users.json', list);
   res.json(list[idx]);
@@ -45,8 +56,12 @@ router.put('/:id', authRequired, (req, res) => {
 router.delete('/:id', authRequired, (req, res) => {
   if (!isPrivileged(req.user.role)) return res.status(403).json({ message: 'Forbidden' });
   const list = readJson('users.json', []);
+  const target = list.find((u) => u.id === req.params.id);
+  if (!target) return res.status(404).json({ message: 'Not found' });
+  if (isProtectedTargetForAdmin(req.user.role, target)) {
+    return res.status(403).json({ message: 'Admin cannot delete Admin/Super Admin users' });
+  }
   const next = list.filter((u) => u.id !== req.params.id);
-  if (next.length === list.length) return res.status(404).json({ message: 'Not found' });
   writeJson('users.json', next);
   res.json({ message: 'Deleted' });
 });
