@@ -141,15 +141,26 @@ function openUserForm(user) {
 		// Restrict kategori options based on current user role
 		if (fields.kategori) {
 			const adminOption = fields.kategori.querySelector('option[value="Admin"]');
-			if (adminOption) {
-				if (currentUser && currentUser.role === 'Admin') {
-					// Admin can only create User category
+			const superAdminOption = fields.kategori.querySelector('option[value="Super Admin"]');
+			if (currentUser && currentUser.role === 'Admin') {
+				// Admin can only create User category
+				if (adminOption) {
 					adminOption.disabled = true;
 					adminOption.style.display = 'none';
-				} else {
-					// Super Admin can create both
+				}
+				if (superAdminOption) {
+					superAdminOption.disabled = true;
+					superAdminOption.style.display = 'none';
+				}
+			} else {
+				// Super Admin can create all categories
+				if (adminOption) {
 					adminOption.disabled = false;
 					adminOption.style.display = '';
+				}
+				if (superAdminOption) {
+					superAdminOption.disabled = false;
+					superAdminOption.style.display = '';
 				}
 			}
 		}
@@ -257,10 +268,10 @@ async function saveUserFromForm() {
 		const existingUsers = readUsers();
 		const dupUser = existingUsers.find(u => u.username === username && u.id !== id);
 		if (dupUser) return alert('Username sudah digunakan');
-		if (kategori !== 'Admin' && kategori !== 'User') return alert('Pilih Kategori yang valid (Admin atau User)');
+		if (kategori !== 'Admin' && kategori !== 'User' && kategori !== 'Super Admin') return alert('Pilih Kategori yang valid (Super Admin, Admin, atau User)');
 		
-		// Check if Admin trying to create Admin user (not allowed)
-		if (currentUser && currentUser.role === 'Admin' && kategori === 'Admin') {
+		// Check if Admin trying to create non-User category (not allowed)
+		if (currentUser && currentUser.role === 'Admin' && kategori !== 'User') {
 			return alert('Admin hanya dapat membuat user dengan kategori User');
 		}
 
