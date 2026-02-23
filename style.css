@@ -766,6 +766,18 @@ main h4{
 	min-height:12px;
 }
 
+.achievement-mini-bar-open{
+	background:linear-gradient(180deg,#fda4af 0%, #ef4444 100%);
+}
+
+.achievement-mini-bar-progress{
+	background:linear-gradient(180deg,#fde68a 0%, #f59e0b 100%);
+}
+
+.achievement-mini-bar-close{
+	background:linear-gradient(180deg,#86efac 0%, #22c55e 100%);
+}
+
 .achievement-mini-value{
 	font-size:11px;
 	font-weight:700;

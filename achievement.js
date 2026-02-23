@@ -291,10 +291,15 @@
         ? rows.slice(0, 8).map(function (row) {
             const height = Math.max(12, Math.round((row.value / max) * 100));
             const shortLabel = row.label.length > 14 ? row.label.slice(0, 14) + '…' : row.label;
+            const dominantStatus = (function () {
+              if (row.open >= row.progress && row.open >= row.close) return 'open';
+              if (row.progress >= row.open && row.progress >= row.close) return 'progress';
+              return 'close';
+            })();
             return `
               <div class="achievement-mini-col" title="${escapeHtml(row.label)}: ${row.value}">
                 <div class="achievement-mini-bar-wrap">
-                  <span class="achievement-mini-bar" style="height:${height}%"></span>
+                  <span class="achievement-mini-bar achievement-mini-bar-${dominantStatus}" style="height:${height}%"></span>
                 </div>
                 <span class="achievement-mini-value">${row.value}</span>
                 <span class="achievement-mini-label">${escapeHtml(shortLabel)}</span>
