@@ -173,7 +173,13 @@
 
   function setMessage(text, isError) {
     const msg = document.getElementById('profile-photo-msg');
-    if (!msg) return;
+    if (!msg) {
+      if (text) {
+        if (isError) console.warn(text);
+        else console.log(text);
+      }
+      return;
+    }
     msg.textContent = text || '';
     msg.classList.toggle('error', !!isError);
   }
@@ -230,8 +236,8 @@
 
   function initPhotoUpload(session, user) {
     const input = document.getElementById('profile-photo-input');
-    const removeBtn = document.getElementById('profile-photo-remove');
-    if (!input || !removeBtn) return;
+    const photoPreview = document.getElementById('profile-photo-preview');
+    if (!input || !photoPreview) return;
 
     input.addEventListener('change', async function () {
       const file = input.files && input.files[0];
@@ -251,10 +257,24 @@
       }
     });
 
-    removeBtn.addEventListener('click', async function () {
-      await saveProfilePhoto(session, user, '');
-      renderPhoto(session, user);
-      setMessage('Foto profil dihapus.', false);
+    photoPreview.addEventListener('click', async function () {
+      const hasPhoto = !!resolveProfilePhoto(session, user);
+      if (!hasPhoto) {
+        input.click();
+        return;
+      }
+
+      const action = (window.prompt('Ketik aksi: ubah / hapus', 'ubah') || '').trim().toLowerCase();
+      if (!action) return;
+
+      if (action === 'hapus') {
+        await saveProfilePhoto(session, user, '');
+        renderPhoto(session, user);
+        setMessage('Foto profil dihapus.', false);
+        return;
+      }
+
+      input.click();
     });
   }
 
