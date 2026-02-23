@@ -9,8 +9,29 @@
 <body>
   <main>
     <h1>My Profile</h1>
-    <p>Halaman profile sederhana. Kembali ke <a href="index.html">Dashboard</a>.</p>
+
+    <section class="profile-card">
+      <div class="profile-top">
+        <div class="profile-photo-wrap">
+          <img id="profile-photo-preview" class="profile-photo" alt="Foto Profil" src="" />
+        </div>
+        <div class="profile-photo-actions">
+          <label for="profile-photo-input" class="profile-upload-label">Upload Foto Profil</label>
+          <input id="profile-photo-input" type="file" accept="image/*" />
+          <button type="button" id="profile-photo-remove" class="small">Hapus Foto</button>
+          <p id="profile-photo-msg" class="muted"></p>
+        </div>
+      </div>
+
+      <div class="profile-details">
+        <h3>Detail User Login</h3>
+        <div id="profile-detail-grid" class="profile-grid"></div>
+      </div>
+    </section>
   </main>
+  <script src="app-config.js"></script>
+  <script src="api-client.js"></script>
   <script src="nav.js"></script>
+  <script src="profile.js"></script>
 </body>
 </html>

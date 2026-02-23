@@ -973,14 +973,14 @@ logoutBtn.addEventListener('click', () => {
 }
 
 // Admin sidebar actions (placeholders)
-if (adminProfileBtn) adminProfileBtn.addEventListener('click', () => alert('My Profile — fitur belum diimplementasikan'));
+if (adminProfileBtn) adminProfileBtn.addEventListener('click', () => { window.location.href = 'profile.html'; });
 if (adminAchievementBtn) adminAchievementBtn.addEventListener('click', () => { window.location.href = 'achievement.html'; });
 if (adminTasklistBtn) adminTasklistBtn.addEventListener('click', () => { window.location.href = 'tasklist.html'; });
 if (adminUsersBtn) adminUsersBtn.addEventListener('click', () => { window.location.href = 'daftar_user.html'; });
 if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', () => logoutBtn.click());
 
 // Super Admin sidebar actions
-if (superadminProfileBtn) superadminProfileBtn.addEventListener('click', () => alert('My Profile — fitur belum diimplementasikan'));
+if (superadminProfileBtn) superadminProfileBtn.addEventListener('click', () => { window.location.href = 'profile.html'; });
 if (superadminAchievementBtn) superadminAchievementBtn.addEventListener('click', () => { window.location.href = 'achievement.html'; });
 if (superadminTasklistBtn) superadminTasklistBtn.addEventListener('click', () => { window.location.href = 'tasklist.html'; });
 if (superadminUsersBtn) superadminUsersBtn.addEventListener('click', () => { window.location.href = 'daftar_user.html'; });
@@ -990,7 +990,7 @@ if (superadminPjaBtn) superadminPjaBtn.addEventListener('click', () => { window.
 if (superadminLogoutBtn) superadminLogoutBtn.addEventListener('click', () => logoutBtn.click());
 
 // User sidebar actions (placeholders)
-if (userProfileBtn) userProfileBtn.addEventListener('click', () => alert('My Profile — fitur belum diimplementasikan'));
+if (userProfileBtn) userProfileBtn.addEventListener('click', () => { window.location.href = 'profile.html'; });
 if (userAchievementBtn) userAchievementBtn.addEventListener('click', () => { window.location.href = 'achievement.html'; });
 if (userTasklistBtn) userTasklistBtn.addEventListener('click', () => { window.location.href = 'tasklist.html'; });
 if (userLogoutBtn) userLogoutBtn.addEventListener('click', () => logoutBtn.click());
