@@ -550,6 +550,21 @@
 
     try {
       const params = new URLSearchParams(window.location.search || '');
+      if (params.get('action') === 'edit') {
+        const targetId = params.get('id') || '';
+        if (targetId && currentRole === 'Super Admin') {
+          const list = readKtaRecords();
+          const target = list.find((item) => item.id === targetId);
+          if (target) {
+            editingId = target.id;
+            followUpMode = false;
+            fillForm(target);
+            setFollowUpFieldMode(false);
+            setSaveButtonText('Simpan Perubahan');
+            showForm();
+          }
+        }
+      }
       if (params.get('action') === 'followup') {
         const targetId = params.get('id') || '';
         if (targetId) {

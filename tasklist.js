@@ -10,6 +10,7 @@
   };
 
   let remoteItems = null;
+  let currentIdentity = null;
 
   function readJson(key) {
     try {
@@ -190,6 +191,9 @@
     }
 
     cards.innerHTML = items.map(function (item) {
+      const superAdminActions = identity.role === 'Super Admin'
+        ? `<div class="form-actions"><button type="button" class="small task-edit-btn" data-source="${escapeHtml(item.source)}" data-id="${escapeHtml(item.id)}">Edit</button><button type="button" class="small task-delete-btn" data-source="${escapeHtml(item.source)}" data-id="${escapeHtml(item.id)}">Hapus</button></div>`
+        : '';
       const thumbnailHtml = item.fotoTemuanPreview
         ? `<a href="${item.fotoTemuanPreview}" target="_blank" rel="noopener noreferrer" class="task-thumb-link"><img src="${item.fotoTemuanPreview}" alt="Thumbnail ${escapeHtml(item.id)}" class="task-thumb" /></a>`
         : '<div class="task-thumb task-thumb-empty">No Image</div>';
@@ -212,31 +216,98 @@
           </ul>
 
           ${item.followUpEligible ? `<div class="form-actions"><button type="button" class="small task-followup-btn" data-source="${escapeHtml(item.source)}" data-id="${escapeHtml(item.id)}">Tindak Lanjut</button></div>` : ''}
+          ${superAdminActions}
         </article>
       `;
     }).join('');
   }
 
-  function handleCardActions(event) {
-    const followupBtn = event.target.closest('.task-followup-btn');
-    if (!followupBtn) return;
-
-    const source = followupBtn.getAttribute('data-source') || '';
-    const id = followupBtn.getAttribute('data-id') || '';
-    if (!source || !id) return;
+  async function deleteTaskItem(source, id) {
+    if (!id || !source) return;
 
     if (source === 'KTA') {
-      window.location.href = `kta.html?action=followup&id=${encodeURIComponent(id)}`;
-      return;
+      const list = readJson(KTA_KEY) || [];
+      writeJson(KTA_KEY, list.filter(function (item) { return item.id !== id; }));
+      try {
+        if (window.AIOSApi && typeof window.AIOSApi.deleteKta === 'function' && window.AIOSApi.getToken && window.AIOSApi.getToken()) {
+          await window.AIOSApi.deleteKta(id);
+        }
+      } catch (err) {
+        console.warn('Tasklist delete KTA API failed:', err && err.message ? err.message : err);
+      }
     }
 
     if (source === 'TTA') {
-      window.location.href = `tta.html?action=followup&id=${encodeURIComponent(id)}`;
+      const list = readJson(TTA_KEY) || [];
+      writeJson(TTA_KEY, list.filter(function (item) { return item.id !== id; }));
+      try {
+        if (window.AIOSApi && typeof window.AIOSApi.deleteTta === 'function' && window.AIOSApi.getToken && window.AIOSApi.getToken()) {
+          await window.AIOSApi.deleteTta(id);
+        }
+      } catch (err) {
+        console.warn('Tasklist delete TTA API failed:', err && err.message ? err.message : err);
+      }
+    }
+
+    if (Array.isArray(remoteItems)) {
+      remoteItems = remoteItems.filter(function (item) {
+        const itemSource = item.type || item.source || '-';
+        const itemId = item.id || '-';
+        return !(itemSource === source && itemId === id);
+      });
+    }
+  }
+
+  async function handleCardActions(event) {
+    const followupBtn = event.target.closest('.task-followup-btn');
+    const editBtn = event.target.closest('.task-edit-btn');
+    const deleteBtn = event.target.closest('.task-delete-btn');
+
+    if (followupBtn) {
+      const source = followupBtn.getAttribute('data-source') || '';
+      const id = followupBtn.getAttribute('data-id') || '';
+      if (!source || !id) return;
+
+      if (source === 'KTA') {
+        window.location.href = `kta.html?action=followup&id=${encodeURIComponent(id)}`;
+        return;
+      }
+
+      if (source === 'TTA') {
+        window.location.href = `tta.html?action=followup&id=${encodeURIComponent(id)}`;
+      }
+      return;
+    }
+
+    if (!currentIdentity || currentIdentity.role !== 'Super Admin') return;
+
+    if (editBtn) {
+      const source = editBtn.getAttribute('data-source') || '';
+      const id = editBtn.getAttribute('data-id') || '';
+      if (!source || !id) return;
+      if (source === 'KTA') {
+        window.location.href = `kta.html?action=edit&id=${encodeURIComponent(id)}`;
+        return;
+      }
+      if (source === 'TTA') {
+        window.location.href = `tta.html?action=edit&id=${encodeURIComponent(id)}`;
+      }
+      return;
+    }
+
+    if (deleteBtn) {
+      const source = deleteBtn.getAttribute('data-source') || '';
+      const id = deleteBtn.getAttribute('data-id') || '';
+      if (!source || !id) return;
+      if (!confirm(`Hapus data ${source} ${id}?`)) return;
+      await deleteTaskItem(source, id);
+      render(currentIdentity);
     }
   }
 
   async function init() {
     const identity = getCurrentIdentity();
+    currentIdentity = identity;
     const sourceFilter = document.getElementById('filter-source');
     const statusFilter = document.getElementById('filter-status');
 
