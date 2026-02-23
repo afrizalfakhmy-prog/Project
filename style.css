@@ -73,7 +73,7 @@ img, picture, .logo-item{max-width:100%;height:auto;display:block}
 }
 
 .logo-azam{
- 	width:clamp(56px, 12vw, 120px);
+	width:clamp(42px, 8vw, 86px);
 }
 
 .logo-alamtri{
@@ -86,8 +86,8 @@ img, picture, .logo-item{max-width:100%;height:auto;display:block}
 		margin-bottom:12px;
 	}
 	.logo-azam{
-		width:80px;
-		height:80px;
+		width:62px;
+		height:62px;
 	}
 	.logo-alamtri{
 		width:150px;
@@ -101,8 +101,8 @@ img, picture, .logo-item{max-width:100%;height:auto;display:block}
 		margin-bottom:10px;
 	}
 	.logo-azam{
-		width:70px;
-		height:70px;
+		width:52px;
+		height:52px;
 	}
 	.logo-alamtri{
 		width:130px;
