@@ -325,6 +325,183 @@
     };
   }
 
+  function getAvailableYearsFromRecords(records) {
+    const years = Array.from(new Set((records || [])
+      .map(function (item) {
+        const date = new Date(item.tanggalLaporan);
+        return Number.isNaN(date.getTime()) ? null : date.getFullYear();
+      })
+      .filter(function (year) { return year !== null; })))
+      .sort(function (a, b) { return b - a; });
+
+    if (!years.length) {
+      years.push(new Date().getFullYear());
+    }
+    return years;
+  }
+
+  function getUserOwnedRecords(source) {
+    const sourceRecords = state.records[source] || [];
+    const identity = state.identity || {};
+    const candidateNames = [identity.username, identity.nama]
+      .map(function (item) { return String(item || '').trim().toLowerCase(); })
+      .filter(Boolean);
+
+    if (!candidateNames.length) return [];
+
+    return sourceRecords.filter(function (item) {
+      const reporter = String(item.namaPelapor || '').trim().toLowerCase();
+      return candidateNames.includes(reporter);
+    });
+  }
+
+  function buildMonthlyStatusSeries(records, targetYear) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const buckets = new Array(12).fill(null).map(function () {
+      return { total: 0, open: 0, progress: 0, close: 0 };
+    });
+
+    records.forEach(function (item) {
+      const date = new Date(item.tanggalLaporan);
+      if (Number.isNaN(date.getTime()) || date.getFullYear() !== targetYear) return;
+
+      const month = date.getMonth();
+      const bucket = buckets[month];
+      bucket.total += 1;
+
+      const status = normalizeStatus(item.status);
+      if (status === 'Open') bucket.open += 1;
+      else if (status === 'Progress') bucket.progress += 1;
+      else if (status === 'Close') bucket.close += 1;
+    });
+
+    const maxValue = Math.max(1, ...buckets.map(function (bucket) { return bucket.total; }));
+
+    return {
+      maxValue: maxValue,
+      items: monthNames.map(function (name, index) {
+        return {
+          month: name,
+          total: buckets[index].total,
+          open: buckets[index].open,
+          progress: buckets[index].progress,
+          close: buckets[index].close
+        };
+      })
+    };
+  }
+
+  function renderUserMonthlyChartCard(type, series, year) {
+    const barClass = type === 'KTA' ? 'ach-bar ach-bar-kta' : 'ach-bar ach-bar-tta';
+
+    const cols = series.items.map(function (item) {
+      const height = Math.max(8, Math.round((item.total / series.maxValue) * 100));
+      return `
+        <div class="ach-month-col ach-month-col--user" title="${escapeHtml(item.month)} ${year} | Total: ${item.total}, Open: ${item.open}, Progress: ${item.progress}, Close: ${item.close}">
+          <div class="ach-bars">
+            <span class="${barClass}" style="height:${height}%"></span>
+          </div>
+          <div class="ach-values">${item.total}</div>
+          <div class="ach-status-detail">
+            <span>Open: ${item.open}</span>
+            <span>Progress: ${item.progress}</span>
+            <span>Close: ${item.close}</span>
+          </div>
+          <div class="ach-label">${escapeHtml(item.month)}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <section class="achievement-chart-card">
+        <h4>Pencapaian Bulanan ${escapeHtml(type)} (${year})</h4>
+        <div class="achievement-status-legend" aria-label="Keterangan status">
+          <span class="status-chip status-chip--open">Open</span>
+          <span class="status-chip status-chip--progress">Progress</span>
+          <span class="status-chip status-chip--close">Close</span>
+        </div>
+        <div class="achievement-monthly-chart" role="img" aria-label="Grafik bulanan ${escapeHtml(type)} tahun ${year} dengan detail status Open, Progress, dan Close">
+          ${cols}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderUserDashboard() {
+    const submenu = document.querySelector('.achievement-submenu');
+    const summary = document.getElementById('achievement-summary');
+    const activeFilters = document.getElementById('achievement-active-filters');
+    const tableWrap = document.getElementById('achievement-detail-table');
+
+    if (submenu) submenu.style.display = 'none';
+    if (summary) summary.style.display = 'none';
+    if (activeFilters && activeFilters.closest('.achievement-section')) {
+      activeFilters.closest('.achievement-section').style.display = 'none';
+    }
+    if (tableWrap && tableWrap.closest('.achievement-section')) {
+      tableWrap.closest('.achievement-section').style.display = 'none';
+    }
+
+    const chartTitle = document.getElementById('achievement-chart-title');
+    if (chartTitle) chartTitle.textContent = 'Dashboard Pencapaian Bulanan KTA & TTA';
+
+    const userKtaRecords = getUserOwnedRecords('KTA');
+    const userTtaRecords = getUserOwnedRecords('TTA');
+    const allUserRecords = userKtaRecords.concat(userTtaRecords);
+
+    const years = getAvailableYearsFromRecords(allUserRecords);
+    if (!state.monthlyYear || !years.includes(state.monthlyYear)) {
+      state.monthlyYear = years[0];
+    }
+
+    const yearOptions = years.map(function (year) {
+      const selected = year === state.monthlyYear ? 'selected' : '';
+      return `<option value="${year}" ${selected}>${year}</option>`;
+    }).join('');
+
+    const ktaSeries = buildMonthlyStatusSeries(userKtaRecords, state.monthlyYear);
+    const ttaSeries = buildMonthlyStatusSeries(userTtaRecords, state.monthlyYear);
+    const statusCounts = aggregateStatus(allUserRecords);
+    const total = allUserRecords.length;
+    const closePercentage = total > 0 ? ((statusCounts.Close || 0) / total) * 100 : 0;
+
+    const charts = document.getElementById('achievement-charts');
+    if (!charts) return;
+    charts.classList.remove('achievement-dual-grid');
+    charts.classList.add('achievement-user-single-column');
+    charts.innerHTML = `
+      <section class="achievement-chart-card achievement-chart-card--monthly">
+        <div class="achievement-monthly-head">
+          <h4>Ringkasan Achievement Role User</h4>
+          <label class="achievement-year-filter">Tahun
+            <select id="achievement-year-select-user" class="achievement-year-select">${yearOptions}</select>
+          </label>
+        </div>
+        <p class="achievement-chart-note">Data ditampilkan hanya dari isian yang dibuat oleh user login. Grafik bulanan menampilkan total temuan serta detail status Open, Progress, dan Close untuk KTA dan TTA.</p>
+        <div class="achievement-user-summary">
+          <article class="achievement-card">
+            <span>Status Open</span>
+            <strong>${statusCounts.Open || 0}</strong>
+          </article>
+          <article class="achievement-card">
+            <span>Status Progress</span>
+            <strong>${statusCounts.Progress || 0}</strong>
+          </article>
+          <article class="achievement-card">
+            <span>Status Close</span>
+            <strong>${statusCounts.Close || 0}</strong>
+          </article>
+          <article class="achievement-card">
+            <span>Persentase Close / Total</span>
+            <strong>${closePercentage.toFixed(1)}%</strong>
+          </article>
+        </div>
+      </section>
+      ${renderUserMonthlyChartCard('KTA', ktaSeries, state.monthlyYear)}
+      ${renderUserMonthlyChartCard('TTA', ttaSeries, state.monthlyYear)}
+    `;
+  }
+
   function renderCharts() {
     const charts = document.getElementById('achievement-charts');
     if (!charts) return;
@@ -465,6 +642,21 @@
   }
 
   function setupInteractions() {
+    if (state.identity && state.identity.role === 'User') {
+      const chartWrapUser = document.getElementById('achievement-charts');
+      if (chartWrapUser) {
+        chartWrapUser.addEventListener('change', function (event) {
+          const yearSelectUser = event.target.closest('#achievement-year-select-user');
+          if (!yearSelectUser) return;
+          const year = Number(yearSelectUser.value);
+          if (Number.isNaN(year)) return;
+          state.monthlyYear = year;
+          renderUserDashboard();
+        });
+      }
+      return;
+    }
+
     const tabKta = document.getElementById('tab-kta');
     const tabTta = document.getElementById('tab-tta');
     const chartWrap = document.getElementById('achievement-charts');
@@ -578,20 +770,29 @@
       return;
     }
 
-    if (state.identity.role !== 'Super Admin' && state.identity.role !== 'Admin') {
-      alert('Akses ditolak. Dashboard Achievement hanya untuk Admin dan Super Admin.');
+    if (state.identity.role !== 'Super Admin' && state.identity.role !== 'Admin' && state.identity.role !== 'User') {
+      alert('Akses ditolak. Role Anda belum memiliki izin ke halaman Achievement.');
       window.location.href = 'index.html';
       return;
     }
 
     if (meta) {
-      meta.textContent = `Dashboard Achievement seluruh user. Login: ${state.identity.username} (${state.identity.role})`;
+      if (state.identity.role === 'User') {
+        meta.textContent = `Dashboard Achievement bulanan KTA & TTA. Login: ${state.identity.username} (${state.identity.role})`;
+      } else {
+        meta.textContent = `Dashboard Achievement seluruh user. Login: ${state.identity.username} (${state.identity.role})`;
+      }
     }
 
     await syncDataFromApiIfReady();
     loadRecords();
-    clearFilters();
     setupInteractions();
+    if (state.identity.role === 'User') {
+      renderUserDashboard();
+      return;
+    }
+
+    clearFilters();
     renderAll();
   }
 

@@ -274,21 +274,21 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 	min-height:220px;
 	display:flex;
 	flex-direction:column;
-	justify-content:center;
-	align-items:center;
-	text-align:center;
+	justify-content:flex-end;
+	align-items:flex-start;
+	text-align:left;
 	padding:10px;
 	border-radius:12px;
 	background:#ffffff;
 	color:#0f172a;
 	border:1px solid rgba(15,23,32,0.1);
 	box-shadow:0 6px 16px rgba(15,23,32,0.05);
-	font-size:clamp(15px,1.4vw,18px);
+	font-size:clamp(18px,2vw,24px);
 	font-weight:800;
 	line-height:1.22;
 	position:relative;
 	overflow:hidden;
-	padding:12px;
+	padding-bottom:14px;
 }
 
 #menu.store-main-card-grid .menu-item::before{
@@ -337,7 +337,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 @media(max-width:768px){
 	.store-links{display:none}
 	#menu.store-main-card-grid{grid-template-columns:1fr}
-	#menu.store-main-card-grid .menu-item{min-height:180px;font-size:clamp(14px,4.4vw,17px)}
+	#menu.store-main-card-grid .menu-item{min-height:180px;font-size:clamp(18px,5.2vw,22px)}
 }
 
 /* chat styles */
@@ -890,7 +890,10 @@ main h4{
 
 .ach-values{font-size:11px;color:#0f172a;margin-top:6px;font-weight:600}
 .ach-status-detail{font-size:10px;color:#475569;margin-top:2px;line-height:1.2}
+.ach-status-detail span{display:block}
 .ach-label{font-size:12px;margin-top:2px;color:#0f172a;font-weight:600}
+
+.ach-month-col--user{cursor:default}
 
 .achievement-status-grid{
 	display:grid;
@@ -991,6 +994,15 @@ main h4{
 	margin-bottom:16px;
 }
 
+.achievement-charts.achievement-dual-grid{
+	grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+}
+
+.achievement-charts.achievement-user-single-column{
+	grid-template-columns:minmax(0,1fr);
+	width:100%;
+}
+
 .achievement-chart-card--monthly{
 	grid-column:1 / -1;
 }
@@ -1041,6 +1053,46 @@ main h4{
 	margin:0 0 10px 0;
 	font-size:12px;
 	color:var(--muted);
+}
+
+.achievement-user-summary{
+	display:grid;
+	grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+	gap:10px;
+	margin-top:12px;
+}
+
+.achievement-status-legend{
+	display:flex;
+	gap:8px;
+	flex-wrap:wrap;
+	margin-bottom:10px;
+}
+
+.status-chip{
+	border-radius:999px;
+	padding:4px 10px;
+	font-size:11px;
+	font-weight:700;
+	border:1px solid transparent;
+}
+
+.status-chip--open{
+	color:#1d4ed8;
+	background:#dbeafe;
+	border-color:#bfdbfe;
+}
+
+.status-chip--progress{
+	color:#92400e;
+	background:#fef3c7;
+	border-color:#fde68a;
+}
+
+.status-chip--close{
+	color:#166534;
+	background:#dcfce7;
+	border-color:#bbf7d0;
 }
 
 .achievement-bars{
