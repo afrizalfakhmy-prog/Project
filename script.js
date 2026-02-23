@@ -933,14 +933,14 @@ logoutBtn.addEventListener('click', () => {
 
 // Admin sidebar actions (placeholders)
 if (adminProfileBtn) adminProfileBtn.addEventListener('click', () => alert('My Profile — fitur belum diimplementasikan'));
-if (adminAchievementBtn) adminAchievementBtn.addEventListener('click', () => alert('Achievement — fitur belum diimplementasikan'));
+if (adminAchievementBtn) adminAchievementBtn.addEventListener('click', () => { window.location.href = 'achievement.html'; });
 if (adminTasklistBtn) adminTasklistBtn.addEventListener('click', () => { window.location.href = 'tasklist.html'; });
 if (adminUsersBtn) adminUsersBtn.addEventListener('click', () => { window.location.href = 'daftar_user.html'; });
 if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', () => logoutBtn.click());
 
 // Super Admin sidebar actions
 if (superadminProfileBtn) superadminProfileBtn.addEventListener('click', () => alert('My Profile — fitur belum diimplementasikan'));
-if (superadminAchievementBtn) superadminAchievementBtn.addEventListener('click', () => alert('Achievement — fitur belum diimplementasikan'));
+if (superadminAchievementBtn) superadminAchievementBtn.addEventListener('click', () => { window.location.href = 'achievement.html'; });
 if (superadminTasklistBtn) superadminTasklistBtn.addEventListener('click', () => { window.location.href = 'tasklist.html'; });
 if (superadminUsersBtn) superadminUsersBtn.addEventListener('click', () => { window.location.href = 'daftar_user.html'; });
 if (superadminDepartemenBtn) superadminDepartemenBtn.addEventListener('click', () => { window.location.href = 'daftar_departemen.html'; });

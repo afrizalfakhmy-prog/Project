@@ -12,16 +12,45 @@
 
     <p id="achievement-meta" class="muted"></p>
 
+    <section class="achievement-submenu">
+      <button id="tab-kta" class="achievement-tab active" type="button">Dashboard KTA</button>
+      <button id="tab-tta" class="achievement-tab" type="button">Dashboard TTA</button>
+    </section>
+
     <section id="achievement-summary" class="achievement-summary"></section>
 
     <section class="achievement-section">
-      <h3>Grafik Bulanan KTA &amp; TTA</h3>
-      <div id="achievement-monthly-chart" class="achievement-monthly-chart"></div>
+      <h3>Filter Aktif</h3>
+      <div id="achievement-active-filters" class="achievement-active-filters"></div>
     </section>
 
     <section class="achievement-section">
-      <h3>Keterangan Status</h3>
-      <div id="achievement-status" class="achievement-status-grid"></div>
+      <h3 id="achievement-chart-title">Grafik Pencapaian</h3>
+      <div id="achievement-charts" class="achievement-charts"></div>
+    </section>
+
+    <section class="achievement-section">
+      <h3 id="achievement-table-title">Tabel Detail Temuan</h3>
+      <div class="table-responsive">
+        <table id="achievement-detail-table">
+          <thead>
+            <tr>
+              <th>No ID</th>
+              <th>Tanggal Laporan</th>
+              <th>Nama Pelapor</th>
+              <th>Departemen</th>
+              <th>Perusahaan</th>
+              <th>Kategori Temuan</th>
+              <th>Lokasi Temuan</th>
+              <th>Risk Level</th>
+              <th>Nama PJA</th>
+              <th>Status</th>
+              <th>Detail Temuan</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
   </main>
   <script src="app-config.js"></script>

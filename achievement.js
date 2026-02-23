@@ -4,7 +4,31 @@
   const KTA_KEY = 'aios_kta_records';
   const TTA_KEY = 'aios_tta_records';
 
-  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const state = {
+    identity: null,
+    activeTab: 'KTA',
+    records: {
+      KTA: [],
+      TTA: []
+    },
+    filters: {
+      departemen: null,
+      perusahaan: null,
+      kategoriTemuan: null,
+      lokasiTemuan: null,
+      riskLevel: null,
+      namaPja: null
+    }
+  };
+
+  const chartDimensions = [
+    { key: 'departemen', title: 'Berdasarkan Departemen' },
+    { key: 'perusahaan', title: 'Berdasarkan Perusahaan' },
+    { key: 'kategoriTemuan', title: 'Berdasarkan Kategori Temuan' },
+    { key: 'lokasiTemuan', title: 'Berdasarkan Lokasi Temuan' },
+    { key: 'riskLevel', title: 'Berdasarkan Risk Level' },
+    { key: 'namaPja', title: 'Berdasarkan Nama PJA' }
+  ];
 
   function readJson(key) {
     try {
@@ -13,6 +37,10 @@
     } catch (e) {
       return null;
     }
+  }
+
+  function writeJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
   }
 
   function escapeHtml(text) {
@@ -32,11 +60,23 @@
     return '-';
   }
 
+  function normalizeLabel(value) {
+    const text = String(value || '').trim();
+    return text || '-';
+  }
+
+  function normalizeDate(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
   function getIdentity() {
     const session = readJson(SESSION_KEY) || {};
     const users = readJson(USER_KEY) || [];
-
     const username = (session.username || '').trim();
+
     const matched = users.find(function (user) {
       return user.username === username || user.email === username;
     });
@@ -48,174 +88,345 @@
     };
   }
 
-  function buildDataset(identity) {
-    const kta = readJson(KTA_KEY) || [];
-    const tta = readJson(TTA_KEY) || [];
-
-    const nameSet = new Set([identity.username, identity.nama].filter(Boolean).map(function (value) {
-      return value.toLowerCase();
-    }));
-
-    function belongsToUser(item) {
-      const reporterUsername = String(item.reporterUsername || '').toLowerCase();
-      const reporterName = String(item.namaPelapor || '').toLowerCase();
-      if (identity.username && reporterUsername === identity.username.toLowerCase()) return true;
-      return nameSet.has(reporterName);
-    }
-
+  function mapKtaRecord(item) {
     return {
-      kta: kta.filter(belongsToUser),
-      tta: tta.filter(belongsToUser)
+      source: 'KTA',
+      id: item.id || '-',
+      tanggalLaporan: item.tanggalLaporan || '',
+      namaPelapor: normalizeLabel(item.namaPelapor),
+      departemen: normalizeLabel(item.departemen || item.departemenPelapor),
+      perusahaan: normalizeLabel(item.perusahaan || item.perusahaanPelapor),
+      kategoriTemuan: normalizeLabel(item.kategoriTemuan),
+      lokasiTemuan: normalizeLabel(item.lokasiTemuan),
+      riskLevel: normalizeLabel(item.riskLevel),
+      namaPja: normalizeLabel(item.namaPja),
+      status: normalizeStatus(item.status),
+      detailTemuan: normalizeLabel(item.detailTemuan)
     };
   }
 
-  function aggregateMonthly(records) {
-    const yearNow = new Date().getFullYear();
-    const monthlyKta = new Array(12).fill(0);
-    const monthlyTta = new Array(12).fill(0);
-    const monthlyStatus = {
-      Open: new Array(12).fill(0),
-      Progress: new Array(12).fill(0),
-      Close: new Array(12).fill(0)
+  function mapTtaRecord(item) {
+    return {
+      source: 'TTA',
+      id: item.id || '-',
+      tanggalLaporan: item.tanggalLaporan || '',
+      namaPelapor: normalizeLabel(item.namaPelapor),
+      departemen: normalizeLabel(item.departemenPelapor || item.departemen),
+      perusahaan: normalizeLabel(item.perusahaanPelapor || item.perusahaan),
+      kategoriTemuan: normalizeLabel(item.kategoriTemuan),
+      lokasiTemuan: normalizeLabel(item.lokasiTemuan),
+      riskLevel: normalizeLabel(item.riskLevel),
+      namaPja: normalizeLabel(item.namaPja),
+      status: normalizeStatus(item.status),
+      detailTemuan: normalizeLabel(item.detailTemuan)
     };
+  }
 
-    records.kta.forEach(function (item) {
-      const date = new Date(item.tanggalLaporan || '');
-      if (Number.isNaN(date.getTime()) || date.getFullYear() !== yearNow) return;
-      const monthIndex = date.getMonth();
-      monthlyKta[monthIndex] += 1;
-      const status = normalizeStatus(item.status);
-      if (monthlyStatus[status]) monthlyStatus[status][monthIndex] += 1;
+  async function syncDataFromApiIfReady() {
+    try {
+      if (!window.AIOSApi || !window.AIOSApi.getToken || !window.AIOSApi.getToken()) return;
+
+      if (typeof window.AIOSApi.listUsers === 'function') {
+        const users = await window.AIOSApi.listUsers();
+        if (Array.isArray(users)) writeJson(USER_KEY, users);
+      }
+
+      if (typeof window.AIOSApi.listKta === 'function') {
+        const kta = await window.AIOSApi.listKta();
+        if (Array.isArray(kta)) writeJson(KTA_KEY, kta);
+      }
+
+      if (typeof window.AIOSApi.listTta === 'function') {
+        const tta = await window.AIOSApi.listTta();
+        if (Array.isArray(tta)) writeJson(TTA_KEY, tta);
+      }
+    } catch (err) {
+      console.warn('Achievement API sync failed:', err && err.message ? err.message : err);
+    }
+  }
+
+  function loadRecords() {
+    const kta = (readJson(KTA_KEY) || []).map(mapKtaRecord);
+    const tta = (readJson(TTA_KEY) || []).map(mapTtaRecord);
+
+    state.records.KTA = kta;
+    state.records.TTA = tta;
+  }
+
+  function clearFilters() {
+    Object.keys(state.filters).forEach(function (key) {
+      state.filters[key] = null;
     });
+  }
 
-    records.tta.forEach(function (item) {
-      const date = new Date(item.tanggalLaporan || '');
-      if (Number.isNaN(date.getTime()) || date.getFullYear() !== yearNow) return;
-      const monthIndex = date.getMonth();
-      monthlyTta[monthIndex] += 1;
-      const status = normalizeStatus(item.status);
-      if (monthlyStatus[status]) monthlyStatus[status][monthIndex] += 1;
+  function filteredRecords(excludeDimension) {
+    const list = state.records[state.activeTab] || [];
+    return list.filter(function (item) {
+      return Object.keys(state.filters).every(function (key) {
+        if (excludeDimension && key === excludeDimension) return true;
+        const selected = state.filters[key];
+        if (!selected) return true;
+        return normalizeLabel(item[key]) === selected;
+      });
     });
-
-    return { year: yearNow, monthlyKta: monthlyKta, monthlyTta: monthlyTta, monthlyStatus: monthlyStatus };
   }
 
   function aggregateStatus(records) {
-    const statusCounts = { Open: 0, Progress: 0, Close: 0, '-': 0 };
-
-    records.kta.forEach(function (item) {
-      const status = normalizeStatus(item.status);
-      statusCounts[status] += 1;
+    const counts = { Open: 0, Progress: 0, Close: 0, '-': 0 };
+    records.forEach(function (item) {
+      const s = normalizeStatus(item.status);
+      counts[s] = (counts[s] || 0) + 1;
     });
-
-    records.tta.forEach(function (item) {
-      const status = normalizeStatus(item.status);
-      statusCounts[status] += 1;
-    });
-
-    return statusCounts;
+    return counts;
   }
 
   function renderSummary(records) {
     const summary = document.getElementById('achievement-summary');
     if (!summary) return;
 
-    const totalKta = records.kta.length;
-    const totalTta = records.tta.length;
-    const totalAll = totalKta + totalTta;
+    const statusCounts = aggregateStatus(records);
+    const total = records.length;
+    const open = statusCounts.Open || 0;
+    const progress = statusCounts.Progress || 0;
+    const close = statusCounts.Close || 0;
+    const openPercentage = total > 0 ? ((open / total) * 100) : 0;
 
     summary.innerHTML = `
       <article class="achievement-card">
-        <span>Total KTA</span>
-        <strong>${totalKta}</strong>
+        <span>Open</span>
+        <strong>${open}</strong>
       </article>
       <article class="achievement-card">
-        <span>Total TTA</span>
-        <strong>${totalTta}</strong>
+        <span>Progress</span>
+        <strong>${progress}</strong>
       </article>
       <article class="achievement-card">
-        <span>Total Pencapaian</span>
-        <strong>${totalAll}</strong>
+        <span>Close</span>
+        <strong>${close}</strong>
+      </article>
+      <article class="achievement-card">
+        <span>Total ${escapeHtml(state.activeTab)}</span>
+        <strong>${total}</strong>
+      </article>
+      <article class="achievement-card">
+        <span>Persentase Open</span>
+        <strong>${openPercentage.toFixed(1)}%</strong>
       </article>
     `;
   }
 
-  function renderMonthlyChart(monthly) {
-    const chart = document.getElementById('achievement-monthly-chart');
-    if (!chart) return;
+  function aggregateByDimension(records, key) {
+    const map = new Map();
+    records.forEach(function (item) {
+      const label = normalizeLabel(item[key]);
+      map.set(label, (map.get(label) || 0) + 1);
+    });
 
-    const maxValue = Math.max(1, ...monthly.monthlyKta, ...monthly.monthlyTta);
-
-    chart.innerHTML = monthLabels.map(function (label, index) {
-      const kta = monthly.monthlyKta[index];
-      const tta = monthly.monthlyTta[index];
-      const openCount = monthly.monthlyStatus.Open[index];
-      const progressCount = monthly.monthlyStatus.Progress[index];
-      const closeCount = monthly.monthlyStatus.Close[index];
-      const ktaHeight = Math.max(6, Math.round((kta / maxValue) * 100));
-      const ttaHeight = Math.max(6, Math.round((tta / maxValue) * 100));
-
-      return `
-        <div class="ach-month-col">
-          <div class="ach-bars">
-            <div class="ach-bar ach-bar-kta" style="height:${ktaHeight}%" title="KTA ${label}: ${kta}"></div>
-            <div class="ach-bar ach-bar-tta" style="height:${ttaHeight}%" title="TTA ${label}: ${tta}"></div>
-          </div>
-          <div class="ach-values">${kta} / ${tta}</div>
-          <div class="ach-status-detail">O:${openCount} P:${progressCount} C:${closeCount}</div>
-          <div class="ach-label">${label}</div>
-        </div>
-      `;
-    }).join('');
+    return Array.from(map.entries())
+      .map(function (entry) {
+        return { label: entry[0], value: entry[1] };
+      })
+      .sort(function (a, b) {
+        if (b.value !== a.value) return b.value - a.value;
+        return a.label.localeCompare(b.label);
+      });
   }
 
-  function renderStatus(statusCounts) {
-    const container = document.getElementById('achievement-status');
-    if (!container) return;
+  function renderActiveFilters() {
+    const wrap = document.getElementById('achievement-active-filters');
+    if (!wrap) return;
 
-    const descriptions = {
-      Open: 'Temuan sudah dicatat, belum ditindaklanjuti.',
-      Progress: 'Temuan sedang dalam proses tindak lanjut.',
-      Close: 'Temuan sudah selesai ditindaklanjuti.',
-      '-': 'Status belum ditentukan.'
-    };
+    const active = Object.keys(state.filters)
+      .filter(function (key) { return !!state.filters[key]; })
+      .map(function (key) {
+        const def = chartDimensions.find(function (item) { return item.key === key; });
+        const title = (def && def.title) || key;
+        return `<button type="button" class="achievement-filter-chip" data-remove-filter="${escapeHtml(key)}">${escapeHtml(title)}: ${escapeHtml(state.filters[key])} ✕</button>`;
+      });
 
-    const ordered = ['Open', 'Progress', 'Close', '-'];
-    container.innerHTML = ordered.map(function (key) {
-      return `
-        <article class="achievement-status-card">
-          <h4>${key}</h4>
-          <p>${descriptions[key]}</p>
-          <strong>${statusCounts[key] || 0}</strong>
-        </article>
-      `;
-    }).join('');
+    wrap.innerHTML = active.length
+      ? `${active.join('')}<button type="button" id="achievement-reset-filter" class="achievement-filter-reset">Reset Semua</button>`
+      : '<span class="muted">Tidak ada filter aktif.</span>';
   }
 
-  function init() {
+  function renderCharts() {
+    const charts = document.getElementById('achievement-charts');
+    if (!charts) return;
+
+    const html = chartDimensions.map(function (dimension) {
+      const baseRecords = filteredRecords(dimension.key);
+      const rows = aggregateByDimension(baseRecords, dimension.key);
+      const max = Math.max(1, ...rows.map(function (row) { return row.value; }), 1);
+      const selected = state.filters[dimension.key];
+
+      const body = rows.length
+        ? rows.map(function (row) {
+            const width = Math.max(8, Math.round((row.value / max) * 100));
+            const isActive = selected === row.label;
+            return `
+              <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}">
+                <span class="achievement-bar-label">${escapeHtml(row.label)}</span>
+                <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
+                <span class="achievement-bar-value">${row.value}</span>
+              </button>
+            `;
+          }).join('')
+        : '<div class="muted">Belum ada data.</div>';
+
+      return `
+        <section class="achievement-chart-card">
+          <h4>${escapeHtml(dimension.title)}</h4>
+          <div class="achievement-bars" role="group">${body}</div>
+        </section>
+      `;
+    }).join('');
+
+    charts.innerHTML = html;
+  }
+
+  function renderDetailTable(records) {
+    const title = document.getElementById('achievement-table-title');
+    if (title) {
+      title.textContent = state.activeTab === 'KTA'
+        ? 'Tabel Detail Temuan KTA'
+        : 'Tabel Detail Temuan TTA';
+    }
+
+    const tbody = document.querySelector('#achievement-detail-table tbody');
+    if (!tbody) return;
+
+    if (!records.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="muted">Belum ada data.</td></tr>';
+      return;
+    }
+
+    const rows = records
+      .slice()
+      .sort(function (a, b) {
+        const da = new Date(a.tanggalLaporan || 0).getTime();
+        const db = new Date(b.tanggalLaporan || 0).getTime();
+        return db - da;
+      })
+      .map(function (item) {
+        return `
+          <tr>
+            <td>${escapeHtml(item.id)}</td>
+            <td>${escapeHtml(normalizeDate(item.tanggalLaporan))}</td>
+            <td>${escapeHtml(item.namaPelapor)}</td>
+            <td>${escapeHtml(item.departemen)}</td>
+            <td>${escapeHtml(item.perusahaan)}</td>
+            <td>${escapeHtml(item.kategoriTemuan)}</td>
+            <td>${escapeHtml(item.lokasiTemuan)}</td>
+            <td>${escapeHtml(item.riskLevel)}</td>
+            <td>${escapeHtml(item.namaPja)}</td>
+            <td>${escapeHtml(item.status)}</td>
+            <td>${escapeHtml(item.detailTemuan)}</td>
+          </tr>
+        `;
+      }).join('');
+
+    tbody.innerHTML = rows;
+  }
+
+  function updateTabUi() {
+    const tabKta = document.getElementById('tab-kta');
+    const tabTta = document.getElementById('tab-tta');
+    if (tabKta) tabKta.classList.toggle('active', state.activeTab === 'KTA');
+    if (tabTta) tabTta.classList.toggle('active', state.activeTab === 'TTA');
+
+    const title = document.getElementById('achievement-chart-title');
+    if (title) title.textContent = `Grafik Pencapaian ${state.activeTab}`;
+  }
+
+  function renderAll() {
+    updateTabUi();
+    const data = filteredRecords();
+    renderSummary(data);
+    renderActiveFilters();
+    renderCharts();
+    renderDetailTable(data);
+  }
+
+  function setupInteractions() {
+    const tabKta = document.getElementById('tab-kta');
+    const tabTta = document.getElementById('tab-tta');
+    const chartWrap = document.getElementById('achievement-charts');
+    const activeFilterWrap = document.getElementById('achievement-active-filters');
+
+    if (tabKta) {
+      tabKta.addEventListener('click', function () {
+        state.activeTab = 'KTA';
+        clearFilters();
+        renderAll();
+      });
+    }
+
+    if (tabTta) {
+      tabTta.addEventListener('click', function () {
+        state.activeTab = 'TTA';
+        clearFilters();
+        renderAll();
+      });
+    }
+
+    if (chartWrap) {
+      chartWrap.addEventListener('click', function (event) {
+        const row = event.target.closest('.achievement-bar-row');
+        if (!row) return;
+        const dim = row.getAttribute('data-dim') || '';
+        const val = row.getAttribute('data-val') || '';
+        if (!dim || !val) return;
+
+        state.filters[dim] = state.filters[dim] === val ? null : val;
+        renderAll();
+      });
+    }
+
+    if (activeFilterWrap) {
+      activeFilterWrap.addEventListener('click', function (event) {
+        const removeBtn = event.target.closest('[data-remove-filter]');
+        if (removeBtn) {
+          const key = removeBtn.getAttribute('data-remove-filter');
+          if (key && Object.prototype.hasOwnProperty.call(state.filters, key)) {
+            state.filters[key] = null;
+            renderAll();
+          }
+          return;
+        }
+
+        const resetBtn = event.target.closest('#achievement-reset-filter');
+        if (resetBtn) {
+          clearFilters();
+          renderAll();
+        }
+      });
+    }
+  }
+
+  async function init() {
+    state.identity = getIdentity();
     const meta = document.getElementById('achievement-meta');
-    const identity = getIdentity();
 
-    if (!identity.username) {
-      if (meta) meta.textContent = 'Silakan login terlebih dahulu untuk melihat dashboard pencapaian.';
+    if (!state.identity.username) {
+      if (meta) meta.textContent = 'Silakan login terlebih dahulu untuk melihat dashboard achievement.';
+      return;
+    }
+
+    if (state.identity.role !== 'Super Admin' && state.identity.role !== 'Admin') {
+      alert('Akses ditolak. Dashboard Achievement hanya untuk Admin dan Super Admin.');
+      window.location.href = 'index.html';
       return;
     }
 
     if (meta) {
-      if (identity.role === 'User') {
-        meta.textContent = `Dashboard pencapaian bulanan untuk ${identity.username}`;
-      } else {
-        meta.textContent = `Dashboard ini fokus untuk role User. Login saat ini: ${identity.username} (${identity.role || '-'})`;
-      }
+      meta.textContent = `Dashboard Achievement seluruh user. Login: ${state.identity.username} (${state.identity.role})`;
     }
 
-    const records = buildDataset(identity);
-    const monthly = aggregateMonthly(records);
-    const statusCounts = aggregateStatus(records);
-
-    renderSummary(records);
-    renderMonthlyChart(monthly);
-    renderStatus(statusCounts);
+    await syncDataFromApiIfReady();
+    loadRecords();
+    clearFilters();
+    setupInteractions();
+    renderAll();
   }
 
   document.addEventListener('DOMContentLoaded', init);
