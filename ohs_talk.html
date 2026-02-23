@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OHS Talk — A-IOS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>OHS Talk</h1>
+
+    <form id="ohs-talk-form" novalidate>
+      <div class="kta-grid">
+        <label>No ID
+          <input id="ohs-id" type="text" readonly />
+        </label>
+
+        <label>Nama Peserta
+          <input id="ohs-nama-peserta" type="text" readonly />
+        </label>
+
+        <label>Jabatan Peserta
+          <input id="ohs-jabatan-peserta" type="text" readonly />
+        </label>
+
+        <label>Departemen Peserta
+          <input id="ohs-departemen-peserta" type="text" readonly />
+        </label>
+
+        <label>Perusahaan Peserta
+          <input id="ohs-perusahaan-peserta" type="text" readonly />
+        </label>
+
+        <label>CCOW
+          <input id="ohs-ccow" type="text" readonly />
+        </label>
+
+        <label>Kategori
+          <select id="ohs-kategori" required>
+            <option value="">(Pilih Kategori)</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Daily">Daily</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+
+        <label>Tanggal Pelaksanaan
+          <input id="ohs-tanggal" type="date" required />
+        </label>
+
+        <label>Waktu Pelaksanaan
+          <input id="ohs-waktu" type="time" required />
+        </label>
+
+        <label>Lokasi
+          <select id="ohs-lokasi" required>
+            <option value="">(Pilih Lokasi)</option>
+            <option value="Mining">Mining</option>
+            <option value="Hauling">Hauling</option>
+            <option value="Port">Port</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Warehouse">Warehouse</option>
+            <option value="CHPP">CHPP</option>
+            <option value="Office">Office</option>
+            <option value="Camp">Camp</option>
+            <option value="Others">Others</option>
+          </select>
+        </label>
+
+        <label>Detail Lokasi
+          <input id="ohs-detail-lokasi" type="text" placeholder="Masukkan detail lokasi" required />
+        </label>
+
+        <label>Pemateri
+          <input id="ohs-pemateri" type="text" placeholder="Masukkan nama pemateri" required />
+        </label>
+
+        <label>Perusahaan Pemateri
+          <select id="ohs-perusahaan-pemateri" required>
+            <option value="">(Pilih Perusahaan)</option>
+          </select>
+        </label>
+
+        <label>Topik
+          <input id="ohs-topik" type="text" placeholder="Masukkan topik OHS Talk" required />
+        </label>
+
+        <label class="kta-full">Foto Kegiatan
+          <input id="ohs-foto-kegiatan" type="file" accept="image/*" />
+        </label>
+
+        <div class="form-actions kta-full">
+          <button id="save-ohs-talk-btn" type="submit">Simpan</button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <script src="app-config.js"></script>
+  <script src="api-client.js"></script>
+  <script src="nav.js"></script>
+  <script src="ohs-talk.js"></script>
+</body>
+</html>

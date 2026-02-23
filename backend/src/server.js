@@ -13,6 +13,7 @@ const usersRoutes = require('./routes/users');
 const departmentsRoutes = require('./routes/departments');
 const companiesRoutes = require('./routes/companies');
 const pjaRoutes = require('./routes/pja');
+const ohsTalkRoutes = require('./routes/ohsTalk');
 const { authRequired } = require('./middleware/auth');
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/departments', departmentsRoutes);
 app.use('/api/companies', companiesRoutes);
 app.use('/api/pja', pjaRoutes);
+app.use('/api/ohs-talk', ohsTalkRoutes);
 
 app.post('/api/upload/images', authRequired, upload.array('images', 10), (req, res) => {
   const files = (req.files || []).map((file) => ({
