@@ -578,27 +578,28 @@ main h4{
 
 .achievement-monthly-chart{
 	display:grid;
-	grid-template-columns:repeat(12,minmax(0,1fr));
+	grid-template-columns:repeat(12,minmax(56px,1fr));
 	gap:8px;
 	align-items:end;
 	padding:12px;
 	border:1px solid rgba(15,23,32,0.08);
 	border-radius:12px;
-	background:#fff;
+	background:#f8fafc;
 	overflow-x:auto;
+	width:100%;
 }
 
-.ach-month-col{min-width:48px;text-align:center}
+.ach-month-col{min-width:56px;text-align:center}
 
 .ach-bars{
-	height:140px;
+	height:150px;
 	display:flex;
 	align-items:flex-end;
 	justify-content:center;
 	gap:4px;
 }
 
-.ach-bar{width:14px;min-height:6px;border-radius:6px 6px 0 0}
+.ach-bar{width:22px;min-height:6px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#4f8dff 0%, #0b63ff 100%)}
 .ach-bar-kta{background:#0b63ff}
 .ach-bar-tta{background:#6b8cff}
 
@@ -700,9 +701,13 @@ main h4{
 
 .achievement-charts{
 	display:grid;
-	grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+	grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
 	gap:12px;
 	margin-bottom:16px;
+}
+
+.achievement-chart-card--monthly{
+	grid-column:1 / -1;
 }
 
 .achievement-chart-card{
@@ -736,9 +741,6 @@ main h4{
 	align-items:end;
 	padding:10px;
 	border:1px solid rgba(15,23,32,0.08);
-.achievement-bar-row:hover{
-	border-color:rgba(11,99,255,0.35);
-	background:#f8fbff;
 	border-radius:10px;
 	background:#f8fafc;
 	margin-bottom:10px;
@@ -757,9 +759,6 @@ main h4{
 	padding:4px;
 	cursor:pointer;
 }
-.achievement-mini-col:hover{
-	border-color:rgba(11,99,255,0.35);
-	background:#f8fbff;
 
 .achievement-mini-col.active{
 	border-color:var(--accent);
@@ -829,16 +828,26 @@ main h4{
 .achievement-bar-track{
 	height:10px;
 	border-radius:999px;
-	gap:10px;
+	background:#e2e8f0;
 	overflow:hidden;
 	display:block;
 }
 
-	padding:8px 10px;
+.achievement-bar-fill{
+	width:100%;
 	height:100%;
 	background:var(--accent);
 	border-radius:999px;
 	display:block;
+}
+
+@media (max-width: 900px){
+	.achievement-monthly-chart{
+		grid-template-columns:repeat(12,minmax(52px,1fr));
+	}
+	.ach-bar{
+		width:18px;
+	}
 }
 
 .achievement-bar-value{

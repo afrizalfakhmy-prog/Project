@@ -260,11 +260,67 @@
       : '<span class="muted">Tidak ada filter aktif.</span>';
   }
 
+  function buildMonthlySeries(records) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const validDates = records
+      .map(function (item) {
+        const date = new Date(item.tanggalLaporan);
+        return Number.isNaN(date.getTime()) ? null : date;
+      })
+      .filter(Boolean);
+
+    const targetYear = validDates.length
+      ? Math.max.apply(null, validDates.map(function (date) { return date.getFullYear(); }))
+      : new Date().getFullYear();
+
+    const values = new Array(12).fill(0);
+    validDates.forEach(function (date) {
+      if (date.getFullYear() === targetYear) {
+        values[date.getMonth()] += 1;
+      }
+    });
+
+    const maxValue = Math.max(1, ...values);
+
+    return {
+      targetYear: targetYear,
+      maxValue: maxValue,
+      items: monthNames.map(function (name, index) {
+        return { month: name, value: values[index] };
+      })
+    };
+  }
+
   function renderCharts() {
     const charts = document.getElementById('achievement-charts');
     if (!charts) return;
 
-    const html = chartDimensions.map(function (dimension) {
+    const filtered = filteredRecords();
+    const monthlySeries = buildMonthlySeries(filtered);
+    const monthlyBars = monthlySeries.items.map(function (item) {
+      const height = Math.max(8, Math.round((item.value / monthlySeries.maxValue) * 100));
+      return `
+        <div class="ach-month-col" title="${escapeHtml(item.month)} ${monthlySeries.targetYear}: ${item.value}">
+          <div class="ach-bars">
+            <span class="ach-bar" style="height:${height}%"></span>
+          </div>
+          <div class="ach-values">${item.value}</div>
+          <div class="ach-label">${escapeHtml(item.month)}</div>
+        </div>
+      `;
+    }).join('');
+
+    const monthlyChartHtml = `
+      <section class="achievement-chart-card achievement-chart-card--monthly">
+        <h4>Pencapaian Bulanan ${escapeHtml(state.activeTab)} (${monthlySeries.targetYear})</h4>
+        <p class="achievement-chart-note">Ringkasan jumlah temuan per bulan. Grafik ini selalu ditampilkan paling atas.</p>
+        <div class="achievement-monthly-chart" role="img" aria-label="Grafik pencapaian bulanan ${escapeHtml(state.activeTab)} tahun ${monthlySeries.targetYear}">
+          ${monthlyBars}
+        </div>
+      </section>
+    `;
+
+    const dimensionChartsHtml = chartDimensions.map(function (dimension) {
       const baseRecords = filteredRecords(dimension.key);
       const rows = aggregateByDimension(baseRecords, dimension.key);
       const max = Math.max(1, ...rows.map(function (row) { return row.value; }), 1);
@@ -297,7 +353,7 @@
       `;
     }).join('');
 
-    charts.innerHTML = html;
+    charts.innerHTML = monthlyChartHtml + dimensionChartsHtml;
   }
 
   function renderDetailTable(records) {
