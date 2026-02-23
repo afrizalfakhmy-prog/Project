@@ -736,6 +736,9 @@ main h4{
 	align-items:end;
 	padding:10px;
 	border:1px solid rgba(15,23,32,0.08);
+.achievement-bar-row:hover{
+	border-color:rgba(11,99,255,0.35);
+	background:#f8fbff;
 	border-radius:10px;
 	background:#f8fafc;
 	margin-bottom:10px;
@@ -754,6 +757,9 @@ main h4{
 	padding:4px;
 	cursor:pointer;
 }
+.achievement-mini-col:hover{
+	border-color:rgba(11,99,255,0.35);
+	background:#f8fbff;
 
 .achievement-mini-col.active{
 	border-color:var(--accent);
