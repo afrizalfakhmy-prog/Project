@@ -136,7 +136,7 @@ function renderUserList(filter) {
 		const tr = document.createElement('tr');
 		const protectedForAdmin = isProtectedUserForAdmin(u);
 		const actionHtml = protectedForAdmin
-			? '<button class="small" disabled title="Admin tidak dapat mengubah role Admin/Super Admin">Edit</button> <button class="small" disabled title="Admin tidak dapat menghapus role Admin/Super Admin">Hapus</button>'
+			? '-'
 			: `<button class="small edit-user" data-id="${u.id}">Edit</button> <button class="small delete-user" data-id="${u.id}">Hapus</button>`;
 		tr.innerHTML = `<td>${u.username||''}</td><td>${u.nama||''}</td><td>${u.karyawan||''}</td><td>${u.departemen||''}</td><td>${u.perusahaan||''}</td><td>${actionHtml}</td>`;
 		userListTableBody.appendChild(tr);
