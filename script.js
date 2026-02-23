@@ -786,22 +786,42 @@ function refreshPresenceUI() {
 	if (!listEl || !countOnlineEl || !countOfflineEl) return; // elements don't exist on this page
 	const users = Object.values(p).sort((a,b) => (b.lastSeen||0)-(a.lastSeen||0));
 	const now = Date.now();
-	let online = 0, offline = 0;
-	listEl.innerHTML = '';
+	const onlineUsers = [];
+	const offlineUsers = [];
+
 	users.forEach(u => {
 		const isOnline = !!u.online && (now - (u.lastSeen||0) <= PRESENCE_TTL);
-		if (isOnline) online++; else offline++;
-		const li = document.createElement('li');
-		const dot = document.createElement('span');
-		dot.className = 'status-dot ' + (isOnline ? 'status-online' : 'status-offline');
-		const text = document.createElement('span');
-		text.textContent = `${u.username} (${u.role})`;
-		li.appendChild(dot);
-		li.appendChild(text);
-		listEl.appendChild(li);
+		if (isOnline) onlineUsers.push(u);
+		else offlineUsers.push(u);
 	});
-	countOnlineEl.textContent = String(online);
-	countOfflineEl.textContent = String(offline);
+
+	countOnlineEl.textContent = String(onlineUsers.length);
+	countOfflineEl.textContent = String(offlineUsers.length);
+
+	function buildUserListHtml(rows, isOnline) {
+		if (!rows.length) return '<li class="presence-empty">Tidak ada user</li>';
+		return rows.map((u) => `
+			<li>
+				<span class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></span>
+				<span>${escapeHtml(u.username || '-')} (${escapeHtml(u.role || 'User')})</span>
+			</li>
+		`).join('');
+	}
+
+	listEl.innerHTML = `
+		<li class="presence-group">
+			<details open>
+				<summary>Online (${onlineUsers.length})</summary>
+				<ul class="presence-sublist">${buildUserListHtml(onlineUsers, true)}</ul>
+			</details>
+		</li>
+		<li class="presence-group">
+			<details>
+				<summary>Offline (${offlineUsers.length})</summary>
+				<ul class="presence-sublist">${buildUserListHtml(offlineUsers, false)}</ul>
+			</details>
+		</li>
+	`;
 }
 
 // listen for storage changes from other tabs
