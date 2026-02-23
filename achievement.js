@@ -275,13 +275,11 @@
         ? rows.map(function (row) {
             const width = Math.max(8, Math.round((row.value / max) * 100));
             const isActive = selected === row.label;
-            const percent = totalGroup > 0 ? ((row.value / totalGroup) * 100).toFixed(1) : '0.0';
             return `
               <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}">
                 <span class="achievement-bar-label">${escapeHtml(row.label)} (${row.value})</span>
                 <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
                 <span class="achievement-bar-value">${row.value}</span>
-                <span class="achievement-bar-detail">${percent}% dari total data pada grafik ini</span>
               </button>
             `;
           }).join('')
@@ -291,19 +289,15 @@
         ? rows.slice(0, 8).map(function (row) {
             const height = Math.max(12, Math.round((row.value / max) * 100));
             const shortLabel = row.label.length > 14 ? row.label.slice(0, 14) + '…' : row.label;
-            const dominantStatus = (function () {
-              if (row.open >= row.progress && row.open >= row.close) return 'open';
-              if (row.progress >= row.open && row.progress >= row.close) return 'progress';
-              return 'close';
-            })();
+            const isActive = selected === row.label;
             return `
-              <div class="achievement-mini-col" title="${escapeHtml(row.label)}: ${row.value}">
+              <button type="button" class="achievement-mini-col ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}" title="${escapeHtml(row.label)}: ${row.value}">
                 <div class="achievement-mini-bar-wrap">
-                  <span class="achievement-mini-bar achievement-mini-bar-${dominantStatus}" style="height:${height}%"></span>
+                  <span class="achievement-mini-bar" style="height:${height}%"></span>
                 </div>
                 <span class="achievement-mini-value">${row.value}</span>
                 <span class="achievement-mini-label">${escapeHtml(shortLabel)}</span>
-              </div>
+              </button>
             `;
           }).join('')
         : '';
@@ -408,7 +402,7 @@
 
     if (chartWrap) {
       chartWrap.addEventListener('click', function (event) {
-        const row = event.target.closest('.achievement-bar-row');
+        const row = event.target.closest('[data-dim][data-val]');
         if (!row) return;
         const dim = row.getAttribute('data-dim') || '';
         const val = row.getAttribute('data-val') || '';
