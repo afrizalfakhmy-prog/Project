@@ -9,6 +9,7 @@
     activeTab: 'KTA',
     monthlyFilter: null,
     monthlyYear: null,
+    statusFilter: null,
     records: {
       KTA: [],
       TTA: []
@@ -161,11 +162,14 @@
     });
     state.monthlyFilter = null;
     state.monthlyYear = null;
+    state.statusFilter = null;
   }
 
   function filteredRecords(excludeDimension, ignoreMonthlyFilter) {
     const list = state.records[state.activeTab] || [];
     return list.filter(function (item) {
+      if (state.statusFilter && normalizeStatus(item.status) !== state.statusFilter) return false;
+
       const passedDimensionFilter = Object.keys(state.filters).every(function (key) {
         if (excludeDimension && key === excludeDimension) return true;
         const selected = state.filters[key];
@@ -200,17 +204,20 @@
     const progress = statusCounts.Progress || 0;
     const close = statusCounts.Close || 0;
     const openPercentage = total > 0 ? ((open / total) * 100) : 0;
+    const openActive = state.statusFilter === 'Open' ? 'active' : '';
+    const progressActive = state.statusFilter === 'Progress' ? 'active' : '';
+    const closeActive = state.statusFilter === 'Close' ? 'active' : '';
 
     summary.innerHTML = `
-      <article class="achievement-card">
+      <article class="achievement-card filterable ${openActive}" data-summary-status="Open">
         <span>Open</span>
         <strong>${open}</strong>
       </article>
-      <article class="achievement-card">
+      <article class="achievement-card filterable ${progressActive}" data-summary-status="Progress">
         <span>Progress</span>
         <strong>${progress}</strong>
       </article>
-      <article class="achievement-card">
+      <article class="achievement-card filterable ${closeActive}" data-summary-status="Close">
         <span>Close</span>
         <strong>${close}</strong>
       </article>
@@ -264,6 +271,10 @@
         const title = (def && def.title) || key;
         return `<button type="button" class="achievement-filter-chip" data-remove-filter="${escapeHtml(key)}">${escapeHtml(title)}: ${escapeHtml(state.filters[key])} ✕</button>`;
       });
+
+    if (state.statusFilter) {
+      active.push(`<button type="button" class="achievement-filter-chip" data-remove-status="1">Status: ${escapeHtml(state.statusFilter)} ✕</button>`);
+    }
 
     if (state.monthlyFilter) {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -458,6 +469,7 @@
     const tabTta = document.getElementById('tab-tta');
     const chartWrap = document.getElementById('achievement-charts');
     const activeFilterWrap = document.getElementById('achievement-active-filters');
+    const summaryWrap = document.getElementById('achievement-summary');
 
     if (tabKta) {
       tabKta.addEventListener('click', function () {
@@ -511,8 +523,26 @@
       });
     }
 
+    if (summaryWrap) {
+      summaryWrap.addEventListener('click', function (event) {
+        const statusCard = event.target.closest('[data-summary-status]');
+        if (!statusCard) return;
+        const status = statusCard.getAttribute('data-summary-status');
+        if (!status) return;
+        state.statusFilter = state.statusFilter === status ? null : status;
+        renderAll();
+      });
+    }
+
     if (activeFilterWrap) {
       activeFilterWrap.addEventListener('click', function (event) {
+        const removeStatusBtn = event.target.closest('[data-remove-status]');
+        if (removeStatusBtn) {
+          state.statusFilter = null;
+          renderAll();
+          return;
+        }
+
         const removeMonthBtn = event.target.closest('[data-remove-month]');
         if (removeMonthBtn) {
           state.monthlyFilter = null;
