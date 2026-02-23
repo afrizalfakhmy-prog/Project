@@ -219,13 +219,24 @@
     const map = new Map();
     records.forEach(function (item) {
       const label = normalizeLabel(item[key]);
-      map.set(label, (map.get(label) || 0) + 1);
+      if (!map.has(label)) {
+        map.set(label, {
+          label: label,
+          value: 0,
+          open: 0,
+          progress: 0,
+          close: 0
+        });
+      }
+      const bucket = map.get(label);
+      bucket.value += 1;
+      const status = normalizeStatus(item.status);
+      if (status === 'Open') bucket.open += 1;
+      else if (status === 'Progress') bucket.progress += 1;
+      else if (status === 'Close') bucket.close += 1;
     });
 
-    return Array.from(map.entries())
-      .map(function (entry) {
-        return { label: entry[0], value: entry[1] };
-      })
+    return Array.from(map.values())
       .sort(function (a, b) {
         if (b.value !== a.value) return b.value - a.value;
         return a.label.localeCompare(b.label);
@@ -258,16 +269,19 @@
       const rows = aggregateByDimension(baseRecords, dimension.key);
       const max = Math.max(1, ...rows.map(function (row) { return row.value; }), 1);
       const selected = state.filters[dimension.key];
+      const totalGroup = rows.reduce(function (sum, row) { return sum + row.value; }, 0);
 
       const body = rows.length
         ? rows.map(function (row) {
             const width = Math.max(8, Math.round((row.value / max) * 100));
             const isActive = selected === row.label;
+            const percent = totalGroup > 0 ? ((row.value / totalGroup) * 100).toFixed(1) : '0.0';
             return `
               <button type="button" class="achievement-bar-row ${isActive ? 'active' : ''}" data-dim="${escapeHtml(dimension.key)}" data-val="${escapeHtml(row.label)}">
                 <span class="achievement-bar-label">${escapeHtml(row.label)}</span>
                 <span class="achievement-bar-track"><span class="achievement-bar-fill" style="width:${width}%"></span></span>
                 <span class="achievement-bar-value">${row.value}</span>
+                <span class="achievement-bar-detail">Open: ${row.open} • Progress: ${row.progress} • Close: ${row.close} • ${percent}%</span>
               </button>
             `;
           }).join('')
@@ -276,6 +290,7 @@
       return `
         <section class="achievement-chart-card">
           <h4>${escapeHtml(dimension.title)}</h4>
+          <p class="achievement-chart-note">Total data pada grafik ini: ${totalGroup} temuan. Klik bar untuk memfilter dashboard.</p>
           <div class="achievement-bars" role="group">${body}</div>
         </section>
       `;
