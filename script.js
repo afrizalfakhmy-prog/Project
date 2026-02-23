@@ -36,6 +36,7 @@ const superadminLogoutBtn = document.getElementById('superadmin-logout');
 const userSidebar = document.getElementById('user-sidebar');
 const frontlineLeadershipBtn = document.getElementById('frontline-leadership-btn');
 const ohsTalkBtn = document.getElementById('ohs-talk-btn');
+const observasiBtn = document.getElementById('observasi-btn');
 const userProfileBtn = document.getElementById('user-profile');
 const userAchievementBtn = document.getElementById('user-achievement');
 const userTasklistBtn = document.getElementById('user-tasklist');
@@ -996,6 +997,7 @@ if (userTasklistBtn) userTasklistBtn.addEventListener('click', () => { window.lo
 if (userLogoutBtn) userLogoutBtn.addEventListener('click', () => logoutBtn.click());
 if (frontlineLeadershipBtn) frontlineLeadershipBtn.addEventListener('click', () => { window.location.href = 'frontline_leadership.html'; });
 if (ohsTalkBtn) ohsTalkBtn.addEventListener('click', () => { window.location.href = 'ohs_talk.html'; });
+if (observasiBtn) observasiBtn.addEventListener('click', () => { window.location.href = 'observasi.html'; });
 
 // Admin 'Daftar User' opens separate page (handled by nav.js too)
 if (adminUsersBtn) adminUsersBtn.addEventListener('click', () => { window.location.href = 'daftar_user.html'; });

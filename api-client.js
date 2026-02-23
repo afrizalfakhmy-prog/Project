@@ -194,6 +194,22 @@
     return request(`/ohs-talk/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
+  async function listObservasi() {
+    return request('/observasi');
+  }
+
+  async function createObservasi(payload) {
+    return request('/observasi', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  async function updateObservasi(id, payload) {
+    return request(`/observasi/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) });
+  }
+
+  async function deleteObservasi(id) {
+    return request(`/observasi/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  }
+
   window.AIOSApi = {
     baseUrl: API_BASE,
     getToken,
@@ -230,6 +246,10 @@
     listOhsTalk,
     createOhsTalk,
     updateOhsTalk,
-    deleteOhsTalk
+    deleteOhsTalk,
+    listObservasi,
+    createObservasi,
+    updateObservasi,
+    deleteObservasi
   };
 })();
