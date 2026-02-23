@@ -103,12 +103,22 @@
     writeJson(KTA_KEY, list);
   }
 
+  function shouldApplyApiList(localList, apiList, label) {
+    if (!Array.isArray(apiList)) return false;
+    if (apiList.length === 0 && Array.isArray(localList) && localList.length > 0) {
+      console.warn(`${label} sync skipped: API kosong, data lokal dipertahankan.`);
+      return false;
+    }
+    return true;
+  }
+
   async function syncKtaFromApi() {
     try {
       if (!window.AIOSApi || typeof window.AIOSApi.listKta !== 'function') return;
       if (!window.AIOSApi.getToken || !window.AIOSApi.getToken()) return;
       const apiList = await window.AIOSApi.listKta();
-      if (Array.isArray(apiList)) {
+      const localList = readKtaRecords();
+      if (shouldApplyApiList(localList, apiList, 'KTA')) {
         writeKtaRecords(apiList);
       }
     } catch (err) {

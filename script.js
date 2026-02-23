@@ -92,6 +92,15 @@ function writeUsers(list) {
 	localStorage.setItem(USER_KEY, JSON.stringify(list));
 }
 
+function shouldApplyApiList(localList, apiList, label) {
+	if (!Array.isArray(apiList)) return false;
+	if (apiList.length === 0 && Array.isArray(localList) && localList.length > 0) {
+		console.warn(label + ' sync skipped: API kosong, data lokal dipertahankan.');
+		return false;
+	}
+	return true;
+}
+
 function getUserRole(user) {
 	if (!user) return 'User';
 	return (user.role || user.kategori || 'User').trim();
@@ -109,7 +118,8 @@ async function syncUsersFromApi() {
 	if (!isApiReady() || !window.AIOSApi.listUsers) return;
 	try {
 		const users = await window.AIOSApi.listUsers();
-		if (Array.isArray(users)) writeUsers(users);
+		const localUsers = readUsers();
+		if (shouldApplyApiList(localUsers, users, 'Users')) writeUsers(users);
 	} catch (e) {
 		console.warn('syncUsersFromApi failed', e && e.message ? e.message : e);
 	}
@@ -401,7 +411,8 @@ async function syncDepartmentsFromApi() {
 	if (!isApiReady() || !window.AIOSApi.listDepartments) return;
 	try {
 		const rows = await window.AIOSApi.listDepartments();
-		if (Array.isArray(rows)) writeDepartments(rows);
+		const localRows = readDepartments();
+		if (shouldApplyApiList(localRows, rows, 'Departments')) writeDepartments(rows);
 	} catch (e) {
 		console.warn('syncDepartmentsFromApi failed', e && e.message ? e.message : e);
 	}
@@ -539,7 +550,8 @@ async function syncCompaniesFromApi() {
 	if (!isApiReady() || !window.AIOSApi.listCompanies) return;
 	try {
 		const rows = await window.AIOSApi.listCompanies();
-		if (Array.isArray(rows)) writeCompanies(rows);
+		const localRows = readCompanies();
+		if (shouldApplyApiList(localRows, rows, 'Companies')) writeCompanies(rows);
 	} catch (e) {
 		console.warn('syncCompaniesFromApi failed', e && e.message ? e.message : e);
 	}
@@ -1132,7 +1144,8 @@ async function syncPjaFromApi() {
 	if (!isApiReady() || !window.AIOSApi.listPja) return;
 	try {
 		const rows = await window.AIOSApi.listPja();
-		if (Array.isArray(rows)) writePJA(rows);
+		const localRows = readPJA();
+		if (shouldApplyApiList(localRows, rows, 'PJA')) writePJA(rows);
 	} catch (e) {
 		console.warn('syncPjaFromApi failed', e && e.message ? e.message : e);
 	}

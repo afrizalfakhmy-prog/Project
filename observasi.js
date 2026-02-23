@@ -29,6 +29,15 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
+  function shouldApplyApiList(localList, apiList, label) {
+    if (!Array.isArray(apiList)) return false;
+    if (apiList.length === 0 && Array.isArray(localList) && localList.length > 0) {
+      console.warn(`${label} sync skipped: API kosong, data lokal dipertahankan.`);
+      return false;
+    }
+    return true;
+  }
+
   function setValue(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -108,7 +117,8 @@
       if (!window.AIOSApi || typeof window.AIOSApi.listUsers !== 'function') return;
       if (!window.AIOSApi.getToken || !window.AIOSApi.getToken()) return;
       const users = await window.AIOSApi.listUsers();
-      if (Array.isArray(users)) writeJson(USER_KEY, users);
+      const localUsers = readJson(USER_KEY) || [];
+      if (shouldApplyApiList(localUsers, users, 'Users')) writeJson(USER_KEY, users);
     } catch (err) {
       console.warn('Observasi users sync failed:', err && err.message ? err.message : err);
     }
@@ -119,7 +129,8 @@
       if (!window.AIOSApi || typeof window.AIOSApi.listObservasi !== 'function') return;
       if (!window.AIOSApi.getToken || !window.AIOSApi.getToken()) return;
       const list = await window.AIOSApi.listObservasi();
-      if (Array.isArray(list)) writeObservasiRecords(list);
+      const localList = readObservasiRecords();
+      if (shouldApplyApiList(localList, list, 'Observasi')) writeObservasiRecords(list);
     } catch (err) {
       console.warn('Observasi sync failed:', err && err.message ? err.message : err);
     }
@@ -130,7 +141,8 @@
       if (!window.AIOSApi || typeof window.AIOSApi.listPja !== 'function') return;
       if (!window.AIOSApi.getToken || !window.AIOSApi.getToken()) return;
       const list = await window.AIOSApi.listPja();
-      if (Array.isArray(list)) writeJson(PJA_KEY, list);
+      const localList = readJson(PJA_KEY) || [];
+      if (shouldApplyApiList(localList, list, 'PJA')) writeJson(PJA_KEY, list);
     } catch (err) {
       console.warn('Observasi PJA sync failed:', err && err.message ? err.message : err);
     }

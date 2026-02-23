@@ -57,6 +57,15 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
+  function shouldApplyApiList(localList, apiList, label) {
+    if (!Array.isArray(apiList)) return false;
+    if (apiList.length === 0 && Array.isArray(localList) && localList.length > 0) {
+      console.warn(`${label} sync skipped: API kosong, data lokal dipertahankan.`);
+      return false;
+    }
+    return true;
+  }
+
   function escapeHtml(text) {
     return String(text || '')
       .replace(/&/g, '&amp;')
@@ -146,17 +155,20 @@
 
       if (typeof window.AIOSApi.listUsers === 'function') {
         const users = await window.AIOSApi.listUsers();
-        if (Array.isArray(users)) writeJson(USER_KEY, users);
+        const localUsers = readJson(USER_KEY) || [];
+        if (shouldApplyApiList(localUsers, users, 'Users')) writeJson(USER_KEY, users);
       }
 
       if (typeof window.AIOSApi.listKta === 'function') {
         const kta = await window.AIOSApi.listKta();
-        if (Array.isArray(kta)) writeJson(KTA_KEY, kta);
+        const localKta = readJson(KTA_KEY) || [];
+        if (shouldApplyApiList(localKta, kta, 'KTA')) writeJson(KTA_KEY, kta);
       }
 
       if (typeof window.AIOSApi.listTta === 'function') {
         const tta = await window.AIOSApi.listTta();
-        if (Array.isArray(tta)) writeJson(TTA_KEY, tta);
+        const localTta = readJson(TTA_KEY) || [];
+        if (shouldApplyApiList(localTta, tta, 'TTA')) writeJson(TTA_KEY, tta);
       }
     } catch (err) {
       console.warn('Achievement API sync failed:', err && err.message ? err.message : err);

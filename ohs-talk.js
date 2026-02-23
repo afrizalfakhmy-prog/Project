@@ -21,6 +21,15 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
+  function shouldApplyApiList(localList, apiList, label) {
+    if (!Array.isArray(apiList)) return false;
+    if (apiList.length === 0 && Array.isArray(localList) && localList.length > 0) {
+      console.warn(`${label} sync skipped: API kosong, data lokal dipertahankan.`);
+      return false;
+    }
+    return true;
+  }
+
   function setValue(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -150,12 +159,14 @@
 
       if (typeof window.AIOSApi.listUsers === 'function') {
         const users = await window.AIOSApi.listUsers();
-        if (Array.isArray(users)) writeJson(USER_KEY, users);
+        const localUsers = readJson(USER_KEY) || [];
+        if (shouldApplyApiList(localUsers, users, 'Users')) writeJson(USER_KEY, users);
       }
 
       if (typeof window.AIOSApi.listCompanies === 'function') {
         const companies = await window.AIOSApi.listCompanies();
-        if (Array.isArray(companies)) writeJson(COMPANY_KEY, companies);
+        const localCompanies = readJson(COMPANY_KEY) || [];
+        if (shouldApplyApiList(localCompanies, companies, 'Companies')) writeJson(COMPANY_KEY, companies);
       }
     } catch (err) {
       console.warn('OHS Talk sync master data failed:', err && err.message ? err.message : err);
@@ -167,7 +178,8 @@
       if (!window.AIOSApi || typeof window.AIOSApi.listOhsTalk !== 'function') return;
       if (!window.AIOSApi.getToken || !window.AIOSApi.getToken()) return;
       const list = await window.AIOSApi.listOhsTalk();
-      if (Array.isArray(list)) writeJson(OHS_TALK_KEY, list);
+      const localList = readJson(OHS_TALK_KEY) || [];
+      if (shouldApplyApiList(localList, list, 'OHS Talk')) writeJson(OHS_TALK_KEY, list);
     } catch (err) {
       console.warn('OHS Talk sync from API failed:', err && err.message ? err.message : err);
     }
