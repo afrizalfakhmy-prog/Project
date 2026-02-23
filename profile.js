@@ -1,6 +1,7 @@
 (function () {
   const SESSION_KEY = 'aios_session';
   const USER_KEY = 'aios_users';
+  const PROFILE_PHOTO_KEY = 'aios_profile_photos';
 
   const fieldLabels = {
     kategori: 'Kategori',
@@ -64,6 +65,20 @@
     return readJson(USER_KEY) || [];
   }
 
+  function getProfilePhotoMap() {
+    return readJson(PROFILE_PHOTO_KEY) || {};
+  }
+
+  function setProfilePhotoMap(map) {
+    writeJson(PROFILE_PHOTO_KEY, map || {});
+  }
+
+  function getSessionIdentity(session) {
+    const username = (session && session.username) ? String(session.username).trim() : '';
+    const role = (session && session.role) ? String(session.role).trim() : '';
+    return username + '|' + role;
+  }
+
   function findCurrentUser(session, users) {
     if (!session) return null;
     const username = (session.username || '').trim();
@@ -87,6 +102,25 @@
     } catch (err) {
       console.warn('Profile API sync failed:', err && err.message ? err.message : err);
     }
+  }
+
+  function resolveProfilePhoto(session, user) {
+    if (user && user.profilePhoto) return user.profilePhoto;
+    const map = getProfilePhotoMap();
+    const key = getSessionIdentity(session);
+    return map[key] || '';
+  }
+
+  async function saveProfilePhoto(session, user, photoData) {
+    if (user && user.id) {
+      user.profilePhoto = photoData;
+      await saveUserProfile(user);
+      return;
+    }
+    const map = getProfilePhotoMap();
+    const key = getSessionIdentity(session);
+    map[key] = photoData || '';
+    setProfilePhotoMap(map);
   }
 
   function renderDetails(user, session) {
@@ -125,11 +159,11 @@
     }).join('');
   }
 
-  function renderPhoto(user) {
+  function renderPhoto(session, user) {
     const img = document.getElementById('profile-photo-preview');
     if (!img) return;
 
-    const photo = user && user.profilePhoto ? user.profilePhoto : '';
+    const photo = resolveProfilePhoto(session, user);
     if (photo) {
       img.src = photo;
     } else {
@@ -194,7 +228,7 @@
     });
   }
 
-  function initPhotoUpload(user) {
+  function initPhotoUpload(session, user) {
     const input = document.getElementById('profile-photo-input');
     const removeBtn = document.getElementById('profile-photo-remove');
     if (!input || !removeBtn) return;
@@ -209,10 +243,8 @@
 
       try {
         const photoData = await optimizeProfilePhoto(file);
-        if (!user) return;
-        user.profilePhoto = photoData;
-        renderPhoto(user);
-        await saveUserProfile(user);
+        await saveProfilePhoto(session, user, photoData);
+        renderPhoto(session, user);
         setMessage('Foto profil berhasil diperbarui (otomatis resize & kompres).', false);
       } catch (err) {
         setMessage(err && err.message ? err.message : 'Gagal memproses file gambar.', true);
@@ -220,10 +252,8 @@
     });
 
     removeBtn.addEventListener('click', async function () {
-      if (!user) return;
-      user.profilePhoto = '';
-      renderPhoto(user);
-      await saveUserProfile(user);
+      await saveProfilePhoto(session, user, '');
+      renderPhoto(session, user);
       setMessage('Foto profil dihapus.', false);
     });
   }
@@ -239,9 +269,9 @@
     const users = getUsers();
     const user = findCurrentUser(session, users);
 
-    renderPhoto(user);
+    renderPhoto(session, user);
     renderDetails(user, session);
-    initPhotoUpload(user);
+    initPhotoUpload(session, user);
   }
 
   document.addEventListener('DOMContentLoaded', init);

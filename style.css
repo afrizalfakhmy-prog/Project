@@ -386,7 +386,7 @@ main, #app{padding-top:calc(var(--top-nav-height) + 18px)}
 
 .profile-grid{
 	display:grid;
-	grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+	grid-template-columns:1fr;
 	gap:10px;
 }
 
