@@ -28,15 +28,15 @@ router.post('/', authRequired, (req, res) => {
 });
 
 router.put('/:id', authRequired, (req, res) => {
+  if (!isPrivileged(req.user.role)) {
+    return res.status(403).json({ message: 'Only Admin/Super Admin can update' });
+  }
+
   const list = readJson('ohs_talk.json', []);
   const idx = list.findIndex((item) => item.id === req.params.id);
   if (idx < 0) return res.status(404).json({ message: 'Data not found' });
 
   const existing = list[idx];
-  if (!isPrivileged(req.user.role) && existing.reporterUsername !== req.user.username) {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-
   list[idx] = {
     ...existing,
     ...req.body,

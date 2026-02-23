@@ -10,7 +10,11 @@
   <main>
     <h1>OHS Talk</h1>
 
-    <form id="ohs-talk-form" novalidate>
+    <div class="form-actions">
+      <button id="show-ohs-talk-form-btn" type="button">Tambahkan</button>
+    </div>
+
+    <form id="ohs-talk-form" class="hidden" novalidate>
       <div class="kta-grid">
         <label>No ID
           <input id="ohs-id" type="text" readonly />
@@ -88,14 +92,38 @@
         </label>
 
         <label class="kta-full">Foto Kegiatan
-          <input id="ohs-foto-kegiatan" type="file" accept="image/*" />
+          <input id="ohs-foto-kegiatan" type="file" accept="image/*" multiple />
         </label>
 
         <div class="form-actions kta-full">
           <button id="save-ohs-talk-btn" type="submit">Simpan</button>
+          <button id="cancel-ohs-talk-form-btn" type="button" class="small">Batal</button>
         </div>
       </div>
     </form>
+
+    <section class="table-section">
+      <h3>Data OHS Talk</h3>
+      <div class="table-responsive">
+        <table id="ohs-talk-list">
+          <thead>
+            <tr>
+              <th>No ID</th>
+              <th>Nama Peserta</th>
+              <th>Kategori</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Lokasi</th>
+              <th>Pemateri</th>
+              <th>Topik</th>
+              <th>Foto</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script src="app-config.js"></script>
