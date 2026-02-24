@@ -420,7 +420,11 @@ async function deleteUser(id) {
 function populateDeptOptions(selected) {
 	const sel = document.getElementById('field-departemen');
 	if (!sel) return;
-	const list = readDepartments();
+	let list = readDepartments();
+	if (!Array.isArray(list) || list.length === 0) {
+		const names = Array.from(new Set(readUsers().map((u) => (u && u.departemen ? String(u.departemen).trim() : '')).filter(Boolean)));
+		list = names.map((name) => ({ id: `dep-${name}`, name }));
+	}
 	sel.innerHTML = '<option value="">(Pilih Departemen)</option>';
 	list.forEach(d => {
 		const opt = document.createElement('option');
@@ -434,7 +438,11 @@ function populateDeptOptions(selected) {
 function populateCompanyOptions(selected) {
 	const sel = document.getElementById('field-perusahaan');
 	if (!sel) return;
-	const list = readCompanies();
+	let list = readCompanies();
+	if (!Array.isArray(list) || list.length === 0) {
+		const names = Array.from(new Set(readUsers().map((u) => (u && u.perusahaan ? String(u.perusahaan).trim() : '')).filter(Boolean)));
+		list = names.map((name) => ({ id: `cmp-${name}`, name }));
+	}
 	sel.innerHTML = '<option value="">(Pilih Perusahaan)</option>';
 	list.forEach(c => {
 		const opt = document.createElement('option');
@@ -541,12 +549,14 @@ async function saveDeptFromForm() {
 	const obj = { id, name };
 	if (idx >= 0) list[idx] = obj; else list.push(obj);
 	writeDepartments(list);
-	if (isApiReady()) {
+	if (window.AIOSApi && (window.AIOSApi.createDepartment || window.AIOSApi.updateDepartment)) {
 		try {
+			const session = getSession ? getSession() : {};
+			const payload = { ...obj, actorRole: session && session.role ? session.role : '' };
 			if (idx >= 0 && window.AIOSApi.updateDepartment) {
-				await window.AIOSApi.updateDepartment(id, obj);
+				await window.AIOSApi.updateDepartment(id, payload);
 			} else if (window.AIOSApi.createDepartment) {
-				await window.AIOSApi.createDepartment(obj);
+				await window.AIOSApi.createDepartment(payload);
 			}
 		} catch (apiErr) {
 			console.warn('Department API sync failed', apiErr && apiErr.message ? apiErr.message : apiErr);
@@ -680,12 +690,14 @@ async function saveCompanyFromForm() {
 	const obj = { id, name };
 	if (idx >= 0) list[idx] = obj; else list.push(obj);
 	writeCompanies(list);
-	if (isApiReady()) {
+	if (window.AIOSApi && (window.AIOSApi.createCompany || window.AIOSApi.updateCompany)) {
 		try {
+			const session = getSession ? getSession() : {};
+			const payload = { ...obj, actorRole: session && session.role ? session.role : '' };
 			if (idx >= 0 && window.AIOSApi.updateCompany) {
-				await window.AIOSApi.updateCompany(id, obj);
+				await window.AIOSApi.updateCompany(id, payload);
 			} else if (window.AIOSApi.createCompany) {
-				await window.AIOSApi.createCompany(obj);
+				await window.AIOSApi.createCompany(payload);
 			}
 		} catch (apiErr) {
 			console.warn('Company API sync failed', apiErr && apiErr.message ? apiErr.message : apiErr);

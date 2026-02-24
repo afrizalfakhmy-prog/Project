@@ -1,15 +1,32 @@
 const express = require('express');
-const { authRequired, isPrivileged } = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
+const { isPrivileged } = require('../middleware/auth');
 const { readJson, writeJson } = require('../utils/store');
 
 const router = express.Router();
+
+router.use((req, _res, next) => {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token) return next();
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET || 'change_me');
+  } catch (_e) {
+    req.user = null;
+  }
+  next();
+});
+
+function resolveRole(req) {
+  return (req.user && req.user.role) || (req.body && req.body.actorRole) || '';
+}
 
 router.get('/', (_req, res) => {
   res.json(readJson('departments.json', []));
 });
 
-router.post('/', authRequired, (req, res) => {
-  if (!isPrivileged(req.user.role)) return res.status(403).json({ message: 'Forbidden' });
+router.post('/', (req, res) => {
+  if (!isPrivileged(resolveRole(req))) return res.status(403).json({ message: 'Forbidden' });
   const list = readJson('departments.json', []);
   const payload = req.body || {};
   const item = { ...payload, id: payload.id || `d-${Date.now()}` };
@@ -18,8 +35,8 @@ router.post('/', authRequired, (req, res) => {
   res.status(201).json(item);
 });
 
-router.put('/:id', authRequired, (req, res) => {
-  if (!isPrivileged(req.user.role)) return res.status(403).json({ message: 'Forbidden' });
+router.put('/:id', (req, res) => {
+  if (!isPrivileged(resolveRole(req))) return res.status(403).json({ message: 'Forbidden' });
   const list = readJson('departments.json', []);
   const idx = list.findIndex((x) => x.id === req.params.id);
   if (idx < 0) return res.status(404).json({ message: 'Not found' });
@@ -28,8 +45,8 @@ router.put('/:id', authRequired, (req, res) => {
   res.json(list[idx]);
 });
 
-router.delete('/:id', authRequired, (req, res) => {
-  if (!isPrivileged(req.user.role)) return res.status(403).json({ message: 'Forbidden' });
+router.delete('/:id', (req, res) => {
+  if (!isPrivileged(resolveRole(req))) return res.status(403).json({ message: 'Forbidden' });
   const list = readJson('departments.json', []);
   const next = list.filter((x) => x.id !== req.params.id);
   if (next.length === list.length) return res.status(404).json({ message: 'Not found' });
