@@ -134,6 +134,11 @@ async function syncMasterDataFromApi() {
 		syncPjaFromApi()
 	]);
 
+	const deptSelected = fields && fields.departemen ? fields.departemen.value : '';
+	const companySelected = fields && fields.perusahaan ? fields.perusahaan.value : '';
+	populateDeptOptions(deptSelected);
+	populateCompanyOptions(companySelected);
+
 	if (userListTableBody) renderUserList(userSearch && userSearch.value);
 	if (document.getElementById('dept-list')) renderDeptList();
 	if (document.getElementById('company-list')) renderCompanyList();
@@ -218,6 +223,18 @@ function openUserForm(user) {
 		populateDeptOptions();
 		populateCompanyOptions();
 		populateCcowOptions();
+
+		Promise.all([
+			syncDepartmentsFromApi(),
+			syncCompaniesFromApi()
+		]).then(() => {
+			const selectedDept = (user && user.departemen) ? user.departemen : (fields.departemen && fields.departemen.value ? fields.departemen.value : '');
+			const selectedCompany = (user && user.perusahaan) ? user.perusahaan : (fields.perusahaan && fields.perusahaan.value ? fields.perusahaan.value : '');
+			populateDeptOptions(selectedDept);
+			populateCompanyOptions(selectedCompany);
+		}).catch((syncErr) => {
+			console.warn('openUserForm master sync failed', syncErr && syncErr.message ? syncErr.message : syncErr);
+		});
 
 		// Restrict kategori options based on current user role
 		if (fields.kategori) {
