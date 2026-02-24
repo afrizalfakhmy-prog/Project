@@ -9,6 +9,10 @@
     const stored = localStorage.getItem('aios_api_base');
     if (stored) return normalizeApiBase(stored);
 
+    if (window.location.protocol === 'file:') {
+      return 'http://localhost:4000/api';
+    }
+
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') {
       return 'http://localhost:4000/api';

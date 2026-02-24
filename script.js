@@ -683,11 +683,14 @@ const PRESENCE_KEY = 'aios_presence';
 const PRESENCE_SIGNAL_KEY = 'aios_presence_signal';
 const PRESENCE_TTL = 10000; // 10s, consider offline if no heartbeat
 const PRESENCE_HEARTBEAT_MS = 5000;
-const PRESENCE_REFRESH_MS = 2000;
+const PRESENCE_REFRESH_MS = 5000;
 const PRESENCE_SESSION_KEY = 'aios_presence_session_id';
 const PRESENCE_CLEANUP_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
 let presenceHeartbeatId = null;
 let presenceRefreshId = null;
+let collabSocket = null;
+let collabSocketReady = false;
+let collabSocketLoading = null;
 
 const presenceChannel = (() => {
 	try {
@@ -715,12 +718,116 @@ const CHAT_KEY = 'aios_chat';
 
 function canUseCollabApi() {
 	return !!(
-		isApiReady() &&
 		window.AIOSApi &&
 		typeof window.AIOSApi.listPresence === 'function' &&
 		typeof window.AIOSApi.heartbeatPresence === 'function' &&
 		typeof window.AIOSApi.listChatMessages === 'function'
 	);
+}
+
+function getCollabServerBase() {
+	const fromApi = (window.AIOSApi && window.AIOSApi.baseUrl) ? String(window.AIOSApi.baseUrl) : '';
+	if (fromApi) return fromApi.replace(/\/api\/?$/i, '');
+	if (window.AIOS_API_BASE) return String(window.AIOS_API_BASE).replace(/\/api\/?$/i, '');
+	return 'http://localhost:4000';
+}
+
+function ensureSocketClientLoaded() {
+	if (typeof window.io === 'function') return Promise.resolve();
+	if (collabSocketLoading) return collabSocketLoading;
+
+	collabSocketLoading = new Promise((resolve, reject) => {
+		const base = getCollabServerBase();
+		const script = document.createElement('script');
+		script.src = `${base}/socket.io/socket.io.js`;
+		script.async = true;
+		script.onload = () => resolve();
+		script.onerror = () => reject(new Error('Gagal memuat socket.io client'));
+		document.head.appendChild(script);
+	});
+
+	return collabSocketLoading;
+}
+
+function upsertChatMessage(message) {
+	if (!message || !message.id) return;
+	const list = readChat();
+	if (list.some((m) => m && m.id === message.id)) return;
+	list.push(message);
+	writeChat(list.slice(-500));
+	renderChatMessages();
+}
+
+async function startSocketRealtime() {
+	if (!currentUser || !canUseCollabApi()) return;
+	try {
+		await ensureSocketClientLoaded();
+		if (typeof window.io !== 'function') return;
+
+		if (!collabSocket) {
+			const base = getCollabServerBase();
+			const token = (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : '';
+			collabSocket = window.io(base, {
+				transports: ['websocket', 'polling'],
+				auth: {
+					token,
+					username: currentUser.username,
+					role: currentUser.role
+				}
+			});
+
+			collabSocket.on('connect', () => {
+				collabSocketReady = true;
+				collabSocket.emit('presence:join', {
+					username: currentUser.username,
+					role: currentUser.role,
+					token: (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : ''
+				});
+			});
+
+			collabSocket.on('disconnect', () => {
+				collabSocketReady = false;
+			});
+
+			collabSocket.on('presence:update', (map) => {
+				if (map && typeof map === 'object') {
+					writePresence(map);
+					refreshPresenceUI();
+				}
+			});
+
+			collabSocket.on('chat:new', (message) => {
+				upsertChatMessage(message);
+			});
+
+			collabSocket.on('chat:snapshot', (rows) => {
+				if (Array.isArray(rows)) {
+					writeChat(rows);
+					renderChatMessages();
+				}
+			});
+		}
+	} catch (e) {
+		console.warn('startSocketRealtime failed', e && e.message ? e.message : e);
+	}
+}
+
+function stopSocketRealtime() {
+	if (!collabSocket) return;
+	try {
+		if (currentUser && collabSocketReady) {
+			collabSocket.emit('presence:offline', {
+				username: currentUser.username,
+				role: currentUser.role,
+				token: (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : ''
+			});
+		}
+		collabSocket.disconnect();
+	} catch (_e) {
+		// ignore
+	}
+	collabSocket = null;
+	collabSocketReady = false;
 }
 
 function readChat() {
@@ -745,7 +852,7 @@ function addChatMessage(msg) {
 }
 
 async function syncChatFromApi() {
-	if (!canUseCollabApi()) return;
+	if (!canUseCollabApi() || collabSocketReady) return;
 	try {
 		const rows = await window.AIOSApi.listChatMessages();
 		if (Array.isArray(rows)) {
@@ -758,7 +865,7 @@ async function syncChatFromApi() {
 }
 
 async function syncPresenceFromApi() {
-	if (!canUseCollabApi()) return;
+	if (!canUseCollabApi() || collabSocketReady) return;
 	try {
 		const map = await window.AIOSApi.listPresence();
 		if (map && typeof map === 'object') {
@@ -792,9 +899,18 @@ function renderChatMessages() {
 
 async function sendChat(text) {
 	if (!currentUser) return alert('Silakan login terlebih dahulu untuk mengirim pesan');
+	if (collabSocket && collabSocketReady) {
+		collabSocket.emit('chat:send', {
+			text,
+			username: currentUser.username,
+			role: currentUser.role,
+			token: (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : ''
+		});
+		return;
+	}
 	if (canUseCollabApi()) {
 		try {
-			await window.AIOSApi.sendChatMessage({ text });
+			await window.AIOSApi.sendChatMessage({ text, username: currentUser.username, role: currentUser.role });
 			await syncChatFromApi();
 			return;
 		} catch (e) {
@@ -888,8 +1004,15 @@ function upsertPresenceSession(username, role, isOnline) {
 function setPresenceOnline(username, role) {
 	upsertPresenceSession(username, role, true);
 	refreshPresenceUI();
+	if (collabSocket && collabSocketReady) {
+		collabSocket.emit('presence:join', {
+			username,
+			role,
+			token: (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : ''
+		});
+	}
 	if (canUseCollabApi()) {
-		window.AIOSApi.heartbeatPresence({ role }).then(() => syncPresenceFromApi()).catch((e) => {
+		window.AIOSApi.heartbeatPresence({ username, role }).then(() => syncPresenceFromApi()).catch((e) => {
 			console.warn('heartbeatPresence API failed', e && e.message ? e.message : e);
 		});
 	}
@@ -922,8 +1045,15 @@ function setPresenceOffline(username) {
 	writePresence(p);
 	notifyPresenceChange();
 	refreshPresenceUI();
+	if (collabSocket && collabSocketReady) {
+		collabSocket.emit('presence:offline', {
+			username,
+			role: existing.role || 'User',
+			token: (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : ''
+		});
+	}
 	if (canUseCollabApi()) {
-		window.AIOSApi.setPresenceOffline({}).then(() => syncPresenceFromApi()).catch((e) => {
+		window.AIOSApi.setPresenceOffline({ username, role: existing.role || 'User' }).then(() => syncPresenceFromApi()).catch((e) => {
 			console.warn('setPresenceOffline API failed', e && e.message ? e.message : e);
 		});
 	}
@@ -932,8 +1062,16 @@ function setPresenceOffline(username) {
 function heartbeatPresence() {
 	if (!currentUser) return;
 	upsertPresenceSession(currentUser.username, currentUser.role, true);
+	if (collabSocket && collabSocketReady) {
+		collabSocket.emit('presence:heartbeat', {
+			username: currentUser.username,
+			role: currentUser.role,
+			token: (window.AIOSApi && typeof window.AIOSApi.getToken === 'function') ? window.AIOSApi.getToken() : ''
+		});
+		return;
+	}
 	if (canUseCollabApi()) {
-		window.AIOSApi.heartbeatPresence({ role: currentUser.role }).catch((e) => {
+		window.AIOSApi.heartbeatPresence({ username: currentUser.username, role: currentUser.role }).catch((e) => {
 			console.warn('heartbeatPresence API failed', e && e.message ? e.message : e);
 		});
 	}
@@ -1093,6 +1231,7 @@ function startPresenceTracking() {
 	heartbeatPresence();
 	cleanupStalePresence();
 	refreshPresenceUI();
+	startSocketRealtime();
 	syncPresenceFromApi();
 	syncChatFromApi();
 
@@ -1119,6 +1258,7 @@ function stopPresenceTracking() {
 		clearInterval(presenceRefreshId);
 		presenceRefreshId = null;
 	}
+	stopSocketRealtime();
 }
 
 // listen for storage changes from other tabs
