@@ -680,8 +680,35 @@ function clearSession() {
 
 // Presence tracking (shared via localStorage)
 const PRESENCE_KEY = 'aios_presence';
+const PRESENCE_SIGNAL_KEY = 'aios_presence_signal';
 const PRESENCE_TTL = 30000; // 30s, consider offline if no heartbeat
+const PRESENCE_HEARTBEAT_MS = 5000;
+const PRESENCE_REFRESH_MS = 2000;
+const PRESENCE_SESSION_KEY = 'aios_presence_session_id';
+const PRESENCE_CLEANUP_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
 let presenceHeartbeatId = null;
+let presenceRefreshId = null;
+
+const presenceChannel = (() => {
+	try {
+		if (typeof BroadcastChannel !== 'undefined') return new BroadcastChannel('aios_presence_channel');
+	} catch (_e) {
+		// ignore
+	}
+	return null;
+})();
+
+function getPresenceSessionId() {
+	try {
+		let id = sessionStorage.getItem(PRESENCE_SESSION_KEY);
+		if (id) return id;
+		id = `sess-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+		sessionStorage.setItem(PRESENCE_SESSION_KEY, id);
+		return id;
+	} catch (_e) {
+		return `sess-fallback-${Math.random().toString(36).slice(2, 10)}`;
+	}
+}
 
 // Chat (localStorage-based)
 const CHAT_KEY = 'aios_chat';
@@ -738,7 +765,8 @@ function sendChat(text) {
 function readPresence() {
 	try {
 		const raw = localStorage.getItem(PRESENCE_KEY);
-		return raw ? JSON.parse(raw) : {};
+		const parsed = raw ? JSON.parse(raw) : {};
+		return parsed && typeof parsed === 'object' ? parsed : {};
 	} catch (e) {
 		console.error('readPresence error', e);
 		return {};
@@ -749,46 +777,152 @@ function writePresence(obj) {
 	localStorage.setItem(PRESENCE_KEY, JSON.stringify(obj));
 }
 
-function setPresenceOnline(username, role) {
+function notifyPresenceChange() {
+	try {
+		localStorage.setItem(PRESENCE_SIGNAL_KEY, String(Date.now()));
+	} catch (_e) {
+		// ignore
+	}
+	if (presenceChannel) {
+		try {
+			presenceChannel.postMessage({ type: 'presence-updated', ts: Date.now() });
+		} catch (_e) {
+			// ignore
+		}
+	}
+}
+
+function normalizePresenceRecord(record) {
+	const safe = record && typeof record === 'object' ? record : {};
+	const sessions = safe.sessions && typeof safe.sessions === 'object' ? safe.sessions : {};
+
+	if (Object.keys(sessions).length === 0 && (safe.lastSeen || safe.online)) {
+		sessions.legacy = {
+			lastSeen: Number(safe.lastSeen || Date.now()),
+			online: !!safe.online,
+			role: safe.role || 'User'
+		};
+	}
+
+	return {
+		username: safe.username || '',
+		role: safe.role || 'User',
+		sessions,
+		lastSeen: Number(safe.lastSeen || 0),
+		online: !!safe.online
+	};
+}
+
+function upsertPresenceSession(username, role, isOnline) {
+	if (!username) return;
+	const now = Date.now();
+	const sessionId = getPresenceSessionId();
 	const p = readPresence();
-	p[username] = { username, role, lastSeen: Date.now(), online: true };
+	const existing = normalizePresenceRecord(p[username]);
+	const sessions = existing.sessions || {};
+
+	sessions[sessionId] = {
+		lastSeen: now,
+		online: !!isOnline,
+		role: role || existing.role || 'User'
+	};
+
+	const hasOnlineSession = Object.values(sessions).some((s) => !!s.online && now - Number(s.lastSeen || 0) <= PRESENCE_TTL);
+	p[username] = {
+		username,
+		role: role || existing.role || 'User',
+		sessions,
+		lastSeen: now,
+		online: hasOnlineSession
+	};
+
 	writePresence(p);
+	notifyPresenceChange();
+}
+
+function setPresenceOnline(username, role) {
+	upsertPresenceSession(username, role, true);
 	refreshPresenceUI();
 }
 
 function setPresenceOffline(username) {
+	if (!username) return;
+	const now = Date.now();
+	const sessionId = getPresenceSessionId();
 	const p = readPresence();
-	if (p[username]) {
-		p[username].online = false;
-		p[username].lastSeen = Date.now();
-		writePresence(p);
-		refreshPresenceUI();
+	const existing = normalizePresenceRecord(p[username]);
+	const sessions = existing.sessions || {};
+
+	if (!sessions[sessionId]) {
+		sessions[sessionId] = { lastSeen: now, online: false, role: existing.role || 'User' };
+	} else {
+		sessions[sessionId].online = false;
+		sessions[sessionId].lastSeen = now;
 	}
+
+	const hasOnlineSession = Object.values(sessions).some((s) => !!s.online && now - Number(s.lastSeen || 0) <= PRESENCE_TTL);
+	p[username] = {
+		username,
+		role: existing.role || 'User',
+		sessions,
+		lastSeen: now,
+		online: hasOnlineSession
+	};
+
+	writePresence(p);
+	notifyPresenceChange();
+	refreshPresenceUI();
 }
 
 function heartbeatPresence() {
 	if (!currentUser) return;
-	const p = readPresence();
-	if (!p[currentUser.username]) {
-		p[currentUser.username] = { username: currentUser.username, role: currentUser.role, lastSeen: Date.now(), online: true };
-	} else {
-		p[currentUser.username].lastSeen = Date.now();
-		p[currentUser.username].online = true;
-	}
-	writePresence(p);
+	upsertPresenceSession(currentUser.username, currentUser.role, true);
 }
 
 function cleanupStalePresence() {
 	const p = readPresence();
 	const now = Date.now();
 	let changed = false;
-	Object.values(p).forEach(u => {
-		if (u.online && now - u.lastSeen > PRESENCE_TTL) {
-			u.online = false;
+	Object.keys(p).forEach((username) => {
+		const u = normalizePresenceRecord(p[username]);
+		const sessions = u.sessions || {};
+
+		Object.keys(sessions).forEach((sid) => {
+			const sess = sessions[sid] || {};
+			const lastSeen = Number(sess.lastSeen || 0);
+			if (!!sess.online && now - lastSeen > PRESENCE_TTL) {
+				sess.online = false;
+				sessions[sid] = sess;
+				changed = true;
+			}
+			if (now - lastSeen > PRESENCE_CLEANUP_MAX_AGE) {
+				delete sessions[sid];
+				changed = true;
+			}
+		});
+
+		const hasSessions = Object.keys(sessions).length > 0;
+		const hasOnlineSession = Object.values(sessions).some((s) => !!s.online && now - Number(s.lastSeen || 0) <= PRESENCE_TTL);
+		if (!hasSessions) {
+			delete p[username];
 			changed = true;
+			return;
 		}
+
+		const latestSeen = Object.values(sessions).reduce((max, s) => Math.max(max, Number(s.lastSeen || 0)), 0);
+		p[username] = {
+			username,
+			role: u.role || 'User',
+			sessions,
+			lastSeen: latestSeen,
+			online: hasOnlineSession
+		};
 	});
-	if (changed) writePresence(p);
+
+	if (changed) {
+		writePresence(p);
+		notifyPresenceChange();
+	}
 }
 
 function refreshPresenceUI() {
@@ -797,7 +931,20 @@ function refreshPresenceUI() {
 	const countOnlineEl = document.getElementById('count-online');
 	const countOfflineEl = document.getElementById('count-offline');
 	if (!listEl || !countOnlineEl || !countOfflineEl) return; // elements don't exist on this page
-	const users = Object.values(p).sort((a,b) => (b.lastSeen||0)-(a.lastSeen||0));
+	const users = Object.values(p)
+		.map((raw) => {
+			const u = normalizePresenceRecord(raw);
+			const sessions = Object.values(u.sessions || {});
+			const latestSeen = sessions.reduce((max, s) => Math.max(max, Number(s.lastSeen || 0)), Number(u.lastSeen || 0));
+			const isOnline = sessions.some((s) => !!s.online && (Date.now() - Number(s.lastSeen || 0) <= PRESENCE_TTL));
+			return {
+				username: u.username,
+				role: u.role,
+				lastSeen: latestSeen,
+				online: isOnline
+			};
+		})
+		.sort((a,b) => (b.lastSeen||0)-(a.lastSeen||0));
 	const now = Date.now();
 	const onlineUsers = [];
 	const offlineUsers = [];
@@ -837,16 +984,64 @@ function refreshPresenceUI() {
 	`;
 }
 
+function startPresenceTracking() {
+	if (presenceHeartbeatId) clearInterval(presenceHeartbeatId);
+	if (presenceRefreshId) clearInterval(presenceRefreshId);
+
+	heartbeatPresence();
+	cleanupStalePresence();
+	refreshPresenceUI();
+
+	presenceHeartbeatId = setInterval(() => {
+		heartbeatPresence();
+		cleanupStalePresence();
+	}, PRESENCE_HEARTBEAT_MS);
+
+	presenceRefreshId = setInterval(() => {
+		cleanupStalePresence();
+		refreshPresenceUI();
+		if (typeof renderChatMessages === 'function') renderChatMessages();
+	}, PRESENCE_REFRESH_MS);
+}
+
+function stopPresenceTracking() {
+	if (presenceHeartbeatId) {
+		clearInterval(presenceHeartbeatId);
+		presenceHeartbeatId = null;
+	}
+	if (presenceRefreshId) {
+		clearInterval(presenceRefreshId);
+		presenceRefreshId = null;
+	}
+}
+
 // listen for storage changes from other tabs
 window.addEventListener('storage', (ev) => {
 	if (!ev.key) return;
-	if (ev.key === PRESENCE_KEY) {
+	if (ev.key === PRESENCE_KEY || ev.key === PRESENCE_SIGNAL_KEY) {
 		cleanupStalePresence();
 		refreshPresenceUI();
 	}
 	// chat updates
 	if (ev.key === CHAT_KEY) {
 		renderChatMessages();
+	}
+});
+
+if (presenceChannel) {
+	presenceChannel.addEventListener('message', (ev) => {
+		if (!ev || !ev.data || ev.data.type !== 'presence-updated') return;
+		cleanupStalePresence();
+		refreshPresenceUI();
+	});
+}
+
+document.addEventListener('visibilitychange', () => {
+	if (!currentUser) return;
+	if (document.visibilityState === 'visible') {
+		heartbeatPresence();
+		cleanupStalePresence();
+		refreshPresenceUI();
 	}
 });
 
@@ -953,13 +1148,7 @@ loginBtn.addEventListener('click', async () => {
 	showScreenForRole(role);
 	// mark presence online and start heartbeat
 	setPresenceOnline(currentUser.username, currentUser.role);
-	if (presenceHeartbeatId) clearInterval(presenceHeartbeatId);
-	presenceHeartbeatId = setInterval(() => {
-		heartbeatPresence();
-		cleanupStalePresence();
-		refreshPresenceUI();
-		renderChatMessages();
-	}, 10000);
+	startPresenceTracking();
 });
 }
 
@@ -975,10 +1164,7 @@ logoutBtn.addEventListener('click', () => {
 	mainScreen.classList.add('hidden');
 	usernameInput.value = '';
 	passwordInput.value = '';
-	if (presenceHeartbeatId) {
-		clearInterval(presenceHeartbeatId);
-		presenceHeartbeatId = null;
-	}
+	stopPresenceTracking();
 	if (adminSidebar) adminSidebar.classList.add('hidden');
 	if (superadminSidebar) superadminSidebar.classList.add('hidden');
 	if (userSidebar) userSidebar.classList.add('hidden');
@@ -1088,13 +1274,7 @@ if (_session) {
 	if (typeof showScreenForRole === 'function') showScreenForRole(currentUser.role);
 	// start presence heartbeat for restored session
 	setPresenceOnline(currentUser.username, currentUser.role);
-	if (presenceHeartbeatId) clearInterval(presenceHeartbeatId);
-	presenceHeartbeatId = setInterval(() => {
-		heartbeatPresence();
-		cleanupStalePresence();
-		refreshPresenceUI();
-		if (typeof renderChatMessages === 'function') renderChatMessages();
-	}, 10000);
+	startPresenceTracking();
 }
 
 // initialize presence UI state
@@ -1104,6 +1284,7 @@ refreshPresenceUI();
 // ensure presence set to offline on unload if needed
 window.addEventListener('beforeunload', () => {
 	if (currentUser) setPresenceOffline(currentUser.username);
+	stopPresenceTracking();
 });
 
 // chat send handlers
