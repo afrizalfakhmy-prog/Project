@@ -4,7 +4,7 @@ const { readJson, writeJson } = require('../utils/store');
 
 const router = express.Router();
 
-router.get('/', authRequired, (_req, res) => {
+router.get('/', (_req, res) => {
   res.json(readJson('companies.json', []));
 });
 

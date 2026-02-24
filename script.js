@@ -460,7 +460,7 @@ function writeDepartments(list) {
 }
 
 async function syncDepartmentsFromApi() {
-	if (!isApiReady() || !window.AIOSApi.listDepartments) return;
+	if (!window.AIOSApi || typeof window.AIOSApi.listDepartments !== 'function') return;
 	try {
 		const rows = await window.AIOSApi.listDepartments();
 		const localRows = readDepartments();
@@ -599,7 +599,7 @@ function writeCompanies(list) {
 }
 
 async function syncCompaniesFromApi() {
-	if (!isApiReady() || !window.AIOSApi.listCompanies) return;
+	if (!window.AIOSApi || typeof window.AIOSApi.listCompanies !== 'function') return;
 	try {
 		const rows = await window.AIOSApi.listCompanies();
 		const localRows = readCompanies();
