@@ -15,6 +15,7 @@ const companiesRoutes = require('./routes/companies');
 const pjaRoutes = require('./routes/pja');
 const ohsTalkRoutes = require('./routes/ohsTalk');
 const observasiRoutes = require('./routes/observasi');
+const collabRoutes = require('./routes/collab');
 const { authRequired } = require('./middleware/auth');
 
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/companies', companiesRoutes);
 app.use('/api/pja', pjaRoutes);
 app.use('/api/ohs-talk', ohsTalkRoutes);
 app.use('/api/observasi', observasiRoutes);
+app.use('/api/collab', collabRoutes);
 
 app.post('/api/upload/images', authRequired, upload.array('images', 10), (req, res) => {
   const files = (req.files || []).map((file) => ({

@@ -713,6 +713,16 @@ function getPresenceSessionId() {
 // Chat (localStorage-based)
 const CHAT_KEY = 'aios_chat';
 
+function canUseCollabApi() {
+	return !!(
+		isApiReady() &&
+		window.AIOSApi &&
+		typeof window.AIOSApi.listPresence === 'function' &&
+		typeof window.AIOSApi.heartbeatPresence === 'function' &&
+		typeof window.AIOSApi.listChatMessages === 'function'
+	);
+}
+
 function readChat() {
 	try {
 		const raw = localStorage.getItem(CHAT_KEY);
@@ -732,6 +742,32 @@ function addChatMessage(msg) {
 	list.push(msg);
 	writeChat(list);
 	renderChatMessages();
+}
+
+async function syncChatFromApi() {
+	if (!canUseCollabApi()) return;
+	try {
+		const rows = await window.AIOSApi.listChatMessages();
+		if (Array.isArray(rows)) {
+			writeChat(rows);
+			renderChatMessages();
+		}
+	} catch (e) {
+		console.warn('syncChatFromApi failed', e && e.message ? e.message : e);
+	}
+}
+
+async function syncPresenceFromApi() {
+	if (!canUseCollabApi()) return;
+	try {
+		const map = await window.AIOSApi.listPresence();
+		if (map && typeof map === 'object') {
+			writePresence(map);
+			refreshPresenceUI();
+		}
+	} catch (e) {
+		console.warn('syncPresenceFromApi failed', e && e.message ? e.message : e);
+	}
 }
 
 function renderChatMessages() {
@@ -754,11 +790,20 @@ function renderChatMessages() {
 	chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
-function sendChat(text) {
+async function sendChat(text) {
 	if (!currentUser) return alert('Silakan login terlebih dahulu untuk mengirim pesan');
+	if (canUseCollabApi()) {
+		try {
+			await window.AIOSApi.sendChatMessage({ text });
+			await syncChatFromApi();
+			return;
+		} catch (e) {
+			console.warn('sendChatMessage API failed, fallback local:', e && e.message ? e.message : e);
+		}
+	}
+
 	const msg = { id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`, username: currentUser.username, role: currentUser.role, ts: Date.now(), text };
 	addChatMessage(msg);
-	// announce via localStorage event by writing same key (already written)
 }
 
 
@@ -843,6 +888,11 @@ function upsertPresenceSession(username, role, isOnline) {
 function setPresenceOnline(username, role) {
 	upsertPresenceSession(username, role, true);
 	refreshPresenceUI();
+	if (canUseCollabApi()) {
+		window.AIOSApi.heartbeatPresence({ role }).then(() => syncPresenceFromApi()).catch((e) => {
+			console.warn('heartbeatPresence API failed', e && e.message ? e.message : e);
+		});
+	}
 }
 
 function setPresenceOffline(username) {
@@ -872,11 +922,21 @@ function setPresenceOffline(username) {
 	writePresence(p);
 	notifyPresenceChange();
 	refreshPresenceUI();
+	if (canUseCollabApi()) {
+		window.AIOSApi.setPresenceOffline({}).then(() => syncPresenceFromApi()).catch((e) => {
+			console.warn('setPresenceOffline API failed', e && e.message ? e.message : e);
+		});
+	}
 }
 
 function heartbeatPresence() {
 	if (!currentUser) return;
 	upsertPresenceSession(currentUser.username, currentUser.role, true);
+	if (canUseCollabApi()) {
+		window.AIOSApi.heartbeatPresence({ role: currentUser.role }).catch((e) => {
+			console.warn('heartbeatPresence API failed', e && e.message ? e.message : e);
+		});
+	}
 }
 
 function cleanupStalePresence() {
@@ -1033,6 +1093,8 @@ function startPresenceTracking() {
 	heartbeatPresence();
 	cleanupStalePresence();
 	refreshPresenceUI();
+	syncPresenceFromApi();
+	syncChatFromApi();
 
 	presenceHeartbeatId = setInterval(() => {
 		heartbeatPresence();
@@ -1041,6 +1103,8 @@ function startPresenceTracking() {
 
 	presenceRefreshId = setInterval(() => {
 		cleanupStalePresence();
+		syncPresenceFromApi();
+		syncChatFromApi();
 		refreshPresenceUI();
 		if (typeof renderChatMessages === 'function') renderChatMessages();
 	}, PRESENCE_REFRESH_MS);

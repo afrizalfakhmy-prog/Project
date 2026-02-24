@@ -210,6 +210,35 @@
     return request(`/observasi/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
+  async function listPresence() {
+    return request('/collab/presence');
+  }
+
+  async function heartbeatPresence(payload) {
+    return request('/collab/presence/heartbeat', {
+      method: 'POST',
+      body: JSON.stringify(payload || {})
+    });
+  }
+
+  async function setPresenceOffline(payload) {
+    return request('/collab/presence/offline', {
+      method: 'POST',
+      body: JSON.stringify(payload || {})
+    });
+  }
+
+  async function listChatMessages() {
+    return request('/collab/chat');
+  }
+
+  async function sendChatMessage(payload) {
+    return request('/collab/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload || {})
+    });
+  }
+
   window.AIOSApi = {
     baseUrl: API_BASE,
     getToken,
@@ -250,6 +279,11 @@
     listObservasi,
     createObservasi,
     updateObservasi,
-    deleteObservasi
+    deleteObservasi,
+    listPresence,
+    heartbeatPresence,
+    setPresenceOffline,
+    listChatMessages,
+    sendChatMessage
   };
 })();

@@ -4,6 +4,8 @@ backend/node_modules/
 
 # env files
 backend/.env
+backend/data/chat.json
+backend/data/presence.json
 
 # logs
 *.log
