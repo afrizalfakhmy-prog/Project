@@ -70,6 +70,7 @@ const fields = {
 };
 const saveUserBtn = document.getElementById('save-user-btn');
 const cancelUserBtn = document.getElementById('cancel-user-btn');
+const exportUserBtn = document.getElementById('export-user-btn');
 
 const USER_KEY = 'aios_users';
 const PJA_KEY = 'aios_pja';
@@ -153,6 +154,57 @@ function renderUserList(filter) {
 		tr.innerHTML = `<td>${u.username||''}</td><td>${u.nama||''}</td><td>${u.karyawan||''}</td><td>${u.departemen||''}</td><td>${u.perusahaan||''}</td><td>${actionHtml}</td>`;
 		userListTableBody.appendChild(tr);
 	});
+}
+
+function excelSafe(value) {
+	return String(value == null ? '' : value)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#039;');
+}
+
+function exportRowsToExcel(filePrefix, headers, rows) {
+	if (!Array.isArray(rows) || rows.length === 0) {
+		alert('Tidak ada data untuk diekspor.');
+		return;
+	}
+
+	const thead = `<tr>${headers.map((h) => `<th>${excelSafe(h)}</th>`).join('')}</tr>`;
+	const tbody = rows.map((row) => `<tr>${row.map((cell) => `<td>${excelSafe(cell)}</td>`).join('')}</tr>`).join('');
+	const html = `
+		<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+		<head><meta charset="UTF-8"></head>
+		<body><table border="1">${thead}${tbody}</table></body>
+		</html>
+	`;
+
+	const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	const stamp = new Date().toISOString().slice(0, 10);
+	a.href = url;
+	a.download = `${filePrefix}-${stamp}.xls`;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+function exportUserTableToExcel() {
+	const users = readUsers();
+	const q = (userSearch && userSearch.value ? userSearch.value : '').toLowerCase();
+	const filtered = users.filter((u) => !q || (u.username && u.username.toLowerCase().includes(q)) || (u.nama && u.nama.toLowerCase().includes(q)) || (u.karyawan && u.karyawan.toLowerCase().includes(q)));
+	const rows = filtered.map((u) => [
+		u.username || '',
+		u.nama || '',
+		u.karyawan || '',
+		u.departemen || '',
+		u.perusahaan || '',
+		u.role || u.kategori || 'User'
+	]);
+	exportRowsToExcel('daftar-user', ['Username', 'Nama', 'No Karyawan', 'Departemen', 'Perusahaan', 'Role'], rows);
 }
 
 function openUserForm(user) {
@@ -1466,6 +1518,7 @@ if (addUserBtn) addUserBtn.addEventListener('click', () => {
 		window.location.href = 'daftar_user.html?action=add';
 	} catch (e) { console.warn('navigate to daftar_user failed', e); }
 });
+if (exportUserBtn) exportUserBtn.addEventListener('click', exportUserTableToExcel);
 if (userSearch) userSearch.addEventListener('input', (e) => renderUserList(e.target.value));
 if (saveUserBtn) {
 	saveUserBtn.addEventListener('click', async () => {

@@ -449,6 +449,58 @@
     });
   }
 
+  function excelSafe(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function exportRowsToExcel(filePrefix, headers, rows) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      alert('Tidak ada data untuk diekspor.');
+      return;
+    }
+
+    const thead = `<tr>${headers.map((h) => `<th>${excelSafe(h)}</th>`).join('')}</tr>`;
+    const tbody = rows.map((row) => `<tr>${row.map((cell) => `<td>${excelSafe(cell)}</td>`).join('')}</tr>`).join('');
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="UTF-8"></head>
+      <body><table border="1">${thead}${tbody}</table></body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `${filePrefix}-${stamp}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportTtaToExcel() {
+    const rows = readTtaRecords().map((item) => [
+      item.id || '',
+      item.tanggalLaporan || '',
+      item.jamTemuan || '-',
+      item.namaPelapor || '',
+      Array.isArray(item.fotoTemuan) ? item.fotoTemuan.join(', ') : '',
+      item.namaPelaku || '-',
+      item.lokasiTemuan || '',
+      item.riskLevel || '',
+      item.status || '-'
+    ]);
+
+    exportRowsToExcel('data-tta', ['No ID', 'Tanggal Laporan', 'Jam Temuan', 'Nama Pelapor', 'Foto Temuan', 'Nama Pelaku TTA', 'Lokasi Temuan', 'Risk Level', 'Status'], rows);
+  }
+
   async function saveFormData() {
     if (followUpMode) {
       if (!editingId) {
@@ -615,6 +667,11 @@
         resetFormForNew();
         showForm();
       });
+    }
+
+    const exportButton = document.getElementById('export-tta-btn');
+    if (exportButton) {
+      exportButton.addEventListener('click', exportTtaToExcel);
     }
 
     const cancelFormButton = document.getElementById('cancel-tta-form-btn');
