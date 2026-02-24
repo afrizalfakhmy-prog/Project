@@ -1,8 +1,8 @@
 {
-  "name": "project-app-backend",
+  "name": "project-app-copy-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Starter backend for Project App",
+  "description": "Starter backend for Project App Copy",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",

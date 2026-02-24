@@ -1,7 +1,7 @@
 {
-  "name": "project-app",
+  "name": "project-app-copy",
   "version": "1.0.0",
-  "description": "Project App Backend",
+  "description": "Project App Copy Backend",
   "main": "backend/src/server.js",
   "scripts": {
     "start": "cd backend && npm install && npm start",
