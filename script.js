@@ -681,7 +681,7 @@ function clearSession() {
 // Presence tracking (shared via localStorage)
 const PRESENCE_KEY = 'aios_presence';
 const PRESENCE_SIGNAL_KEY = 'aios_presence_signal';
-const PRESENCE_TTL = 30000; // 30s, consider offline if no heartbeat
+const PRESENCE_TTL = 10000; // 10s, consider offline if no heartbeat
 const PRESENCE_HEARTBEAT_MS = 5000;
 const PRESENCE_REFRESH_MS = 2000;
 const PRESENCE_SESSION_KEY = 'aios_presence_session_id';
