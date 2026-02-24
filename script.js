@@ -931,26 +931,68 @@ function refreshPresenceUI() {
 	const countOnlineEl = document.getElementById('count-online');
 	const countOfflineEl = document.getElementById('count-offline');
 	if (!listEl || !countOnlineEl || !countOfflineEl) return; // elements don't exist on this page
-	const users = Object.values(p)
-		.map((raw) => {
-			const u = normalizePresenceRecord(raw);
-			const sessions = Object.values(u.sessions || {});
-			const latestSeen = sessions.reduce((max, s) => Math.max(max, Number(s.lastSeen || 0)), Number(u.lastSeen || 0));
-			const isOnline = sessions.some((s) => !!s.online && (Date.now() - Number(s.lastSeen || 0) <= PRESENCE_TTL));
-			return {
-				username: u.username,
-				role: u.role,
+	const now = Date.now();
+
+	const knownUsersMap = {};
+
+	Object.keys(CREDENTIALS || {}).forEach((username) => {
+		if (!username) return;
+		const item = CREDENTIALS[username] || {};
+		knownUsersMap[username] = {
+			username,
+			role: item.role || 'User',
+			lastSeen: 0,
+			online: false
+		};
+	});
+
+	readUsers().forEach((u) => {
+		const username = (u && u.username) ? String(u.username) : '';
+		if (!username) return;
+		if (!knownUsersMap[username]) {
+			knownUsersMap[username] = {
+				username,
+				role: (u.role || u.kategori || 'User'),
+				lastSeen: 0,
+				online: false
+			};
+		} else if (!knownUsersMap[username].role || knownUsersMap[username].role === 'User') {
+			knownUsersMap[username].role = (u.role || u.kategori || knownUsersMap[username].role || 'User');
+		}
+	});
+
+	Object.values(p).forEach((raw) => {
+		const u = normalizePresenceRecord(raw);
+		const username = (u.username || '').trim();
+		if (!username) return;
+		const sessions = Object.values(u.sessions || {});
+		const latestSeen = sessions.reduce((max, s) => Math.max(max, Number(s.lastSeen || 0)), Number(u.lastSeen || 0));
+		const isOnline = sessions.some((s) => !!s.online && (now - Number(s.lastSeen || 0) <= PRESENCE_TTL));
+
+		if (!knownUsersMap[username]) {
+			knownUsersMap[username] = {
+				username,
+				role: u.role || 'User',
 				lastSeen: latestSeen,
 				online: isOnline
 			};
-		})
-		.sort((a,b) => (b.lastSeen||0)-(a.lastSeen||0));
-	const now = Date.now();
+		} else {
+			knownUsersMap[username].role = knownUsersMap[username].role || u.role || 'User';
+			knownUsersMap[username].lastSeen = Math.max(Number(knownUsersMap[username].lastSeen || 0), latestSeen);
+			knownUsersMap[username].online = isOnline;
+		}
+	});
+
+	const users = Object.values(knownUsersMap).sort((a,b) => {
+		if (!!b.online !== !!a.online) return b.online ? 1 : -1;
+		return (b.lastSeen || 0) - (a.lastSeen || 0);
+	});
+
 	const onlineUsers = [];
 	const offlineUsers = [];
 
 	users.forEach(u => {
-		const isOnline = !!u.online && (now - (u.lastSeen||0) <= PRESENCE_TTL);
+		const isOnline = !!u.online;
 		if (isOnline) onlineUsers.push(u);
 		else offlineUsers.push(u);
 	});
