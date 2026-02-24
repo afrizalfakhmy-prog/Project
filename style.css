@@ -451,6 +451,21 @@ main, #app{padding-top:calc(var(--top-nav-height) + 18px)}
 .form-section{margin-bottom:24px}
 .table-section{margin-top:24px}
 
+#kta-list th,#kta-list td,
+#tta-list th,#tta-list td,
+#observasi-list th,#observasi-list td{
+	font-size:12px;
+	line-height:1.3;
+}
+
+@media(max-width:768px){
+	#kta-list th,#kta-list td,
+	#tta-list th,#tta-list td,
+	#observasi-list th,#observasi-list td{
+		font-size:11px;
+	}
+}
+
 /* Profile page */
 .profile-card{
 	background:#fff;
