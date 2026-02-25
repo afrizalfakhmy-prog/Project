@@ -420,11 +420,7 @@ async function deleteUser(id) {
 function populateDeptOptions(selected) {
 	const sel = document.getElementById('field-departemen');
 	if (!sel) return;
-	let list = readDepartments();
-	if (!Array.isArray(list) || list.length === 0) {
-		const names = Array.from(new Set(readUsers().map((u) => (u && u.departemen ? String(u.departemen).trim() : '')).filter(Boolean)));
-		list = names.map((name) => ({ id: `dep-${name}`, name }));
-	}
+	const list = readDepartments();
 	sel.innerHTML = '<option value="">(Pilih Departemen)</option>';
 	list.forEach(d => {
 		const opt = document.createElement('option');
@@ -438,11 +434,7 @@ function populateDeptOptions(selected) {
 function populateCompanyOptions(selected) {
 	const sel = document.getElementById('field-perusahaan');
 	if (!sel) return;
-	let list = readCompanies();
-	if (!Array.isArray(list) || list.length === 0) {
-		const names = Array.from(new Set(readUsers().map((u) => (u && u.perusahaan ? String(u.perusahaan).trim() : '')).filter(Boolean)));
-		list = names.map((name) => ({ id: `cmp-${name}`, name }));
-	}
+	const list = readCompanies();
 	sel.innerHTML = '<option value="">(Pilih Perusahaan)</option>';
 	list.forEach(c => {
 		const opt = document.createElement('option');
@@ -487,8 +479,21 @@ function writeDepartments(list) {
 async function syncDepartmentsFromApi() {
 	if (!window.AIOSApi || typeof window.AIOSApi.listDepartments !== 'function') return;
 	try {
-		const rows = await window.AIOSApi.listDepartments();
+		let rows = await window.AIOSApi.listDepartments();
 		const localRows = readDepartments();
+		if (Array.isArray(rows) && rows.length === 0 && Array.isArray(localRows) && localRows.length > 0 && window.AIOSApi.createDepartment) {
+			const session = getSession ? getSession() : {};
+			const actorRole = (session && session.role) ? session.role : '';
+			for (const item of localRows) {
+				const payload = { id: item.id, name: item.name, actorRole };
+				try {
+					await window.AIOSApi.createDepartment(payload);
+				} catch (_e) {
+					// ignore duplicate or permission errors per item
+				}
+			}
+			rows = await window.AIOSApi.listDepartments();
+		}
 		if (shouldApplyApiList(localRows, rows, 'Departments')) writeDepartments(rows);
 	} catch (e) {
 		console.warn('syncDepartmentsFromApi failed', e && e.message ? e.message : e);
@@ -628,8 +633,21 @@ function writeCompanies(list) {
 async function syncCompaniesFromApi() {
 	if (!window.AIOSApi || typeof window.AIOSApi.listCompanies !== 'function') return;
 	try {
-		const rows = await window.AIOSApi.listCompanies();
+		let rows = await window.AIOSApi.listCompanies();
 		const localRows = readCompanies();
+		if (Array.isArray(rows) && rows.length === 0 && Array.isArray(localRows) && localRows.length > 0 && window.AIOSApi.createCompany) {
+			const session = getSession ? getSession() : {};
+			const actorRole = (session && session.role) ? session.role : '';
+			for (const item of localRows) {
+				const payload = { id: item.id, name: item.name, actorRole };
+				try {
+					await window.AIOSApi.createCompany(payload);
+				} catch (_e) {
+					// ignore duplicate or permission errors per item
+				}
+			}
+			rows = await window.AIOSApi.listCompanies();
+		}
 		if (shouldApplyApiList(localRows, rows, 'Companies')) writeCompanies(rows);
 	} catch (e) {
 		console.warn('syncCompaniesFromApi failed', e && e.message ? e.message : e);

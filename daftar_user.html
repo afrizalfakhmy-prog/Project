@@ -81,6 +81,7 @@
   <script src="api-client.js"></script>
   <script src="script.js"></script>
   <script>
+    (async function () {
     console.log('Initializing daftar_user page...');
       
       // ensure only Admin or Super Admin can view
@@ -99,6 +100,9 @@
         console.log('Access granted for role:', session.role);
         // populate and render
         try {
+          if (typeof syncMasterDataFromApi === 'function') {
+            await syncMasterDataFromApi();
+          }
           console.log('Populating options...');
           if (typeof populateDeptOptions === 'function') populateDeptOptions();
           if (typeof populateCompanyOptions === 'function') populateCompanyOptions();
@@ -122,6 +126,7 @@
       } catch (e) { 
         console.warn('Error opening form from URL:', e);
       }
+    })();
   </script>
 </body>
 </html>
