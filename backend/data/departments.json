@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "d-seed-1",
+    "name": "IT"
+  },
+  {
+    "id": "d-seed-2",
+    "name": "OHS"
+  },
+  {
+    "id": "d-seed-3",
+    "name": "Operation"
+  }
+]
