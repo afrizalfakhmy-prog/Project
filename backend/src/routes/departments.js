@@ -22,7 +22,29 @@ function resolveRole(req) {
 }
 
 router.get('/', (_req, res) => {
-  res.json(readJson('departments.json', []));
+  const list = readJson('departments.json', []);
+  if (Array.isArray(list) && list.length > 0) {
+    return res.json(list);
+  }
+
+  const users = readJson('users.json', []);
+  const names = Array.from(new Set(
+    (Array.isArray(users) ? users : [])
+      .map((user) => (user && user.departemen ? String(user.departemen).trim() : ''))
+      .filter(Boolean)
+  ));
+
+  const seeded = names.map((name, index) => ({
+    id: `d-seed-${index + 1}`,
+    name
+  }));
+
+  if (seeded.length > 0) {
+    writeJson('departments.json', seeded);
+    return res.json(seeded);
+  }
+
+  return res.json([]);
 });
 
 router.post('/', (req, res) => {
