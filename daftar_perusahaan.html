@@ -44,18 +44,23 @@
   <script src="script.js"></script>
   <script>
     // protect: only Super Admin can access this page
-    try {
-      const s = localStorage.getItem('aios_session');
-      const session = s ? JSON.parse(s) : null;
-      if (!session || session.role !== 'Super Admin') {
-        alert('Akses ditolak. Hanya Super Admin.');
-        window.location.href = 'index.html';
-      } else {
+    (async () => {
+      try {
+        const s = localStorage.getItem('aios_session');
+        const session = s ? JSON.parse(s) : null;
+        if (!session || session.role !== 'Super Admin') {
+          alert('Akses ditolak. Hanya Super Admin.');
+          window.location.href = 'index.html';
+          return;
+        }
+        if (typeof syncCompaniesFromApi === 'function') {
+          await syncCompaniesFromApi();
+        }
         if (typeof renderCompanyList === 'function') renderCompanyList();
+      } catch (e) {
+        console.warn('perusahaan page init error', e);
       }
-    } catch (e) {
-      console.warn('perusahaan page init error', e);
-    }
+    })();
   </script>
 </body>
 </html>

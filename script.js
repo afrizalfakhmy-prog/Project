@@ -494,7 +494,7 @@ async function syncDepartmentsFromApi() {
 			}
 			rows = await window.AIOSApi.listDepartments();
 		}
-		if (shouldApplyApiList(localRows, rows, 'Departments')) writeDepartments(rows);
+		if (Array.isArray(rows)) writeDepartments(rows);
 	} catch (e) {
 		console.warn('syncDepartmentsFromApi failed', e && e.message ? e.message : e);
 	}
@@ -648,7 +648,7 @@ async function syncCompaniesFromApi() {
 			}
 			rows = await window.AIOSApi.listCompanies();
 		}
-		if (shouldApplyApiList(localRows, rows, 'Companies')) writeCompanies(rows);
+		if (Array.isArray(rows)) writeCompanies(rows);
 	} catch (e) {
 		console.warn('syncCompaniesFromApi failed', e && e.message ? e.message : e);
 	}
