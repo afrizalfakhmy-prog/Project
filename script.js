@@ -212,29 +212,29 @@ function exportUserTableToExcel() {
 	exportRowsToExcel('daftar-user', ['Username', 'Nama', 'No Karyawan', 'Departemen', 'Perusahaan', 'Role'], rows);
 }
 
-function openUserForm(user) {
+async function openUserForm(user) {
 	try {
 		// Verify form exists
 		if (!userForm) {
 			console.error('Error: userForm not found');
 			return alert('Terjadi kesalahan: Form tidak ditemukan.');
 		}
-		// populate dynamic selects first
-		populateDeptOptions();
-		populateCompanyOptions();
-		populateCcowOptions();
 
-		Promise.all([
-			syncDepartmentsFromApi(),
-			syncCompaniesFromApi()
-		]).then(() => {
-			const selectedDept = (user && user.departemen) ? user.departemen : (fields.departemen && fields.departemen.value ? fields.departemen.value : '');
-			const selectedCompany = (user && user.perusahaan) ? user.perusahaan : (fields.perusahaan && fields.perusahaan.value ? fields.perusahaan.value : '');
-			populateDeptOptions(selectedDept);
-			populateCompanyOptions(selectedCompany);
-		}).catch((syncErr) => {
+		try {
+			await Promise.all([
+				syncDepartmentsFromApi(),
+				syncCompaniesFromApi()
+			]);
+		} catch (syncErr) {
 			console.warn('openUserForm master sync failed', syncErr && syncErr.message ? syncErr.message : syncErr);
-		});
+		}
+
+		const selectedDept = (user && user.departemen) ? user.departemen : '';
+		const selectedCompany = (user && user.perusahaan) ? user.perusahaan : '';
+		const selectedCcow = (user && user.ccow) ? user.ccow : '';
+		populateDeptOptions(selectedDept);
+		populateCompanyOptions(selectedCompany);
+		populateCcowOptions(selectedCcow);
 
 		// Restrict kategori options based on current user role
 		if (fields.kategori) {
@@ -276,6 +276,10 @@ function openUserForm(user) {
 				} catch(e){ console.warn('Error clearing field ' + k, e); }
 			});
 		}
+
+		populateDeptOptions((user && user.departemen) ? user.departemen : '');
+		populateCompanyOptions((user && user.perusahaan) ? user.perusahaan : '');
+		populateCcowOptions((user && user.ccow) ? user.ccow : '');
 	} catch (err) {
 		console.error('Error opening user form:', err);
 		alert('Terjadi kesalahan membuka form: ' + (err && err.message ? err.message : String(err)));
@@ -341,6 +345,11 @@ async function saveUserFromForm() {
 		if (!departemen) return alert('Departemen wajib dipilih');
 		if (!perusahaan) return alert('Perusahaan wajib dipilih');
 		if (!ccow) return alert('CCOW wajib dipilih');
+
+		const allowedDept = readDepartments().map((item) => (item && (item.name || item.id) ? String(item.name || item.id).trim() : '')).filter(Boolean);
+		const allowedCompany = readCompanies().map((item) => (item && (item.name || item.id) ? String(item.name || item.id).trim() : '')).filter(Boolean);
+		if (!allowedDept.includes(departemen)) return alert('Departemen harus dipilih dari Daftar Departemen.');
+		if (!allowedCompany.includes(perusahaan)) return alert('Perusahaan harus dipilih dari Daftar Perusahaan.');
 		
 		// Format validations
 		if (!/^[0-9]+$/.test(hp)) return alert('No HP harus berupa angka');
@@ -1546,13 +1555,13 @@ if (observasiBtn) observasiBtn.addEventListener('click', () => { window.location
 if (adminUsersBtn) adminUsersBtn.addEventListener('click', () => { window.location.href = 'daftar_user.html'; });
 
 // Add user button
-if (addUserBtn) addUserBtn.addEventListener('click', () => {
+if (addUserBtn) addUserBtn.addEventListener('click', async () => {
 	try {
 		// If we're already on daftar_user.html, open the form inline
 		const href = (window.location.href || '').toLowerCase();
 		if (href.indexOf('daftar_user.html') !== -1) {
 			try {
-				openUserForm();
+				await openUserForm();
 			} catch (err) {
 				console.error('openUserForm error', err);
 				alert('Gagal membuka form: ' + (err && err.message ? err.message : String(err)));
@@ -1602,7 +1611,12 @@ document.addEventListener('click', (e) => {
 			alert('Admin tidak dapat mengubah user dengan role Admin atau Super Admin');
 			return;
 		}
-		if (u) openUserForm(u);
+		if (u) {
+			openUserForm(u).catch((err) => {
+				console.error('openUserForm edit error', err);
+				alert('Gagal membuka form edit: ' + (err && err.message ? err.message : String(err)));
+			});
+		}
 	}
 	if (del) {
 		const id = del.getAttribute('data-id');
