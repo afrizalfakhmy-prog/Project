@@ -482,7 +482,7 @@ async function syncDepartmentsFromApi() {
 		let rows = await window.AIOSApi.listDepartments();
 		const localRows = readDepartments();
 		if (Array.isArray(rows) && rows.length === 0 && Array.isArray(localRows) && localRows.length > 0 && window.AIOSApi.createDepartment) {
-			const session = getSession ? getSession() : {};
+			const session = loadSession() || {};
 			const actorRole = (session && session.role) ? session.role : '';
 			for (const item of localRows) {
 				const payload = { id: item.id, name: item.name, actorRole };
@@ -556,7 +556,7 @@ async function saveDeptFromForm() {
 	writeDepartments(list);
 	if (window.AIOSApi && (window.AIOSApi.createDepartment || window.AIOSApi.updateDepartment)) {
 		try {
-			const session = getSession ? getSession() : {};
+			const session = loadSession() || {};
 			const payload = { ...obj, actorRole: session && session.role ? session.role : '' };
 			if (idx >= 0 && window.AIOSApi.updateDepartment) {
 				await window.AIOSApi.updateDepartment(id, payload);
@@ -636,7 +636,7 @@ async function syncCompaniesFromApi() {
 		let rows = await window.AIOSApi.listCompanies();
 		const localRows = readCompanies();
 		if (Array.isArray(rows) && rows.length === 0 && Array.isArray(localRows) && localRows.length > 0 && window.AIOSApi.createCompany) {
-			const session = getSession ? getSession() : {};
+			const session = loadSession() || {};
 			const actorRole = (session && session.role) ? session.role : '';
 			for (const item of localRows) {
 				const payload = { id: item.id, name: item.name, actorRole };
@@ -710,7 +710,7 @@ async function saveCompanyFromForm() {
 	writeCompanies(list);
 	if (window.AIOSApi && (window.AIOSApi.createCompany || window.AIOSApi.updateCompany)) {
 		try {
-			const session = getSession ? getSession() : {};
+			const session = loadSession() || {};
 			const payload = { ...obj, actorRole: session && session.role ? session.role : '' };
 			if (idx >= 0 && window.AIOSApi.updateCompany) {
 				await window.AIOSApi.updateCompany(id, payload);
