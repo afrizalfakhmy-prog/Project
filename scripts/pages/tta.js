@@ -51,6 +51,19 @@
     return new Date().toISOString().slice(0, 10);
   }
 
+  function applyDateLimits(reportDate) {
+    const limitDate = String(reportDate || '').trim();
+    tanggalTemuanInput.max = limitDate;
+    tanggalPerbaikanInput.max = limitDate;
+  }
+
+  function isDateAfter(dateValue, limitDate) {
+    const date = String(dateValue || '').trim();
+    const limit = String(limitDate || '').trim();
+    if (!date || !limit) return false;
+    return date > limit;
+  }
+
   function getSession() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -108,6 +121,13 @@
     }) || null;
   }
 
+  function getLoggedInUserId() {
+    const session = getSession();
+    if (!session || !session.username) return '';
+    const user = findUserByUsername(session.username);
+    return String(user && user.id ? user.id : '').trim();
+  }
+
   function populateReporterProfile(username) {
     const user = findUserByUsername(username);
 
@@ -132,9 +152,11 @@
 
   function populatePelakuDropdown(selectedId) {
     const users = readList(USER_KEY);
+    const loggedInUserId = getLoggedInUserId();
     namaPelakuInput.innerHTML = '<option value="">(Pilih Nama Pelaku TTA)</option>';
 
     users.forEach(function (user) {
+      if (String(user.id || '') === loggedInUserId) return;
       const option = document.createElement('option');
       option.value = user.id || '';
       option.textContent = (user.username || '-') + ' - ' + (user.nama || '-');
@@ -336,6 +358,7 @@
     statusInput.value = 'Open';
 
     tanggalLaporanInput.value = todayValue();
+    applyDateLimits(tanggalLaporanInput.value);
     noIdInput.value = buildNoId();
     populatePjaDropdown();
     populatePelakuDropdown('');
@@ -343,7 +366,11 @@
   }
 
   function validate(payload) {
+    const loggedInUserId = getLoggedInUserId();
     if (!payload.tanggalTemuan) return 'Tanggal Temuan wajib diisi.';
+    if (isDateAfter(payload.tanggalTemuan, payload.tanggalLaporan)) {
+      return 'Tanggal Temuan tidak boleh melebihi Tanggal Laporan.';
+    }
     if (!payload.jamTemuan) return 'Jam Temuan wajib diisi.';
     if (!payload.kategoriTemuan) return 'Kategori Temuan wajib diisi.';
     if (!payload.lokasiTemuan) return 'Lokasi Temuan wajib dipilih.';
@@ -351,11 +378,17 @@
     if (!payload.riskLevel) return 'Risk Level wajib dipilih.';
     if (!payload.namaPjaId) return 'Nama PJA wajib dipilih.';
     if (!payload.namaPelakuId) return 'Nama Pelaku TTA wajib dipilih.';
+    if (loggedInUserId && String(payload.namaPelakuId || '') === loggedInUserId) {
+      return 'Nama Pelaku TTA tidak boleh sama dengan user yang login.';
+    }
     if (!payload.detailTemuan) return 'Detail Temuan wajib diisi.';
 
     if (payload.perbaikanLangsung === 'Ya') {
       if (!payload.tindakanPerbaikan) return 'Tindakan Perbaikan wajib diisi.';
       if (!payload.tanggalPerbaikan) return 'Tanggal Perbaikan wajib diisi.';
+      if (isDateAfter(payload.tanggalPerbaikan, payload.tanggalLaporan)) {
+        return 'Tanggal Perbaikan tidak boleh melebihi Tanggal Laporan.';
+      }
       if (!payload.status) return 'Status wajib dipilih.';
     }
 
@@ -451,6 +484,7 @@
 
       noIdInput.value = target.noId || '';
       tanggalLaporanInput.value = target.tanggalLaporan || todayValue();
+      applyDateLimits(tanggalLaporanInput.value);
       namaPelaporInput.value = target.namaPelapor || '';
       jabatanInput.value = target.jabatan || '';
       departemenInput.value = target.departemen || '';
@@ -545,6 +579,7 @@
   if (!session) return;
 
   tanggalLaporanInput.value = todayValue();
+  applyDateLimits(tanggalLaporanInput.value);
   noIdInput.value = buildNoId();
   populateReporterProfile(session.username);
   populatePjaDropdown();

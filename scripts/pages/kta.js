@@ -41,6 +41,19 @@
     return new Date().toISOString().slice(0, 10);
   }
 
+  function applyDateLimits(reportDate) {
+    const limitDate = String(reportDate || '').trim();
+    tanggalTemuanInput.max = limitDate;
+    tanggalPerbaikanInput.max = limitDate;
+  }
+
+  function isDateAfter(dateValue, limitDate) {
+    const date = String(dateValue || '').trim();
+    const limit = String(limitDate || '').trim();
+    if (!date || !limit) return false;
+    return date > limit;
+  }
+
   function getSession() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -238,6 +251,7 @@
     statusInput.value = 'Open';
 
     tanggalLaporanInput.value = todayValue();
+    applyDateLimits(tanggalLaporanInput.value);
     noIdInput.value = buildNoId();
     populatePjaDropdown();
     togglePerbaikanSection();
@@ -245,6 +259,9 @@
 
   function validate(payload) {
     if (!payload.tanggalTemuan) return 'Tanggal Temuan wajib diisi.';
+    if (isDateAfter(payload.tanggalTemuan, payload.tanggalLaporan)) {
+      return 'Tanggal Temuan tidak boleh melebihi Tanggal Laporan.';
+    }
     if (!payload.kategoriTemuan) return 'Kategori Temuan wajib diisi.';
     if (!payload.lokasiTemuan) return 'Lokasi Temuan wajib dipilih.';
     if (!payload.detailLokasiTemuan) return 'Detail Lokasi Temuan wajib diisi.';
@@ -255,6 +272,9 @@
     if (payload.perbaikanLangsung === 'Ya') {
       if (!payload.tindakanPerbaikan) return 'Tindakan Perbaikan wajib diisi.';
       if (!payload.tanggalPerbaikan) return 'Tanggal Perbaikan wajib diisi.';
+      if (isDateAfter(payload.tanggalPerbaikan, payload.tanggalLaporan)) {
+        return 'Tanggal Perbaikan tidak boleh melebihi Tanggal Laporan.';
+      }
       if (!payload.status) return 'Status wajib dipilih.';
     }
 
@@ -341,6 +361,7 @@
 
       noIdInput.value = target.noId || '';
       tanggalLaporanInput.value = target.tanggalLaporan || todayValue();
+      applyDateLimits(tanggalLaporanInput.value);
       namaPelaporInput.value = target.namaPelapor || '';
       jabatanInput.value = target.jabatan || '';
       departemenInput.value = target.departemen || '';
@@ -428,6 +449,7 @@
   if (!session) return;
 
   tanggalLaporanInput.value = todayValue();
+  applyDateLimits(tanggalLaporanInput.value);
   noIdInput.value = buildNoId();
   populateReporterProfile(session.username);
   populatePjaDropdown();
