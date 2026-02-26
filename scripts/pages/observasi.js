@@ -90,6 +90,17 @@
     return new Date().toISOString().slice(0, 10);
   }
 
+  function applyTanggalObservasiLimit(reportDate) {
+    tanggalObservasiInput.max = String(reportDate || '').trim();
+  }
+
+  function isDateAfter(dateValue, limitDate) {
+    const date = String(dateValue || '').trim();
+    const limit = String(limitDate || '').trim();
+    if (!date || !limit) return false;
+    return date > limit;
+  }
+
   function buildNoId() {
     const rows = readList(OBS_KEY);
     const now = new Date();
@@ -273,6 +284,9 @@
     if (!payload.tanggalLaporan) return 'Tanggal Laporan tidak valid.';
     if (!payload.namaObserver) return 'Nama Observer tidak valid.';
     if (!payload.tanggalObservasi) return 'Tanggal Observasi wajib diisi.';
+    if (isDateAfter(payload.tanggalObservasi, payload.tanggalLaporan)) {
+      return 'Tanggal Observasi tidak boleh melebihi Tanggal Laporan.';
+    }
     if (!payload.waktuObservasi) return 'Waktu Observasi wajib diisi.';
     if (!payload.lokasi) return 'Lokasi wajib dipilih.';
     if (!payload.detailLokasi) return 'Detail Lokasi wajib diisi.';
@@ -306,6 +320,7 @@
     editingLampiran = [];
     noIdInput.value = buildNoId();
     tanggalLaporanInput.value = todayValue();
+    applyTanggalObservasiLimit(tanggalLaporanInput.value);
     fillObserverProfile(user);
 
     tanggalObservasiInput.value = '';
@@ -368,6 +383,7 @@
 
     noIdInput.value = target.noId || '';
     tanggalLaporanInput.value = target.tanggalLaporan || todayValue();
+    applyTanggalObservasiLimit(tanggalLaporanInput.value);
     namaObserverInput.value = target.namaObserver || '';
     jabatanObserverInput.value = target.jabatanObserver || '';
     departemenObserverInput.value = target.departemenObserver || '';

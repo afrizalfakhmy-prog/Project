@@ -108,6 +108,17 @@
     return prefix + String(next).padStart(3, '0');
   }
 
+  function applyDateLimit(reportDate) {
+    tanggalInput.max = String(reportDate || '').trim();
+  }
+
+  function isDateAfter(dateValue, limitDate) {
+    const date = String(dateValue || '').trim();
+    const limit = String(limitDate || '').trim();
+    if (!date || !limit) return false;
+    return date > limit;
+  }
+
   function readFilesAsPayloadFromFiles(files) {
     return Promise.all(files.map(function (file) {
       return new Promise(function (resolve, reject) {
@@ -197,6 +208,7 @@
     editingId = '';
     fotoDraft = [];
     noIdInput.value = buildNoId();
+    applyDateLimit(todayValue());
     fillAutoFields(user);
     kategoriInput.value = '';
     tanggalInput.value = '';
@@ -215,6 +227,9 @@
     if (!payload.namaPeserta) return 'Nama Peserta tidak ditemukan.';
     if (!payload.kategori) return 'Kategori wajib dipilih.';
     if (!payload.tanggalPelaksanaan) return 'Tanggal Pelaksanaan wajib diisi.';
+    if (isDateAfter(payload.tanggalPelaksanaan, payload.tanggalLaporan)) {
+      return 'Tanggal Pelaksanaan tidak boleh melebihi Tanggal Laporan.';
+    }
     if (!payload.waktuPelaksanaan) return 'Waktu Pelaksanaan wajib diisi.';
     if (!payload.lokasi) return 'Lokasi wajib dipilih.';
     if (!payload.detailLokasi) return 'Detail Lokasi wajib diisi.';
@@ -262,6 +277,7 @@
     const payload = {
       id: payloadId,
       noId: String(noIdInput.value || '').trim(),
+      tanggalLaporan: todayValue(),
       username: user.username || '',
       namaPeserta: String(namaPesertaInput.value || '').trim(),
       jabatanPeserta: String(jabatanPesertaInput.value || '').trim(),
@@ -318,6 +334,7 @@
       fotoDraft = Array.isArray(target.fotoKegiatan) ? target.fotoKegiatan.slice() : [];
 
       noIdInput.value = target.noId || '';
+      applyDateLimit(todayValue());
       namaPesertaInput.value = target.namaPeserta || '';
       jabatanPesertaInput.value = target.jabatanPeserta || '';
       departemenPesertaInput.value = target.departemenPeserta || '';
