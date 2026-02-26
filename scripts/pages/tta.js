@@ -44,6 +44,8 @@
   let editingId = '';
   let fotoTemuanDraft = [];
   let fotoPerbaikanDraft = [];
+  const IMAGE_MAX_EDGE = 1280;
+  const IMAGE_QUALITY = 0.75;
 
   function todayValue() {
     return new Date().toISOString().slice(0, 10);
@@ -68,7 +70,19 @@
   }
 
   function writeList(key, rows) {
-    localStorage.setItem(key, JSON.stringify(rows));
+    try {
+      localStorage.setItem(key, JSON.stringify(rows));
+      return true;
+    } catch (error) {
+      const message = String(error && error.message ? error.message : '').toLowerCase();
+      const quotaExceeded = message.includes('quota') || message.includes('storage');
+      if (quotaExceeded) {
+        alert('Penyimpanan browser penuh. Kurangi jumlah/ukuran foto lalu coba simpan lagi.');
+      } else {
+        alert('Gagal menyimpan data TTA. Silakan coba lagi.');
+      }
+      return false;
+    }
   }
 
   function toNameOnlyLabel(value) {
@@ -176,17 +190,60 @@
     statusInput.required = false;
   }
 
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(new Error('Gagal membaca file gambar.')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function compressImageFile(file) {
+    return new Promise(function (resolve) {
+      if (!file || !String(file.type || '').startsWith('image/')) {
+        readFileAsDataUrl(file).then(resolve).catch(function () { resolve(''); });
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+
+      image.onload = function () {
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(width, height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(width * scale));
+        canvas.height = Math.max(1, Math.round(height * scale));
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          URL.revokeObjectURL(objectUrl);
+          readFileAsDataUrl(file).then(resolve).catch(function () { resolve(''); });
+          return;
+        }
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const output = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+        URL.revokeObjectURL(objectUrl);
+        resolve(output);
+      };
+
+      image.onerror = function () {
+        URL.revokeObjectURL(objectUrl);
+        readFileAsDataUrl(file).then(resolve).catch(function () { resolve(''); });
+      };
+
+      image.src = objectUrl;
+    });
+  }
+
   function readFilesAsPayloadFromFiles(files) {
     return Promise.all(files.map(function (file) {
-      return new Promise(function (resolve, reject) {
-        const reader = new FileReader();
-        reader.onload = function () {
-          resolve({ name: file.name, dataUrl: reader.result });
-        };
-        reader.onerror = function () {
-          reject(new Error('Gagal membaca file gambar.'));
-        };
-        reader.readAsDataURL(file);
+      return compressImageFile(file).then(function (dataUrl) {
+        if (!dataUrl) throw new Error('Gagal memproses file gambar.');
+        return { name: file.name, dataUrl: dataUrl };
       });
     }));
   }
@@ -360,7 +417,9 @@
     const idx = rows.findIndex(function (item) { return item.id === payloadId; });
     if (idx >= 0) rows[idx] = payload;
     else rows.push(payload);
-    writeList(TTA_KEY, rows);
+    if (!writeList(TTA_KEY, rows)) {
+      return;
+    }
     alert(editingId ? 'Data TTA berhasil diubah.' : 'Data TTA berhasil disimpan.');
     renderRows();
     resetFormAfterSave();
@@ -423,7 +482,7 @@
     if (action === 'delete') {
       if (!confirm('Hapus data TTA ini?')) return;
       const nextRows = rows.filter(function (item) { return item.id !== id; });
-      writeList(TTA_KEY, nextRows);
+      if (!writeList(TTA_KEY, nextRows)) return;
       renderRows();
       resetFormAfterSave();
       closeForm();
