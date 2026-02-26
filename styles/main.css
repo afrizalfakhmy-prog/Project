@@ -685,14 +685,21 @@ button.ghost:hover {
   }
 
   .dashboard-header {
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     margin-bottom: 16px;
+  }
+
+  .dashboard-header > div {
+    width: 100%;
   }
 
   .mobile-menu-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    align-self: flex-start;
+    margin-top: 6px;
   }
 
   .dashboard-layout {
