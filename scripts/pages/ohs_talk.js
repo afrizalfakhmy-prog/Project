@@ -27,6 +27,10 @@
   let editingId = '';
   let fotoDraft = [];
 
+  function todayValue() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
   function openForm() {
     form.classList.remove('hidden');
   }
