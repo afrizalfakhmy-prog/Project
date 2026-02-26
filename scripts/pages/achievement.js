@@ -10,7 +10,20 @@
 
   const BASE_DIMENSIONS = ['departemen', 'perusahaan', 'kategoriTemuan', 'lokasiTemuan', 'riskLevel', 'namaPjaLabel'];
   const TTA_EXTRA_DIMENSIONS = ['namaPelakuLabel', 'jabatanPelaku', 'departemenPelaku', 'perusahaanPelaku'];
+  const OBS_DIMENSIONS = [
+    'namaObserver',
+    'jabatanObserver',
+    'departemenObserver',
+    'perusahaanObserver',
+    'lokasi',
+    'obsSopJawaban',
+    'obsApdJawaban',
+    'obsKompetensiJawaban',
+    'obsLimaRJawaban',
+    'obsFitJawaban'
+  ];
   const DIMENSION_LABELS = {
+    monthKey: 'Bulan',
     departemen: 'Departemen',
     perusahaan: 'Perusahaan',
     kategoriTemuan: 'Kategori Temuan',
@@ -20,7 +33,17 @@
     namaPelakuLabel: 'Nama Pelaku TTA',
     jabatanPelaku: 'Jabatan Pelaku TTA',
     departemenPelaku: 'Departemen Pelaku TTA',
-    perusahaanPelaku: 'Perusahaan Pelaku TTA'
+    perusahaanPelaku: 'Perusahaan Pelaku TTA',
+    namaObserver: 'Nama Observer',
+    jabatanObserver: 'Jabatan Observer',
+    departemenObserver: 'Departemen Observer',
+    perusahaanObserver: 'Perusahaan Observer',
+    lokasi: 'Lokasi',
+    obsSopJawaban: 'SOP / WIN / JSA',
+    obsApdJawaban: 'Penggunaan APD',
+    obsKompetensiJawaban: 'Kesesuaian Kompetensi',
+    obsLimaRJawaban: 'Program 5R',
+    obsFitJawaban: 'Fit to Work'
   };
 
   const STATUS_COLORS = {
@@ -52,8 +75,10 @@
   const kpiOpenPercent = document.getElementById('kpi-open-percent');
 
   const filterChips = document.getElementById('active-filter-chips');
+  const kpiSection = document.querySelector('.achievement-kpi-grid');
   const detailTbody = document.getElementById('achievement-admin-detail-tbody');
   const detailEmpty = document.getElementById('achievement-admin-detail-empty');
+  const detailSection = document.querySelector('.achievement-table-wrap');
   const adminMonthlyCanvas = document.getElementById('admin-chart-monthly');
   const adminMonthlyDetail = document.getElementById('admin-monthly-detail');
   const adminMonthlyEmpty = document.getElementById('admin-monthly-empty');
@@ -68,7 +93,16 @@
     namaPelakuLabel: document.getElementById('admin-chart-namaPelakuLabel'),
     jabatanPelaku: document.getElementById('admin-chart-jabatanPelaku'),
     departemenPelaku: document.getElementById('admin-chart-departemenPelaku'),
-    perusahaanPelaku: document.getElementById('admin-chart-perusahaanPelaku')
+    perusahaanPelaku: document.getElementById('admin-chart-perusahaanPelaku'),
+    namaObserver: document.getElementById('admin-chart-namaObserver'),
+    jabatanObserver: document.getElementById('admin-chart-jabatanObserver'),
+    departemenObserver: document.getElementById('admin-chart-departemenObserver'),
+    perusahaanObserver: document.getElementById('admin-chart-perusahaanObserver'),
+    obsSopJawaban: document.getElementById('admin-chart-obsSopJawaban'),
+    obsApdJawaban: document.getElementById('admin-chart-obsApdJawaban'),
+    obsKompetensiJawaban: document.getElementById('admin-chart-obsKompetensiJawaban'),
+    obsLimaRJawaban: document.getElementById('admin-chart-obsLimaRJawaban'),
+    obsFitJawaban: document.getElementById('admin-chart-obsFitJawaban')
   };
 
   const chartInstances = {};
@@ -77,6 +111,7 @@
 
   function createEmptyFilters() {
     return {
+      monthKey: '',
       departemen: '',
       perusahaan: '',
       kategoriTemuan: '',
@@ -86,11 +121,24 @@
       namaPelakuLabel: '',
       jabatanPelaku: '',
       departemenPelaku: '',
-      perusahaanPelaku: ''
+      perusahaanPelaku: '',
+      namaObserver: '',
+      jabatanObserver: '',
+      departemenObserver: '',
+      perusahaanObserver: '',
+      lokasi: '',
+      obsSopJawaban: '',
+      obsApdJawaban: '',
+      obsKompetensiJawaban: '',
+      obsLimaRJawaban: '',
+      obsFitJawaban: ''
     };
   }
 
   function getActiveDimensions() {
+    if (activeModule === 'OBS') {
+      return OBS_DIMENSIONS.slice();
+    }
     return activeModule === 'TTA'
       ? BASE_DIMENSIONS.concat(TTA_EXTRA_DIMENSIONS)
       : BASE_DIMENSIONS.slice();
@@ -162,8 +210,10 @@
 
   function normalizeRows(rows) {
     return rows.map(function (row) {
+      const monthMeta = toMonthMeta(row.tanggalLaporan);
       return {
         id: row.id || '',
+        monthKey: monthMeta ? monthMeta.key : '',
         noId: row.noId || '-',
         tanggalLaporan: row.tanggalLaporan || '-',
         namaPelapor: row.namaPelapor || '-',
@@ -182,7 +232,40 @@
     });
   }
 
+  function getQuestionAnswer(row, key, fallbackKey) {
+    const questions = row && row.questions ? row.questions : {};
+    const source = questions[key] || questions[fallbackKey] || {};
+    const value = String(source.jawaban || '').trim();
+    return value || '-';
+  }
+
+  function normalizeObservasiRows(rows) {
+    return rows.map(function (row) {
+      const reportDate = String(row.tanggalLaporan || row.tanggalObservasi || '').trim();
+      const monthMeta = toMonthMeta(reportDate);
+      return {
+        id: row.id || '',
+        monthKey: monthMeta ? monthMeta.key : '',
+        noId: row.noId || '-',
+        tanggalLaporan: row.tanggalLaporan || row.tanggalObservasi || '-',
+        namaObserver: row.namaObserver || '-',
+        jabatanObserver: row.jabatanObserver || '-',
+        departemenObserver: row.departemenObserver || '-',
+        perusahaanObserver: row.perusahaanObserver || '-',
+        lokasi: row.lokasi || '-',
+        obsSopJawaban: getQuestionAnswer(row, 'sop'),
+        obsApdJawaban: getQuestionAnswer(row, 'apd'),
+        obsKompetensiJawaban: getQuestionAnswer(row, 'kompetensi'),
+        obsLimaRJawaban: getQuestionAnswer(row, 'lima-r', 'limaR'),
+        obsFitJawaban: getQuestionAnswer(row, 'fit')
+      };
+    });
+  }
+
   function getModuleRows(module) {
+    if (module === 'OBS') {
+      return normalizeObservasiRows(readList(OBS_KEY));
+    }
     return normalizeRows(readList(module === 'KTA' ? KTA_KEY : TTA_KEY));
   }
 
@@ -231,6 +314,29 @@
       }
 
       map[monthMeta.key][normalizeStatus(row.status)] += 1;
+    });
+
+    return Object.keys(map)
+      .map(function (key) { return map[key]; })
+      .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
+  }
+
+  function aggregateMonthlyTotal(rows) {
+    const map = {};
+
+    rows.forEach(function (row) {
+      const monthMeta = toMonthMeta(row.tanggalLaporan);
+      if (!monthMeta) return;
+
+      if (!map[monthMeta.key]) {
+        map[monthMeta.key] = {
+          monthKey: monthMeta.key,
+          monthLabel: monthMeta.label,
+          total: 0
+        };
+      }
+
+      map[monthMeta.key].total += 1;
     });
 
     return Object.keys(map)
@@ -442,6 +548,10 @@
   function applyFilters(rows) {
     const dimensions = getActiveDimensions();
     return rows.filter(function (row) {
+      if (activeFilters.monthKey && String(row.monthKey || '') !== String(activeFilters.monthKey)) {
+        return false;
+      }
+
       return dimensions.every(function (dimension) {
         if (!activeFilters[dimension]) return true;
         return String(row[dimension] || '') === String(activeFilters[dimension]);
@@ -450,6 +560,15 @@
   }
 
   function updateKpi(rows) {
+    if (activeModule === 'OBS') {
+      kpiOpen.textContent = '-';
+      kpiProgress.textContent = '-';
+      kpiClose.textContent = '-';
+      kpiOpenPercent.textContent = '-';
+      kpiTotal.textContent = String(rows.length);
+      return;
+    }
+
     const openCount = rows.filter(function (item) { return item.status === 'Open'; }).length;
     const progressCount = rows.filter(function (item) { return item.status === 'Progress'; }).length;
     const closeCount = rows.filter(function (item) { return item.status === 'Close'; }).length;
@@ -468,11 +587,20 @@
     filterChips.innerHTML = '';
     const dimensions = getActiveDimensions();
 
+    if (activeFilters.monthKey) {
+      const monthChip = document.createElement('button');
+      monthChip.type = 'button';
+      monthChip.className = 'legend-chip filter-chip-btn';
+      monthChip.dataset.dimension = 'monthKey';
+      monthChip.textContent = DIMENSION_LABELS.monthKey + ': ' + activeFilters.monthKey + ' ×';
+      filterChips.appendChild(monthChip);
+    }
+
     const activeKeys = dimensions.filter(function (dimension) {
       return !!activeFilters[dimension];
     });
 
-    if (!activeKeys.length) {
+    if (!activeKeys.length && !activeFilters.monthKey) {
       const infoChip = document.createElement('span');
       infoChip.className = 'legend-chip';
       infoChip.textContent = 'Belum ada filter aktif';
@@ -573,15 +701,58 @@
   }
 
   function renderAdminMonthlyChart(rows) {
+    if (!adminMonthlyCanvas) return;
+
+    if (activeModule === 'OBS') {
+      const monthlyRows = aggregateMonthlyTotal(rows);
+      destroyChart('admin-monthly');
+
+      if (!monthlyRows.length) {
+        if (adminMonthlyEmpty) adminMonthlyEmpty.classList.remove('hidden');
+        if (adminMonthlyDetail) adminMonthlyDetail.innerHTML = '';
+        return;
+      }
+
+      if (adminMonthlyEmpty) adminMonthlyEmpty.classList.add('hidden');
+      if (adminMonthlyDetail) {
+        adminMonthlyDetail.innerHTML = monthlyRows.map(function (item) {
+          return '<span>' + item.monthLabel + ' | Total Observasi: <strong>' + item.total + '</strong></span>';
+        }).join('');
+      }
+
+      const ctx = adminMonthlyCanvas.getContext('2d');
+      chartInstances['admin-monthly'] = new window.Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: monthlyRows.map(function (item) { return item.monthLabel; }),
+          datasets: [{
+            label: 'Total Observasi',
+            data: monthlyRows.map(function (item) { return item.total; }),
+            backgroundColor: '#0ea5e9',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          onClick: function (_evt, activeElements) {
+            if (!activeElements || !activeElements.length) return;
+            const idx = activeElements[0].index;
+            const selected = monthlyRows[idx] ? monthlyRows[idx].monthKey : '';
+            if (!selected) return;
+            activeFilters.monthKey = activeFilters.monthKey === selected ? '' : selected;
+            renderAdminDashboard();
+          }
+        }
+      });
+
+      return;
+    }
+
     const monthlyRows = aggregateMonthlyForAdmin(rows);
-    renderUserMonthlyChart(
-      adminMonthlyCanvas,
-      'admin-monthly',
-      adminMonthlyEmpty,
-      adminMonthlyDetail,
-      monthlyRows,
-      activeModule
-    );
+    renderUserMonthlyChart(adminMonthlyCanvas, 'admin-monthly', adminMonthlyEmpty, adminMonthlyDetail, monthlyRows, activeModule);
   }
 
   function updateDimensionCardVisibility() {
@@ -607,9 +778,17 @@
     const filteredRows = applyFilters(baseRows);
 
     updateDimensionCardVisibility();
+    if (kpiSection) {
+      kpiSection.classList.toggle('hidden', activeModule === 'OBS');
+    }
+    if (detailSection) {
+      detailSection.classList.toggle('hidden', activeModule === 'OBS');
+    }
     updateKpi(filteredRows);
     renderFilterChips();
-    renderDetailTable(filteredRows);
+    if (activeModule !== 'OBS') {
+      renderDetailTable(filteredRows);
+    }
     renderAdminMonthlyChart(filteredRows);
 
     getActiveDimensions().forEach(function (dimension) {
