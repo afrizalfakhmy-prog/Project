@@ -465,7 +465,7 @@
     drawChart();
   }
 
-  function renderUserMonthlyObservasiChart(canvas, chartKey, emptyText, detailContainer, rows) {
+  function renderUserMonthlyObservasiChart(canvas, chartKey, emptyText, detailContainer, rows, onBarClick) {
     destroyChart(chartKey);
 
     if (!rows.length) {
@@ -509,6 +509,13 @@
           },
           scales: {
             y: { beginAtZero: true, ticks: { precision: 0 } }
+          },
+          onClick: function (_evt, activeElements) {
+            if (typeof onBarClick !== 'function') return;
+            if (!activeElements || !activeElements.length) return;
+            const idx = activeElements[0].index;
+            const selected = rows[idx] || null;
+            onBarClick(selected);
           }
         }
       });
@@ -705,49 +712,19 @@
 
     if (activeModule === 'OBS') {
       const monthlyRows = aggregateMonthlyTotal(rows);
-      destroyChart('admin-monthly');
-
-      if (!monthlyRows.length) {
-        if (adminMonthlyEmpty) adminMonthlyEmpty.classList.remove('hidden');
-        if (adminMonthlyDetail) adminMonthlyDetail.innerHTML = '';
-        return;
-      }
-
-      if (adminMonthlyEmpty) adminMonthlyEmpty.classList.add('hidden');
-      if (adminMonthlyDetail) {
-        adminMonthlyDetail.innerHTML = monthlyRows.map(function (item) {
-          return '<span>' + item.monthLabel + ' | Total Observasi: <strong>' + item.total + '</strong></span>';
-        }).join('');
-      }
-
-      const ctx = adminMonthlyCanvas.getContext('2d');
-      chartInstances['admin-monthly'] = new window.Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: monthlyRows.map(function (item) { return item.monthLabel; }),
-          datasets: [{
-            label: 'Total Observasi',
-            data: monthlyRows.map(function (item) { return item.total; }),
-            backgroundColor: '#0ea5e9',
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-          onClick: function (_evt, activeElements) {
-            if (!activeElements || !activeElements.length) return;
-            const idx = activeElements[0].index;
-            const selected = monthlyRows[idx] ? monthlyRows[idx].monthKey : '';
-            if (!selected) return;
-            activeFilters.monthKey = activeFilters.monthKey === selected ? '' : selected;
-            renderAdminDashboard();
-          }
+      renderUserMonthlyObservasiChart(
+        adminMonthlyCanvas,
+        'admin-monthly',
+        adminMonthlyEmpty,
+        adminMonthlyDetail,
+        monthlyRows,
+        function (selected) {
+          const selectedMonth = selected && selected.monthKey ? selected.monthKey : '';
+          if (!selectedMonth) return;
+          activeFilters.monthKey = activeFilters.monthKey === selectedMonth ? '' : selectedMonth;
+          renderAdminDashboard();
         }
-      });
-
+      );
       return;
     }
 
