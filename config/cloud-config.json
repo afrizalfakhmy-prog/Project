@@ -1,0 +1,5 @@
+{
+  "supabaseUrl": "",
+  "supabaseAnonKey": "",
+  "tableName": "aios_kv"
+}

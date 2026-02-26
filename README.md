@@ -48,7 +48,21 @@ for each row execute function public.set_updated_at();
 
 Jika RLS aktif, buat policy agar role `anon` bisa `select/insert/update` pada tabel `aios_kv`.
 
-### 3) Set konfigurasi di browser/Vercel
+### 3) Set konfigurasi global untuk semua user Vercel
+
+Isi file `config/cloud-config.json`:
+
+```json
+{
+	"supabaseUrl": "https://YOUR_PROJECT.supabase.co",
+	"supabaseAnonKey": "YOUR_SUPABASE_ANON_KEY",
+	"tableName": "aios_kv"
+}
+```
+
+Dengan ini, semua role (Super Admin/Admin/User) dan semua device/browser di domain Vercel yang sama memakai endpoint cloud yang sama.
+
+### 4) Opsi override (opsional)
 
 Tambahkan konfigurasi global sebelum memuat `scripts/cloud_sync.js`:
 

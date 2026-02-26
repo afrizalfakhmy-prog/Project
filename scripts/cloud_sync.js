@@ -2,6 +2,14 @@
   const SUPABASE_HEADERS = {
     'Content-Type': 'application/json'
   };
+  const DEFAULT_TABLE_NAME = 'aios_kv';
+
+  let remoteConfigCache = {
+    supabaseUrl: '',
+    supabaseAnonKey: '',
+    tableName: DEFAULT_TABLE_NAME,
+    loaded: false
+  };
 
   function normalizeUrl(url) {
     return String(url || '').trim().replace(/\/+$/, '');
@@ -9,14 +17,50 @@
 
   function getConfig() {
     const inline = window.AIOS_CLOUD_CONFIG || {};
-    const supabaseUrl = normalizeUrl(inline.supabaseUrl || localStorage.getItem('aios_supabase_url'));
-    const supabaseAnonKey = String(inline.supabaseAnonKey || localStorage.getItem('aios_supabase_anon_key') || '').trim();
+    const supabaseUrl = normalizeUrl(
+      inline.supabaseUrl ||
+      localStorage.getItem('aios_supabase_url') ||
+      remoteConfigCache.supabaseUrl
+    );
+    const supabaseAnonKey = String(
+      inline.supabaseAnonKey ||
+      localStorage.getItem('aios_supabase_anon_key') ||
+      remoteConfigCache.supabaseAnonKey ||
+      ''
+    ).trim();
+    const tableName = String(
+      inline.tableName ||
+      remoteConfigCache.tableName ||
+      DEFAULT_TABLE_NAME
+    ).trim();
 
     return {
       supabaseUrl: supabaseUrl,
       supabaseAnonKey: supabaseAnonKey,
-      tableName: String(inline.tableName || 'aios_kv').trim()
+      tableName: tableName || DEFAULT_TABLE_NAME
     };
+  }
+
+  async function loadRemoteConfig() {
+    if (remoteConfigCache.loaded) return;
+
+    try {
+      const response = await fetch('/config/cloud-config.json', { cache: 'no-store' });
+      if (!response.ok) {
+        remoteConfigCache.loaded = true;
+        return;
+      }
+
+      const json = await response.json();
+      remoteConfigCache = {
+        supabaseUrl: normalizeUrl(json && json.supabaseUrl),
+        supabaseAnonKey: String((json && json.supabaseAnonKey) || '').trim(),
+        tableName: String((json && json.tableName) || DEFAULT_TABLE_NAME).trim() || DEFAULT_TABLE_NAME,
+        loaded: true
+      };
+    } catch (_error) {
+      remoteConfigCache.loaded = true;
+    }
   }
 
   function isEnabled() {
@@ -104,6 +148,9 @@
     pullOne: pullOne,
     pullMany: pullMany,
     pushOne: pushOne,
-    getConfig: getConfig
+    getConfig: getConfig,
+    loadRemoteConfig: loadRemoteConfig
   };
+
+  loadRemoteConfig();
 })();

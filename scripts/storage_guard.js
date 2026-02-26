@@ -128,6 +128,23 @@
         const changed = applyRemoteValueToLocal(row.key, row.value);
         if (changed) changedKeys.push(row.key);
       });
+
+      for (let index = 0; index < DATA_KEYS.length; index += 1) {
+        const key = DATA_KEYS[index];
+        const remoteRow = rows.find(function (row) {
+          return row && row.key === key;
+        });
+        if (remoteRow && remoteRow.found) continue;
+
+        const localRaw = localStorage.getItem(key);
+        const localParsed = parseJsonSafe(localRaw);
+        if (localParsed === null) continue;
+
+        try {
+          await window.aiosCloudSync.pushOne(key, localParsed);
+        } catch (_error) {
+        }
+      }
     } catch (_error) {
       return;
     }
