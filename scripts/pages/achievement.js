@@ -257,50 +257,71 @@
       return;
     }
 
+    if (!canvas || typeof canvas.getContext !== 'function') {
+      if (emptyText) emptyText.classList.remove('hidden');
+      return;
+    }
+
     if (emptyText) emptyText.classList.add('hidden');
     renderUserDetail(detailContainer, rows);
 
-    const ctx = canvas.getContext('2d');
-    chartInstances[chartKey] = new window.Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: rows.map(function (item) { return item.monthLabel; }),
-        datasets: [
-          {
-            label: 'Open',
-            data: rows.map(function (item) { return item.Open; }),
-            backgroundColor: STATUS_COLORS.Open,
-            borderRadius: 6,
-            stack: stackLabel
-          },
-          {
-            label: 'Progress',
-            data: rows.map(function (item) { return item.Progress; }),
-            backgroundColor: STATUS_COLORS.Progress,
-            borderRadius: 6,
-            stack: stackLabel
-          },
-          {
-            label: 'Close',
-            data: rows.map(function (item) { return item.Close; }),
-            backgroundColor: STATUS_COLORS.Close,
-            borderRadius: 6,
-            stack: stackLabel
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom' }
+    const drawChart = function () {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      chartInstances[chartKey] = new window.Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: rows.map(function (item) { return item.monthLabel; }),
+          datasets: [
+            {
+              label: 'Open',
+              data: rows.map(function (item) { return item.Open; }),
+              backgroundColor: STATUS_COLORS.Open,
+              borderRadius: 6,
+              stack: stackLabel
+            },
+            {
+              label: 'Progress',
+              data: rows.map(function (item) { return item.Progress; }),
+              backgroundColor: STATUS_COLORS.Progress,
+              borderRadius: 6,
+              stack: stackLabel
+            },
+            {
+              label: 'Close',
+              data: rows.map(function (item) { return item.Close; }),
+              backgroundColor: STATUS_COLORS.Close,
+              borderRadius: 6,
+              stack: stackLabel
+            }
+          ]
         },
-        scales: {
-          x: { stacked: true },
-          y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+          }
         }
+      });
+
+      if (chartInstances[chartKey]) {
+        chartInstances[chartKey].resize();
+        chartInstances[chartKey].update();
       }
-    });
+    };
+
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(drawChart);
+      return;
+    }
+
+    drawChart();
   }
 
   function countByDimension(rows, dimension) {
