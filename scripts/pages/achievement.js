@@ -3,6 +3,7 @@
   const USER_KEY = 'aios_users';
   const KTA_KEY = 'aios_kta';
   const TTA_KEY = 'aios_tta';
+  const OBS_KEY = 'aios_observasi';
   const ROLE_USER = 'User';
   const ROLE_ADMIN = 'Admin';
   const ROLE_SUPER_ADMIN = 'Super Admin';
@@ -36,10 +37,13 @@
 
   const userKtaCanvas = document.getElementById('kta-user-chart');
   const userTtaCanvas = document.getElementById('tta-user-chart');
+  const userObsCanvas = document.getElementById('obs-user-chart');
   const userKtaDetail = document.getElementById('kta-user-detail');
   const userTtaDetail = document.getElementById('tta-user-detail');
+  const userObsDetail = document.getElementById('obs-user-detail');
   const userKtaEmpty = document.getElementById('kta-user-empty');
   const userTtaEmpty = document.getElementById('tta-user-empty');
+  const userObsEmpty = document.getElementById('obs-user-empty');
 
   const kpiOpen = document.getElementById('kpi-open');
   const kpiProgress = document.getElementById('kpi-progress');
@@ -234,6 +238,37 @@
       .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
   }
 
+  function aggregateMonthlyObservasiForUser(rows, session, currentUser) {
+    const sessionUsername = String((session && session.username) || '').trim().toLowerCase();
+    const currentName = String((currentUser && currentUser.nama) || '').trim().toLowerCase();
+    const map = {};
+
+    rows.forEach(function (row) {
+      const rowUsername = String((row && row.username) || '').trim().toLowerCase();
+      const rowObserver = String((row && row.namaObserver) || '').trim().toLowerCase();
+      const isOwnerByUsername = sessionUsername && rowUsername && rowUsername === sessionUsername;
+      const isOwnerByName = currentName && rowObserver && rowObserver === currentName;
+      if (!isOwnerByUsername && !isOwnerByName) return;
+
+      const monthMeta = toMonthMeta(row.tanggalObservasi || row.tanggalLaporan);
+      if (!monthMeta) return;
+
+      if (!map[monthMeta.key]) {
+        map[monthMeta.key] = {
+          monthKey: monthMeta.key,
+          monthLabel: monthMeta.label,
+          total: 0
+        };
+      }
+
+      map[monthMeta.key].total += 1;
+    });
+
+    return Object.keys(map)
+      .map(function (key) { return map[key]; })
+      .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
+  }
+
   function destroyChart(key) {
     if (chartInstances[key]) {
       chartInstances[key].destroy();
@@ -306,6 +341,68 @@
           scales: {
             x: { stacked: true },
             y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+
+      if (chartInstances[chartKey]) {
+        chartInstances[chartKey].resize();
+        chartInstances[chartKey].update();
+      }
+    };
+
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(drawChart);
+      return;
+    }
+
+    drawChart();
+  }
+
+  function renderUserMonthlyObservasiChart(canvas, chartKey, emptyText, detailContainer, rows) {
+    destroyChart(chartKey);
+
+    if (!rows.length) {
+      if (emptyText) emptyText.classList.remove('hidden');
+      if (detailContainer) detailContainer.innerHTML = '';
+      return;
+    }
+
+    if (!canvas || typeof canvas.getContext !== 'function') {
+      if (emptyText) emptyText.classList.remove('hidden');
+      return;
+    }
+
+    if (emptyText) emptyText.classList.add('hidden');
+    if (detailContainer) {
+      detailContainer.innerHTML = rows.map(function (item) {
+        return '<span>' + item.monthLabel + ' | Total Observasi: <strong>' + item.total + '</strong></span>';
+      }).join('');
+    }
+
+    const drawChart = function () {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      chartInstances[chartKey] = new window.Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: rows.map(function (item) { return item.monthLabel; }),
+          datasets: [{
+            label: 'Total Observasi',
+            data: rows.map(function (item) { return item.total; }),
+            backgroundColor: '#0ea5e9',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
           }
         }
       });
@@ -537,6 +634,9 @@
   }
 
   function initUserDashboard() {
+    const session = getSession();
+    if (!session) return;
+
     const currentUser = getCurrentUser();
     if (!currentUser) {
       alert('Profil user tidak ditemukan. Silakan login ulang.');
@@ -546,11 +646,14 @@
 
     const ktaRows = getModuleRows('KTA');
     const ttaRows = getModuleRows('TTA');
+    const observasiRows = readList(OBS_KEY);
     const ktaMonthly = aggregateMonthlyForUser(ktaRows, currentUser);
     const ttaMonthly = aggregateMonthlyForUser(ttaRows, currentUser);
+    const observasiMonthly = aggregateMonthlyObservasiForUser(observasiRows, session, currentUser);
 
     renderUserMonthlyChart(userKtaCanvas, 'user-kta', userKtaEmpty, userKtaDetail, ktaMonthly, 'KTA');
     renderUserMonthlyChart(userTtaCanvas, 'user-tta', userTtaEmpty, userTtaDetail, ttaMonthly, 'TTA');
+    renderUserMonthlyObservasiChart(userObsCanvas, 'user-observasi', userObsEmpty, userObsDetail, observasiMonthly);
   }
 
   function initAdminDashboard() {

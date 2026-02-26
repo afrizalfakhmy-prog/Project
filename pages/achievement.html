@@ -17,7 +17,7 @@
       </header>
 
       <section id="achievement-user-panel" class="hidden">
-        <p class="subtitle">Dashboard pencapaian bulanan KTA dan TTA berdasarkan status Open, Progress, dan Close.</p>
+        <p class="subtitle">Dashboard pencapaian bulanan KTA, TTA, dan Observasi.</p>
 
         <section class="achievement-legend" aria-label="Keterangan Status">
           <span class="legend-chip legend-open">Open</span>
@@ -42,6 +42,15 @@
             </div>
             <div id="tta-user-detail" class="status-detail"></div>
             <p id="tta-user-empty" class="subtitle small hidden">Belum ada data TTA untuk ditampilkan.</p>
+          </article>
+
+          <article class="achievement-card">
+            <h3>Grafik Bulanan Observasi</h3>
+            <div class="achievement-canvas-wrap">
+              <canvas id="obs-user-chart"></canvas>
+            </div>
+            <div id="obs-user-detail" class="status-detail"></div>
+            <p id="obs-user-empty" class="subtitle small hidden">Belum ada data Observasi untuk ditampilkan.</p>
           </article>
         </section>
       </section>
