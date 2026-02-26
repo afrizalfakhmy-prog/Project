@@ -50,6 +50,9 @@
   const filterChips = document.getElementById('active-filter-chips');
   const detailTbody = document.getElementById('achievement-admin-detail-tbody');
   const detailEmpty = document.getElementById('achievement-admin-detail-empty');
+  const adminMonthlyCanvas = document.getElementById('admin-chart-monthly');
+  const adminMonthlyDetail = document.getElementById('admin-monthly-detail');
+  const adminMonthlyEmpty = document.getElementById('admin-monthly-empty');
 
   const adminChartCanvasMap = {
     departemen: document.getElementById('admin-chart-departemen'),
@@ -198,6 +201,31 @@
           Close: 0
         };
       }
+      map[monthMeta.key][normalizeStatus(row.status)] += 1;
+    });
+
+    return Object.keys(map)
+      .map(function (key) { return map[key]; })
+      .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
+  }
+
+  function aggregateMonthlyForAdmin(rows) {
+    const map = {};
+
+    rows.forEach(function (row) {
+      const monthMeta = toMonthMeta(row.tanggalLaporan);
+      if (!monthMeta) return;
+
+      if (!map[monthMeta.key]) {
+        map[monthMeta.key] = {
+          monthKey: monthMeta.key,
+          monthLabel: monthMeta.label,
+          Open: 0,
+          Progress: 0,
+          Close: 0
+        };
+      }
+
       map[monthMeta.key][normalizeStatus(row.status)] += 1;
     });
 
@@ -426,6 +454,18 @@
     });
   }
 
+  function renderAdminMonthlyChart(rows) {
+    const monthlyRows = aggregateMonthlyForAdmin(rows);
+    renderUserMonthlyChart(
+      adminMonthlyCanvas,
+      'admin-monthly',
+      adminMonthlyEmpty,
+      adminMonthlyDetail,
+      monthlyRows,
+      activeModule
+    );
+  }
+
   function updateDimensionCardVisibility() {
     const dimensions = getActiveDimensions();
     const cards = document.querySelectorAll('[data-dimension-card]');
@@ -448,6 +488,7 @@
     updateKpi(filteredRows);
     renderFilterChips();
     renderDetailTable(filteredRows);
+    renderAdminMonthlyChart(filteredRows);
 
     getActiveDimensions().forEach(function (dimension) {
       renderAdminDimensionChart(dimension, filteredRows);

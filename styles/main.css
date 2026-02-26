@@ -444,6 +444,10 @@ button.ghost:hover {
   background: #ffffff;
 }
 
+.achievement-card-full {
+  grid-column: 1 / -1;
+}
+
 .achievement-card h3 {
   margin: 0 0 12px;
   font-size: 16px;
