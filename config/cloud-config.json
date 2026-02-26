@@ -1,5 +1,5 @@
 {
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
+  "supabaseUrl": "https://ozrsedgqffmduabnrpqj.supabase.co",
+  "supabaseAnonKey": "sb_publishable_OjtMfQekpdFYwmynajtZhA_QGR8kkV4",
   "tableName": "aios_kv"
 }
