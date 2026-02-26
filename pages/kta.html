@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KTA | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>KTA</h1>
+        <div class="module-actions">
+          <button id="add-kta-btn" type="button">Tambah</button>
+          <a class="link-btn" href="frontline_leadership.html">Kembali ke Frontline Leadership</a>
+        </div>
+      </header>
+
+      <form id="kta-form" class="inline-form hidden">
+        <div class="field-wrap">
+          <label for="kta-no-id">No ID</label>
+          <input id="kta-no-id" type="text" readonly />
+          <small class="field-hint">Terisi otomatis oleh sistem saat form dibuka.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-tanggal-laporan">Tanggal Laporan</label>
+          <input id="kta-tanggal-laporan" type="date" readonly />
+          <small class="field-hint">Tanggal laporan dibuat otomatis sesuai hari input.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-nama-pelapor">Nama Pelapor</label>
+          <input id="kta-nama-pelapor" type="text" readonly />
+          <small class="field-hint">Terisi otomatis dari profil akun yang login.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-jabatan">Jabatan</label>
+          <input id="kta-jabatan" type="text" readonly />
+          <small class="field-hint">Terisi otomatis dari data jabatan user pelapor.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-departemen">Departemen</label>
+          <input id="kta-departemen" type="text" readonly />
+          <small class="field-hint">Terisi otomatis berdasarkan profil user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-perusahaan">Perusahaan</label>
+          <input id="kta-perusahaan" type="text" readonly />
+          <small class="field-hint">Terisi otomatis berdasarkan perusahaan user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-ccow">CCOW</label>
+          <input id="kta-ccow" type="text" readonly />
+          <small class="field-hint">Terisi otomatis sesuai area kerja user.</small>
+        </div>
+
+        <div class="field-wrap">
+          <label for="kta-tanggal-temuan">Tanggal Temuan</label>
+          <input id="kta-tanggal-temuan" type="date" required />
+          <small class="field-hint">Pilih tanggal saat temuan terjadi.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-kategori-temuan">Kategori Temuan</label>
+          <input id="kta-kategori-temuan" type="text" required />
+          <small class="field-hint">Isi kategori temuan secara singkat dan jelas.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-lokasi-temuan">Lokasi Temuan</label>
+          <select id="kta-lokasi-temuan" required>
+            <option value="">(Pilih Lokasi)</option>
+            <option value="Mining">Mining</option>
+            <option value="Hauling">Hauling</option>
+            <option value="Port">Port</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Warehouse">Warehouse</option>
+            <option value="CHPP">CHPP</option>
+            <option value="Office">Office</option>
+            <option value="Camp">Camp</option>
+            <option value="Others">Others</option>
+          </select>
+          <small class="field-hint">Pilih area lokasi utama temuan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-detail-lokasi">Detail Lokasi Temuan</label>
+          <input id="kta-detail-lokasi" type="text" required />
+          <small class="field-hint">Contoh: Pit A blok 3, dekat fuel station.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-risk-level">Risk Level</label>
+          <select id="kta-risk-level" required>
+            <option value="">(Pilih Risk Level)</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <small class="field-hint">Pilih tingkat risiko sesuai potensi dampak.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-nama-pja">Nama PJA</label>
+          <select id="kta-nama-pja" required></select>
+          <small class="field-hint">Pilih PJA yang bertanggung jawab atas area/aktivitas.</small>
+        </div>
+        <div class="field-wrap full">
+          <label for="kta-detail-temuan">Detail Temuan</label>
+          <textarea id="kta-detail-temuan" rows="3" required></textarea>
+          <small class="field-hint">Jelaskan kondisi tidak aman/temuan secara spesifik.</small>
+        </div>
+        <div class="field-wrap full">
+          <label for="kta-foto-temuan">Foto Temuan</label>
+          <input id="kta-foto-temuan" type="file" accept="image/*" multiple />
+          <small class="field-hint">Upload satu atau lebih foto bukti temuan.</small>
+          <div id="kta-foto-temuan-preview" class="ohs-photo-grid"></div>
+        </div>
+        <div class="field-wrap">
+          <label for="kta-perbaikan-langsung">Perbaikan Langsung</label>
+          <select id="kta-perbaikan-langsung" required>
+            <option value="Tidak">Tidak</option>
+            <option value="Ya">Ya</option>
+          </select>
+          <small class="field-hint">Pilih Ya jika sudah ada tindakan langsung di lapangan.</small>
+        </div>
+
+        <div id="kta-perbaikan-section" class="field-wrap full hidden kta-extra-box">
+          <div class="inline-form">
+            <div class="field-wrap full">
+              <label for="kta-tindakan-perbaikan">Tindakan Perbaikan</label>
+              <textarea id="kta-tindakan-perbaikan" rows="3"></textarea>
+              <small class="field-hint">Isi tindakan yang sudah/akan dilakukan untuk perbaikan.</small>
+            </div>
+            <div class="field-wrap full">
+              <label for="kta-foto-perbaikan">Foto Perbaikan</label>
+              <input id="kta-foto-perbaikan" type="file" accept="image/*" multiple />
+              <small class="field-hint">Upload foto hasil perbaikan (boleh lebih dari satu).</small>
+              <div id="kta-foto-perbaikan-preview" class="ohs-photo-grid"></div>
+            </div>
+            <div class="field-wrap">
+              <label for="kta-tanggal-perbaikan">Tanggal Perbaikan</label>
+              <input id="kta-tanggal-perbaikan" type="date" />
+              <small class="field-hint">Pilih tanggal saat perbaikan dilakukan.</small>
+            </div>
+            <div class="field-wrap">
+              <label for="kta-status">Status</label>
+              <select id="kta-status">
+                <option value="Open">Open</option>
+                <option value="Progress">Progress</option>
+                <option value="Close">Close</option>
+              </select>
+              <small class="field-hint">Open: belum dikerjakan, Progress: sedang, Close: selesai.</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan KTA</button>
+            <button id="kta-cancel-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>No ID</th>
+            <th>Tanggal Laporan</th>
+            <th>Nama Pelapor</th>
+            <th>Kategori Temuan</th>
+            <th>Risk Level</th>
+            <th>Nama PJA</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="kta-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/kta.js"></script>
+</body>
+</html>

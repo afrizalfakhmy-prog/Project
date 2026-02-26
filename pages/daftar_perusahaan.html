@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar Perusahaan | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>Daftar Perusahaan</h1>
+        <div class="module-actions">
+          <button id="add-company-btn" type="button">Tambah</button>
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <form id="company-form" class="inline-form hidden">
+        <input id="company-id" type="hidden" />
+        <div class="field-wrap">
+          <label for="company-name">Perusahaan</label>
+          <input id="company-name" type="text" required placeholder="Masukkan nama perusahaan" />
+        </div>
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan Perusahaan</button>
+            <button id="cancel-company-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Perusahaan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="company-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/daftar_perusahaan.js"></script>
+</body>
+</html>

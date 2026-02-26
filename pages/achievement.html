@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Achievement | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>Achievement</h1>
+        <div class="module-actions">
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <section id="achievement-user-panel" class="hidden">
+        <p class="subtitle">Dashboard pencapaian bulanan KTA dan TTA berdasarkan status Open, Progress, dan Close.</p>
+
+        <section class="achievement-legend" aria-label="Keterangan Status">
+          <span class="legend-chip legend-open">Open</span>
+          <span class="legend-chip legend-progress">Progress</span>
+          <span class="legend-chip legend-close">Close</span>
+        </section>
+
+        <section class="achievement-grid">
+          <article class="achievement-card">
+            <h3>Grafik Bulanan KTA</h3>
+            <div class="achievement-canvas-wrap">
+              <canvas id="kta-user-chart"></canvas>
+            </div>
+            <div id="kta-user-detail" class="status-detail"></div>
+            <p id="kta-user-empty" class="subtitle small hidden">Belum ada data KTA untuk ditampilkan.</p>
+          </article>
+
+          <article class="achievement-card">
+            <h3>Grafik Bulanan TTA</h3>
+            <div class="achievement-canvas-wrap">
+              <canvas id="tta-user-chart"></canvas>
+            </div>
+            <div id="tta-user-detail" class="status-detail"></div>
+            <p id="tta-user-empty" class="subtitle small hidden">Belum ada data TTA untuk ditampilkan.</p>
+          </article>
+        </section>
+      </section>
+
+      <section id="achievement-admin-panel" class="hidden">
+        <p class="subtitle">Pilih sub menu dashboard untuk melihat pencapaian global seluruh user.</p>
+
+        <div class="achievement-submenu" id="achievement-submenu">
+          <button type="button" class="submenu-btn active" data-module="KTA">Dashboard KTA</button>
+          <button type="button" class="submenu-btn" data-module="TTA">Dashboard TTA</button>
+        </div>
+
+        <section class="achievement-kpi-grid">
+          <article class="achievement-kpi-card"><p>Status Open</p><h3 id="kpi-open">0</h3></article>
+          <article class="achievement-kpi-card"><p>Status Progress</p><h3 id="kpi-progress">0</h3></article>
+          <article class="achievement-kpi-card"><p>Status Close</p><h3 id="kpi-close">0</h3></article>
+          <article class="achievement-kpi-card"><p>Total Temuan</p><h3 id="kpi-total">0</h3></article>
+          <article class="achievement-kpi-card"><p>Persentase Open</p><h3 id="kpi-open-percent">0%</h3></article>
+        </section>
+
+        <section id="active-filter-chips" class="achievement-legend" aria-label="Filter Aktif"></section>
+
+        <section class="achievement-grid">
+          <article class="achievement-card" data-dimension-card="departemen">
+            <h3>Berdasarkan Departemen</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-departemen"></canvas></div>
+          </article>
+          <article class="achievement-card" data-dimension-card="perusahaan">
+            <h3>Berdasarkan Perusahaan</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-perusahaan"></canvas></div>
+          </article>
+          <article class="achievement-card" data-dimension-card="kategoriTemuan">
+            <h3>Berdasarkan Kategori Temuan</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-kategoriTemuan"></canvas></div>
+          </article>
+          <article class="achievement-card" data-dimension-card="lokasiTemuan">
+            <h3>Berdasarkan Lokasi Temuan</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-lokasiTemuan"></canvas></div>
+          </article>
+          <article class="achievement-card" data-dimension-card="riskLevel">
+            <h3>Berdasarkan Risk Level</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-riskLevel"></canvas></div>
+          </article>
+          <article class="achievement-card" data-dimension-card="namaPjaLabel">
+            <h3>Berdasarkan Nama PJA</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-namaPjaLabel"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="namaPelakuLabel">
+            <h3>Berdasarkan Nama Pelaku TTA</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-namaPelakuLabel"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="jabatanPelaku">
+            <h3>Berdasarkan Jabatan Pelaku TTA</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-jabatanPelaku"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="departemenPelaku">
+            <h3>Berdasarkan Departemen Pelaku TTA</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-departemenPelaku"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="perusahaanPelaku">
+            <h3>Berdasarkan Perusahaan Pelaku TTA</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-perusahaanPelaku"></canvas></div>
+          </article>
+        </section>
+
+        <section class="achievement-card achievement-table-wrap">
+          <h3>Tabel Detail Temuan</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No ID</th>
+                <th>Tanggal Laporan</th>
+                <th>Nama Pelapor</th>
+                <th>Departemen</th>
+                <th>Perusahaan</th>
+                <th>Kategori</th>
+                <th>Lokasi</th>
+                <th>Risk</th>
+                <th>Nama PJA</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="achievement-admin-detail-tbody"></tbody>
+          </table>
+          <p id="achievement-admin-detail-empty" class="subtitle small hidden">Tidak ada data sesuai filter.</p>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/achievement.js"></script>
+</body>
+</html>

@@ -3,23 +3,84 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Website Baru</title>
+  <title>A-IOS | All In One OHS Solution</title>
   <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
-  <main class="new-root">
-    <section class="hero">
-      <p class="eyebrow">Website Baru</p>
-      <h1>Desain dari Nol</h1>
-      <p class="subtitle">Semua menu dan item lama telah dihapus. Halaman ini menjadi titik awal desain baru.</p>
-      <div class="actions">
-        <button id="start-design-btn" type="button">Mulai Desain</button>
-        <button id="clear-draft-btn" type="button" class="ghost">Reset Draft</button>
+  <main class="app-shell">
+    <section id="login-screen" class="card login-card">
+      <p class="eyebrow">A-IOS</p>
+      <h1>All In One OHS Solution</h1>
+      <p class="subtitle">Masuk ke aplikasi untuk mengakses proses kerja OHS yang lebih cepat dan terstruktur.</p>
+
+      <form id="login-form" class="form" novalidate>
+        <label for="username">Username / Email</label>
+        <input id="username" name="username" type="text" autocomplete="username" placeholder="Masukkan username atau email" required />
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Masukkan password" required />
+
+        <button id="login-btn" type="submit">Login</button>
+      </form>
+      <p id="login-message" class="message" aria-live="polite"></p>
+    </section>
+
+    <section id="dashboard-screen" class="card dashboard hidden">
+      <header class="dashboard-header">
+        <div>
+          <p class="eyebrow">A-IOS Dashboard</p>
+          <h2>Menu Utama</h2>
+          <p class="subtitle small">Role aktif: <strong id="active-role">-</strong></p>
+        </div>
+        <button id="mobile-sidebar-toggle" class="mobile-menu-toggle" type="button" aria-controls="role-sidebar" aria-expanded="false">Side Menu</button>
+      </header>
+
+      <div class="dashboard-layout">
+        <button id="mobile-sidebar-backdrop" class="mobile-sidebar-backdrop" type="button" aria-label="Tutup side menu"></button>
+        <aside class="sidebar" id="role-sidebar">
+          <h3 class="sidebar-title">Sidebar Menu</h3>
+          <div id="sidebar-menu" class="sidebar-menu"></div>
+        </aside>
+
+        <div class="menu-grid" id="main-menu">
+          <button type="button" class="menu-item product-card" data-menu="Frontline Leadership">
+            <span class="product-title">Frontline Leadership</span>
+            <img class="product-logo" src="assets/frontline-leadership.svg" alt="Logo Frontline Leadership" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="Inspeksi">
+            <span class="product-title">Inspeksi</span>
+            <img class="product-logo" src="assets/inspeksi.svg" alt="Logo Inspeksi" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="Observasi">
+            <span class="product-title">Observasi</span>
+            <img class="product-logo" src="assets/observasi.svg" alt="Logo Observasi" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="OHS Talk">
+            <span class="product-title">OHS Talk</span>
+            <img class="product-logo" src="assets/ohs-talk.svg" alt="Logo OHS Talk" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="JSA">
+            <span class="product-title">JSA</span>
+            <img class="product-logo" src="assets/jsa.svg" alt="Logo JSA" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="Work Permit">
+            <span class="product-title">Work Permit</span>
+            <img class="product-logo" src="assets/work-permit.svg" alt="Logo Work Permit" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="SPIP">
+            <span class="product-title">SPIP</span>
+            <img class="product-logo" src="assets/spip.svg" alt="Logo SPIP" />
+          </button>
+          <button type="button" class="menu-item product-card" data-menu="OSPEK">
+            <span class="product-title">OSPEK</span>
+            <img class="product-logo" src="assets/ospek.svg" alt="Logo OSPEK" />
+          </button>
+        </div>
       </div>
-      <p id="status-text" class="status" aria-live="polite"></p>
     </section>
   </main>
 
+  <script src="scripts/storage_guard.js"></script>
   <script src="scripts/main.js"></script>
 </body>
 </html>

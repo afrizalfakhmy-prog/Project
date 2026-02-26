@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar PJA | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>Daftar PJA</h1>
+        <div class="module-actions">
+          <button id="add-pja-btn" type="button">Tambah</button>
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <form id="pja-form" class="inline-form hidden">
+        <input id="pja-id" type="hidden" />
+        <div class="field-wrap">
+          <label for="pja-user">PJA</label>
+          <select id="pja-user" required></select>
+        </div>
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan PJA</button>
+            <button id="cancel-pja-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>PJA</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="pja-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/daftar_pja.js"></script>
+</body>
+</html>

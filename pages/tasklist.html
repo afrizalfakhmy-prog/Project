@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tasklist | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>Tasklist</h1>
+        <div class="module-actions">
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <p class="subtitle">Notifikasi dari input KTA dan TTA sesuai user login.</p>
+
+      <div id="tasklist-cards" class="tasklist-grid"></div>
+      <p id="tasklist-empty" class="subtitle hidden">Belum ada notifikasi tasklist.</p>
+
+      <section id="tasklist-edit-panel" class="tasklist-edit hidden">
+        <h3>Edit Tindak Lanjut</h3>
+        <form id="tasklist-edit-form" class="inline-form">
+          <input id="task-record-type" type="hidden" />
+          <input id="task-record-id" type="hidden" />
+
+          <div class="field-wrap full">
+            <label for="task-tindakan">Tindakan Perbaikan</label>
+            <textarea id="task-tindakan" rows="3" required></textarea>
+          </div>
+          <div class="field-wrap full">
+            <label for="task-foto-perbaikan">Foto Perbaikan</label>
+            <input id="task-foto-perbaikan" type="file" accept="image/*" multiple />
+            <div id="task-foto-preview" class="ohs-photo-grid"></div>
+          </div>
+          <div class="field-wrap">
+            <label for="task-tanggal-perbaikan">Tanggal Perbaikan</label>
+            <input id="task-tanggal-perbaikan" type="date" required />
+          </div>
+          <div class="field-wrap">
+            <label for="task-status">Status</label>
+            <select id="task-status" required>
+              <option value="Open">Open</option>
+              <option value="Progress">Progress</option>
+              <option value="Close">Close</option>
+            </select>
+          </div>
+
+          <div class="field-wrap full">
+            <div class="form-inline-actions">
+              <button type="submit">Simpan Update</button>
+              <button id="task-cancel-btn" type="button" class="ghost">Batal</button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/tasklist.js"></script>
+</body>
+</html>

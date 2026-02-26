@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar User | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>Daftar User</h1>
+        <div class="module-actions">
+          <button id="add-user-btn" type="button">Tambah</button>
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <form id="user-form" class="inline-form hidden">
+        <input id="user-id" type="hidden" />
+        <div class="field-wrap">
+          <label for="user-username">Username</label>
+          <input id="user-username" type="text" placeholder="Contoh: budi.santoso" required />
+          <small class="field-hint">Gunakan username unik tanpa spasi.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-password">Password</label>
+          <input id="user-password" type="text" minlength="8" placeholder="Minimal 8 karakter" required />
+          <small class="field-hint">Isi minimal 8 karakter.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-kategori">Kategori</label>
+          <select id="user-kategori" required>
+            <option value="Admin">Admin</option>
+            <option value="User">User</option>
+          </select>
+          <small class="field-hint">Pilih kategori akun sesuai hak akses user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-nama">Nama Lengkap</label>
+          <input id="user-nama" type="text" placeholder="Contoh: Budi Santoso" required />
+          <small class="field-hint">Isi nama sesuai identitas resmi.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-tempat-lahir">Tempat Lahir</label>
+          <input id="user-tempat-lahir" type="text" placeholder="Contoh: Palangka Raya" required />
+          <small class="field-hint">Isi nama kota/kabupaten tempat lahir.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-tanggal-lahir">Tanggal Lahir</label>
+          <input id="user-tanggal-lahir" type="date" required />
+          <small class="field-hint">Pilih tanggal lahir sesuai dokumen.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-no-hp">No HP</label>
+          <input id="user-no-hp" type="text" maxlength="13" inputmode="numeric" placeholder="Contoh: 081234567890" required />
+          <small class="field-hint">Hanya angka, maksimal 13 digit.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-email">Alamat Email</label>
+          <input id="user-email" type="email" placeholder="Contoh: nama@email.com" required />
+          <small class="field-hint">Gunakan format email yang valid.</small>
+        </div>
+        <div class="field-wrap full">
+          <label for="user-alamat">Alamat Lengkap</label>
+          <textarea id="user-alamat" rows="3" placeholder="Contoh: Jl. Merdeka No. 10, Kecamatan..., Kota..." required></textarea>
+          <small class="field-hint">Isi alamat domisili lengkap saat ini.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-ktp">No KTP</label>
+          <input id="user-ktp" type="text" maxlength="17" inputmode="numeric" placeholder="Contoh: 6201xxxxxxxxxxxx" required />
+          <small class="field-hint">Hanya angka, 15–17 digit.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-no-karyawan">No Karyawan</label>
+          <input id="user-no-karyawan" type="text" placeholder="Contoh: EMP-2026-001" required />
+          <small class="field-hint">Isi nomor karyawan sesuai data perusahaan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-no-mine-permit">No Mine Permit</label>
+          <input id="user-no-mine-permit" type="text" placeholder="Contoh: MP-12345" required />
+          <small class="field-hint">Isi nomor mine permit yang aktif.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-jabatan">Jabatan</label>
+          <input id="user-jabatan" type="text" placeholder="Contoh: Safety Officer" required />
+          <small class="field-hint">Isi jabatan saat ini di perusahaan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-kelompok-jabatan">Kelompok Jabatan</label>
+          <select id="user-kelompok-jabatan" required>
+            <option value="Staff Up">Staff Up</option>
+            <option value="Operator DT / A2B">Operator DT / A2B</option>
+            <option value="Driver LV">Driver LV</option>
+            <option value="Mekanik">Mekanik</option>
+            <option value="Construction Worker">Construction Worker</option>
+            <option value="Admin">Admin</option>
+            <option value="Other">Other</option>
+          </select>
+          <small class="field-hint">Pilih kelompok jabatan yang paling sesuai.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-departemen">Departemen</label>
+          <select id="user-departemen" required></select>
+          <small class="field-hint">Pilih departemen dari data master departemen.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-perusahaan">Perusahaan</label>
+          <select id="user-perusahaan" required></select>
+          <small class="field-hint">Pilih perusahaan dari data master perusahaan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="user-ccow">CCOW</label>
+          <select id="user-ccow" required>
+            <option value="PT. Maruwai Coal">PT. Maruwai Coal</option>
+            <option value="PT. Lahai Coal">PT. Lahai Coal</option>
+          </select>
+          <small class="field-hint">Pilih area CCOW sesuai lokasi kerja user.</small>
+        </div>
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan User</button>
+            <button id="cancel-user-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Nama Lengkap</th>
+            <th>Kategori</th>
+            <th>Departemen</th>
+            <th>Perusahaan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="user-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/daftar_user.js"></script>
+</body>
+</html>

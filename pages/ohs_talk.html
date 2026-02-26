@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OHS Talk | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>OHS Talk</h1>
+        <div class="module-actions">
+          <button id="add-ohs-btn" type="button">Tambah</button>
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <form id="ohs-talk-form" class="inline-form hidden">
+        <div class="field-wrap">
+          <label for="ohs-no-id">No ID</label>
+          <input id="ohs-no-id" type="text" readonly />
+          <small class="field-hint">Terisi otomatis oleh sistem saat form dibuka.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-nama-peserta">Nama Peserta</label>
+          <input id="ohs-nama-peserta" type="text" readonly />
+          <small class="field-hint">Terisi otomatis dari akun user yang login.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-jabatan-peserta">Jabatan Peserta</label>
+          <input id="ohs-jabatan-peserta" type="text" readonly />
+          <small class="field-hint">Terisi otomatis dari profil user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-departemen-peserta">Departemen Peserta</label>
+          <input id="ohs-departemen-peserta" type="text" readonly />
+          <small class="field-hint">Terisi otomatis dari profil user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-perusahaan-peserta">Perusahaan Peserta</label>
+          <input id="ohs-perusahaan-peserta" type="text" readonly />
+          <small class="field-hint">Terisi otomatis dari profil user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-ccow">CCOW</label>
+          <input id="ohs-ccow" type="text" readonly />
+          <small class="field-hint">Terisi otomatis sesuai area kerja user.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-kategori">Kategori</label>
+          <select id="ohs-kategori" required>
+            <option value="">(Pilih Kategori)</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Daily">Daily</option>
+            <option value="Other">Other</option>
+          </select>
+          <small class="field-hint">Pilih frekuensi pelaksanaan OHS Talk.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-tanggal">Tanggal Pelaksanaan</label>
+          <input id="ohs-tanggal" type="date" required />
+          <small class="field-hint">Pilih tanggal kegiatan OHS Talk dilakukan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-waktu">Waktu Pelaksanaan</label>
+          <input id="ohs-waktu" type="time" required />
+          <small class="field-hint">Pilih jam mulai pelaksanaan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-lokasi">Lokasi</label>
+          <select id="ohs-lokasi" required>
+            <option value="">(Pilih Lokasi)</option>
+            <option value="Mining">Mining</option>
+            <option value="Hauling">Hauling</option>
+            <option value="Port">Port</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Warehouse">Warehouse</option>
+            <option value="CHPP">CHPP</option>
+            <option value="Office">Office</option>
+            <option value="Camp">Camp</option>
+            <option value="Others">Others</option>
+          </select>
+          <small class="field-hint">Pilih lokasi utama kegiatan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-detail-lokasi">Detail Lokasi</label>
+          <input id="ohs-detail-lokasi" type="text" required />
+          <small class="field-hint">Contoh: mess A, ruang meeting lantai 2.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-pemateri">Pemateri</label>
+          <input id="ohs-pemateri" type="text" required />
+          <small class="field-hint">Isi nama pemateri OHS Talk.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="ohs-perusahaan-pemateri">Perusahaan Pemateri</label>
+          <select id="ohs-perusahaan-pemateri" required></select>
+          <small class="field-hint">Pilih perusahaan asal pemateri.</small>
+        </div>
+        <div class="field-wrap full">
+          <label for="ohs-topik">Topik</label>
+          <textarea id="ohs-topik" rows="3" required></textarea>
+          <small class="field-hint">Jelaskan topik/materi yang disampaikan.</small>
+        </div>
+        <div class="field-wrap full">
+          <label for="ohs-foto">Foto Kegiatan</label>
+          <input id="ohs-foto" type="file" accept="image/*" multiple />
+          <small class="field-hint">Upload dokumentasi kegiatan (bisa lebih dari satu foto).</small>
+          <div id="ohs-foto-preview" class="ohs-photo-grid"></div>
+        </div>
+
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan OHS Talk</button>
+            <button id="ohs-cancel-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>No ID</th>
+            <th>Nama Peserta</th>
+            <th>Kategori</th>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+            <th>Lokasi</th>
+            <th>Pemateri</th>
+            <th>Perusahaan Pemateri</th>
+            <th>Topik</th>
+            <th>Foto</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="ohs-talk-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/ohs_talk.js"></script>
+</body>
+</html>
