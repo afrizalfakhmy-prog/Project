@@ -2,25 +2,6 @@
   const CLOUD_SYNC_EVENT = 'aios:cloud-sync';
   let isApplyingRemoteData = false;
 
-  function injectCornerBrandLogo() {
-    if (!document || !document.body) return;
-    if (document.querySelector('.corner-brand-logo')) return;
-
-    const logo = document.createElement('img');
-    logo.className = 'corner-brand-logo';
-    logo.alt = 'Logo Alam Tri';
-    logo.decoding = 'async';
-    logo.loading = 'eager';
-    logo.src = window.location.origin + '/assets/alamtri-logo.svg';
-    logo.onerror = function () {
-      if (logo && logo.parentNode) {
-        logo.parentNode.removeChild(logo);
-      }
-    };
-
-    document.body.appendChild(logo);
-  }
-
   function enforceCanonicalLocalOrigin() {
     const protocol = String(window.location.protocol || '').toLowerCase();
     const hostname = String(window.location.hostname || '').toLowerCase();
@@ -44,8 +25,6 @@
   if (enforceCanonicalLocalOrigin()) {
     return;
   }
-
-  injectCornerBrandLogo();
 
   const DATA_KEYS = [
     'aios_users',
