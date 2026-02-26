@@ -115,6 +115,15 @@
     fillMasterSelect(perusahaanInput, companyRows, '(Pilih Perusahaan)');
   }
 
+  function fillDropdownsKeepSelection() {
+    const selectedDept = String(departemenInput.value || '').trim();
+    const selectedCompany = String(perusahaanInput.value || '').trim();
+    fillDropdowns();
+
+    if (selectedDept) departemenInput.value = selectedDept;
+    if (selectedCompany) perusahaanInput.value = selectedCompany;
+  }
+
   function isEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
@@ -342,6 +351,36 @@
       closeForm();
     });
   }
+
+  window.addEventListener('storage', function (event) {
+    if (!event) return;
+
+    if (event.key === USER_KEY || event.key === null) {
+      renderRows();
+    }
+
+    if (event.key === DEPT_KEY || event.key === COMPANY_KEY || event.key === null) {
+      fillDropdownsKeepSelection();
+    }
+  });
+
+  window.addEventListener('aios:cloud-sync', function (event) {
+    const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
+      ? event.detail.changedKeys
+      : [];
+
+    if (changedKeys.length === 0 || changedKeys.indexOf(USER_KEY) >= 0) {
+      renderRows();
+    }
+
+    if (
+      changedKeys.length === 0 ||
+      changedKeys.indexOf(DEPT_KEY) >= 0 ||
+      changedKeys.indexOf(COMPANY_KEY) >= 0
+    ) {
+      fillDropdownsKeepSelection();
+    }
+  });
 
   if (!guardAccess()) return;
   fillDropdowns();

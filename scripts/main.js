@@ -131,6 +131,29 @@
     }
   }
 
+  function syncSessionAgainstUsers() {
+    const currentSession = readSession();
+    if (!currentSession || !currentSession.username) return;
+
+    const users = readUsers();
+    const account = users.find(function (user) {
+      return String((user && user.username) || '').trim().toLowerCase() === String(currentSession.username || '').trim().toLowerCase();
+    });
+
+    if (!account) {
+      clearSession();
+      showLogin();
+      setLoginMessage('Akun tidak ditemukan atau sudah dihapus. Silakan login ulang.', 'error');
+      return;
+    }
+
+    const latestRole = normalizeRole(account);
+    if (currentSession.role !== latestRole) {
+      saveSession({ username: account.username || currentSession.username, role: latestRole });
+      showDashboard(latestRole);
+    }
+  }
+
   function clearSession() {
     localStorage.removeItem(SESSION_KEY);
   }
@@ -271,6 +294,19 @@
     if (event.key === 'Escape') {
       closeMobileSidebar();
     }
+  });
+
+  window.addEventListener('storage', function (event) {
+    if (!event || (event.key !== USER_KEY && event.key !== null)) return;
+    syncSessionAgainstUsers();
+  });
+
+  window.addEventListener('aios:cloud-sync', function (event) {
+    const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
+      ? event.detail.changedKeys
+      : [];
+    if (changedKeys.length > 0 && changedKeys.indexOf(USER_KEY) < 0) return;
+    syncSessionAgainstUsers();
   });
 
   if (mainMenu) {

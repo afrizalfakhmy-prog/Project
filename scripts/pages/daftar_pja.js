@@ -165,6 +165,25 @@
     });
   }
 
+  window.addEventListener('storage', function (event) {
+    if (!event || (event.key !== USER_KEY && event.key !== PJA_KEY && event.key !== null)) return;
+
+    const currentSelectedUserId = String(userSelect.value || '').trim();
+    renderRows();
+    fillUserDropdown(currentSelectedUserId);
+  });
+
+  window.addEventListener('aios:cloud-sync', function (event) {
+    const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
+      ? event.detail.changedKeys
+      : [];
+    if (changedKeys.length > 0 && changedKeys.indexOf(USER_KEY) < 0 && changedKeys.indexOf(PJA_KEY) < 0) return;
+
+    const currentSelectedUserId = String(userSelect.value || '').trim();
+    renderRows();
+    fillUserDropdown(currentSelectedUserId);
+  });
+
   if (!guardAccess()) return;
   fillUserDropdown('');
   closeForm();

@@ -131,6 +131,19 @@
     });
   }
 
+  window.addEventListener('storage', function (event) {
+    if (!event || (event.key !== DEPT_KEY && event.key !== null)) return;
+    renderRows();
+  });
+
+  window.addEventListener('aios:cloud-sync', function (event) {
+    const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
+      ? event.detail.changedKeys
+      : [];
+    if (changedKeys.length > 0 && changedKeys.indexOf(DEPT_KEY) < 0) return;
+    renderRows();
+  });
+
   if (!guardAccess()) return;
   closeForm();
   renderRows();

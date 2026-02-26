@@ -1,4 +1,7 @@
 (function () {
+  const CLOUD_SYNC_EVENT = 'aios:cloud-sync';
+  let isApplyingRemoteData = false;
+
   function enforceCanonicalLocalOrigin() {
     const protocol = String(window.location.protocol || '').toLowerCase();
     const hostname = String(window.location.hostname || '').toLowerCase();
@@ -38,6 +41,14 @@
     return 'aios_backup__' + key;
   }
 
+  function parseJsonSafe(value) {
+    try {
+      return JSON.parse(value);
+    } catch (_error) {
+      return null;
+    }
+  }
+
   function isJsonParsable(value) {
     if (typeof value !== 'string' || value.trim() === '') return false;
     try {
@@ -75,11 +86,65 @@
   const originalSetItem = Storage.prototype.setItem;
   const originalRemoveItem = Storage.prototype.removeItem;
 
+  async function pushCloudKeyIfNeeded(key, value) {
+    if (isApplyingRemoteData) return;
+    if (DATA_KEYS.indexOf(key) < 0) return;
+    if (!window.aiosCloudSync || !window.aiosCloudSync.isEnabled || !window.aiosCloudSync.isEnabled()) return;
+
+    const parsedValue = parseJsonSafe(value);
+    if (parsedValue === null) return;
+
+    try {
+      await window.aiosCloudSync.pushOne(key, parsedValue);
+    } catch (_error) {
+    }
+  }
+
+  function applyRemoteValueToLocal(key, remoteValue) {
+    const currentRaw = localStorage.getItem(key);
+    const remoteRaw = JSON.stringify(remoteValue);
+    if (currentRaw === remoteRaw) return false;
+
+    isApplyingRemoteData = true;
+    try {
+      originalSetItem.call(localStorage, key, remoteRaw);
+      originalSetItem.call(localStorage, getBackupKey(key), remoteRaw);
+    } finally {
+      isApplyingRemoteData = false;
+    }
+
+    return true;
+  }
+
+  async function syncFromCloud() {
+    if (!window.aiosCloudSync || !window.aiosCloudSync.isEnabled || !window.aiosCloudSync.isEnabled()) return;
+
+    const changedKeys = [];
+
+    try {
+      const rows = await window.aiosCloudSync.pullMany(DATA_KEYS);
+      rows.forEach(function (row) {
+        if (!row || !row.found) return;
+        const changed = applyRemoteValueToLocal(row.key, row.value);
+        if (changed) changedKeys.push(row.key);
+      });
+    } catch (_error) {
+      return;
+    }
+
+    if (changedKeys.length > 0) {
+      window.dispatchEvent(new CustomEvent(CLOUD_SYNC_EVENT, {
+        detail: { changedKeys: changedKeys }
+      }));
+    }
+  }
+
   Storage.prototype.setItem = function (key, value) {
     originalSetItem.call(this, key, value);
 
     if (DATA_KEYS.indexOf(key) >= 0) {
       originalSetItem.call(this, getBackupKey(key), value);
+      pushCloudKeyIfNeeded(key, value);
     }
   };
 
@@ -90,4 +155,7 @@
       originalRemoveItem.call(this, getBackupKey(key));
     }
   };
+
+  syncFromCloud();
+  setInterval(syncFromCloud, 8000);
 })();
