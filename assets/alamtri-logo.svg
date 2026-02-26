@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 220" role="img" aria-labelledby="title desc">
+  <title id="title">Alam Tri geo</title>
+  <desc id="desc">Logo teks Alam Tri geo dengan aksen bentuk tetes berwarna.</desc>
+  <defs>
+    <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1f78be"/>
+      <stop offset="100%" stop-color="#153b66"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f6c14f"/>
+      <stop offset="100%" stop-color="#e27b3e"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#a7d9a0"/>
+      <stop offset="100%" stop-color="#4b9b5d"/>
+    </linearGradient>
+    <linearGradient id="g4" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3bb9c8"/>
+      <stop offset="100%" stop-color="#0f6f8e"/>
+    </linearGradient>
+  </defs>
+
+  <text x="8" y="118" font-family="Segoe UI, Arial, sans-serif" font-size="88" font-weight="700" fill="#0a4566">AlamTri</text>
+  <text x="254" y="188" font-family="Segoe UI, Arial, sans-serif" font-size="74" font-weight="700" fill="#1f9cb4">geo</text>
+
+  <g transform="translate(410 42)">
+    <path d="M28 0 C43 17 52 28 52 40 C52 55 40 66 28 78 C16 66 4 55 4 40 C4 28 13 17 28 0 Z" fill="url(#g2)"/>
+    <path d="M28 156 C43 139 52 128 52 116 C52 101 40 90 28 78 C16 90 4 101 4 116 C4 128 13 139 28 156 Z" fill="url(#g4)"/>
+  </g>
+
+  <g transform="translate(460 42)">
+    <path d="M28 0 C43 17 52 28 52 40 C52 55 40 66 28 78 C16 66 4 55 4 40 C4 28 13 17 28 0 Z" fill="url(#g1)"/>
+    <path d="M28 156 C43 139 52 128 52 116 C52 101 40 90 28 78 C16 90 4 101 4 116 C4 128 13 139 28 156 Z" fill="url(#g3)"/>
+  </g>
+</svg>
