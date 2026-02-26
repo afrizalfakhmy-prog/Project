@@ -472,6 +472,10 @@
 
     cards.forEach(function (card) {
       const dimension = card.getAttribute('data-dimension-card') || '';
+      if (dimension === 'monthly') {
+        card.classList.remove('hidden');
+        return;
+      }
       if (dimensions.indexOf(dimension) >= 0) {
         card.classList.remove('hidden');
       } else {
