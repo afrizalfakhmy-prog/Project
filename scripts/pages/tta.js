@@ -471,6 +471,26 @@
     if (!target) return;
 
     if (action === 'detail') {
+      const previewImages = [];
+      if (Array.isArray(target.fotoTemuan)) {
+        target.fotoTemuan.forEach(function (item, index) {
+          if (!item || !item.dataUrl) return;
+          previewImages.push({
+            name: 'Foto Temuan ' + String(index + 1),
+            src: item.dataUrl
+          });
+        });
+      }
+      if (Array.isArray(target.fotoPerbaikan)) {
+        target.fotoPerbaikan.forEach(function (item, index) {
+          if (!item || !item.dataUrl) return;
+          previewImages.push({
+            name: 'Foto Perbaikan ' + String(index + 1),
+            src: item.dataUrl
+          });
+        });
+      }
+
       const detailText = [
         'No ID: ' + (target.noId || '-'),
         'Tanggal Laporan: ' + (target.tanggalLaporan || '-'),
@@ -499,7 +519,7 @@
         'Jumlah Foto Perbaikan: ' + (Array.isArray(target.fotoPerbaikan) ? target.fotoPerbaikan.length : 0)
       ].join('\n');
       if (typeof window.aiosShowDetailModal === 'function') {
-        window.aiosShowDetailModal('Detail TTA', detailText);
+        window.aiosShowDetailModal('Detail TTA', detailText, { images: previewImages });
       } else {
         alert(detailText);
       }

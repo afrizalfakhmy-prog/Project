@@ -329,6 +329,17 @@
     if (!target) return;
 
     if (action === 'detail') {
+      const previewImages = Array.isArray(target.fotoKegiatan)
+        ? target.fotoKegiatan
+          .filter(function (item) { return item && item.dataUrl; })
+          .map(function (item, index) {
+            return {
+              name: 'Foto Kegiatan ' + String(index + 1),
+              src: item.dataUrl
+            };
+          })
+        : [];
+
       const detailText = [
         'No ID: ' + (target.noId || '-'),
         'Nama Peserta: ' + (target.namaPeserta || '-'),
@@ -347,7 +358,7 @@
         'Jumlah Foto Kegiatan: ' + (Array.isArray(target.fotoKegiatan) ? target.fotoKegiatan.length : 0)
       ].join('\n');
       if (typeof window.aiosShowDetailModal === 'function') {
-        window.aiosShowDetailModal('Detail OHS Talk', detailText);
+        window.aiosShowDetailModal('Detail OHS Talk', detailText, { images: previewImages });
       } else {
         alert(detailText);
       }
