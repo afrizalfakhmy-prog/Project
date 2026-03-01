@@ -528,7 +528,11 @@
         'Tindak Lanjut: ' + (target.tindakLanjut || '-'),
         'Jumlah Lampiran: ' + (Array.isArray(target.lampiran) ? target.lampiran.length : 0)
       ].join('\n');
-      alert(detailText);
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail Observasi', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 

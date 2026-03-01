@@ -102,7 +102,12 @@
     if (!target) return;
 
     if (action === 'detail') {
-      alert('Departemen: ' + (target.name || '-'));
+      const detailText = 'Departemen: ' + (target.name || '-');
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail Departemen', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 

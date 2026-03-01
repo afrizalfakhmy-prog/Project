@@ -687,6 +687,43 @@ button.ghost:hover {
   font-size: 13px;
 }
 
+.aios-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.aios-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.aios-detail-dialog {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: min(86vh, 720px);
+  margin: 0;
+  z-index: 1;
+  overflow: auto;
+}
+
+.aios-detail-header {
+  margin-bottom: 10px;
+}
+
+.aios-detail-content {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #0f172a;
+}
+
 @media (max-width: 699px) {
   .dashboard-brand-logo {
     top: 54px;

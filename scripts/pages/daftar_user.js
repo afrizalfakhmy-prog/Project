@@ -308,7 +308,11 @@
         'Perusahaan: ' + (target.perusahaan || '-'),
         'CCOW: ' + (target.ccow || '-')
       ].join('\n');
-      alert(detailText);
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail User', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 

@@ -346,7 +346,11 @@
         'Topik: ' + (target.topik || '-'),
         'Jumlah Foto Kegiatan: ' + (Array.isArray(target.fotoKegiatan) ? target.fotoKegiatan.length : 0)
       ].join('\n');
-      alert(detailText);
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail OHS Talk', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 

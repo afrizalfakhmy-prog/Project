@@ -139,7 +139,12 @@
       const users = readUsers();
       const linkedUser = users.find(function (user) { return user.id === target.userId; });
       const nama = linkedUser ? (linkedUser.nama || linkedUser.username || '-') : (target.userLabel || '-');
-      alert('Nama PJA: ' + nama + '\nUser ID: ' + (target.userId || '-'));
+      const detailText = 'Nama PJA: ' + nama + '\nUser ID: ' + (target.userId || '-');
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail PJA', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 

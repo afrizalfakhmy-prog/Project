@@ -102,7 +102,12 @@
     if (!target) return;
 
     if (action === 'detail') {
-      alert('Perusahaan: ' + (target.name || '-'));
+      const detailText = 'Perusahaan: ' + (target.name || '-');
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail Perusahaan', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 

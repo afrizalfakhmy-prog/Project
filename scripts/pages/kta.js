@@ -370,7 +370,11 @@
         'Jumlah Foto Temuan: ' + (Array.isArray(target.fotoTemuan) ? target.fotoTemuan.length : 0),
         'Jumlah Foto Perbaikan: ' + (Array.isArray(target.fotoPerbaikan) ? target.fotoPerbaikan.length : 0)
       ].join('\n');
-      alert(detailText);
+      if (typeof window.aiosShowDetailModal === 'function') {
+        window.aiosShowDetailModal('Detail KTA', detailText);
+      } else {
+        alert(detailText);
+      }
       return;
     }
 
