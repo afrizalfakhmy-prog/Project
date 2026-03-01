@@ -210,6 +210,7 @@
     const routeMap = {
       Achievement: 'pages/achievement.html',
       'Frontline Leadership': 'pages/frontline_leadership.html',
+      Inspeksi: 'pages/inspeksi.html',
       'OHS Talk': 'pages/ohs_talk.html',
       Observasi: 'pages/observasi.html',
       Tasklist: 'pages/tasklist.html',

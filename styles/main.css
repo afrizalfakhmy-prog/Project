@@ -258,6 +258,24 @@ button.ghost:hover {
   gap: 14px;
 }
 
+.inspeksi-menu-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.inspeksi-menu-btn {
+  width: 100%;
+  text-align: left;
+  background: #f8fbff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+}
+
+.inspeksi-menu-btn:hover {
+  background: #eff6ff;
+}
+
 .module-header {
   display: flex;
   justify-content: space-between;
