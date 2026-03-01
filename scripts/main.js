@@ -208,6 +208,7 @@
 
   function goToPage(menuLabel) {
     const routeMap = {
+      'My Profile': 'pages/my_profile.html',
       Achievement: 'pages/achievement.html',
       'Frontline Leadership': 'pages/frontline_leadership.html',
       Inspeksi: 'pages/inspeksi.html',

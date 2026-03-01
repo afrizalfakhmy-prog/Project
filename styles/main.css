@@ -258,6 +258,37 @@ button.ghost:hover {
   gap: 14px;
 }
 
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.profile-item {
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f8fbff;
+  display: grid;
+  gap: 4px;
+}
+
+.profile-item-full {
+  grid-column: 1 / -1;
+}
+
+.profile-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.profile-value {
+  font-size: 14px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
 .inspeksi-menu-list {
   display: grid;
   grid-template-columns: 1fr;
@@ -883,6 +914,10 @@ button.ghost:hover {
 
   .achievement-kpi-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

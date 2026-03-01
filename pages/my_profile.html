@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Profile | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>My Profile</h1>
+        <div class="module-actions">
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <p class="subtitle">Detail profil diambil dari data Daftar User sesuai akun yang sedang login.</p>
+
+      <section class="profile-grid" aria-label="Detail Profil User">
+        <article class="profile-item"><span class="profile-label">Username</span><strong id="profile-username" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Password</span><strong id="profile-password" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Kategori</span><strong id="profile-kategori" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Nama Lengkap</span><strong id="profile-nama" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Tempat Lahir</span><strong id="profile-tempat" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Tanggal Lahir</span><strong id="profile-tgl" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">No HP</span><strong id="profile-hp" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Email</span><strong id="profile-email" class="profile-value">-</strong></article>
+        <article class="profile-item profile-item-full"><span class="profile-label">Alamat</span><strong id="profile-alamat" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">No KTP</span><strong id="profile-ktp" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">No Karyawan</span><strong id="profile-karyawan" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">No Mine Permit</span><strong id="profile-mine" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Jabatan</span><strong id="profile-jabatan" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Kelompok Jabatan</span><strong id="profile-kelompok" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Departemen</span><strong id="profile-departemen" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">Perusahaan</span><strong id="profile-perusahaan" class="profile-value">-</strong></article>
+        <article class="profile-item"><span class="profile-label">CCOW</span><strong id="profile-ccow" class="profile-value">-</strong></article>
+      </section>
+    </section>
+  </main>
+
+  <script src="../scripts/cloud_sync.js"></script>
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/pages/my_profile.js"></script>
+</body>
+</html>
