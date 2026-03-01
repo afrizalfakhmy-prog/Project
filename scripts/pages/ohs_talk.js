@@ -191,10 +191,11 @@
         '<td>' + (row.topik || '-') + '</td>' +
         '<td>' + (thumb ? '<img src="' + thumb + '" alt="Foto Kegiatan" class="ohs-photo-thumb" />' : '-') + '</td>' +
         '<td>' +
+          '<button type="button" class="table-btn" data-action="detail" data-id="' + row.id + '">Detail</button>' +
           (canManage
-            ? '<button type="button" class="table-btn" data-action="edit" data-id="' + row.id + '">Ubah</button> ' +
+            ? ' <button type="button" class="table-btn" data-action="edit" data-id="' + row.id + '">Ubah</button> ' +
               '<button type="button" class="table-btn danger" data-action="delete" data-id="' + row.id + '">Hapus</button>'
-            : '-') +
+            : '') +
         '</td>';
       tbody.appendChild(tr);
     });
@@ -321,17 +322,39 @@
     const button = event.target.closest('button[data-action]');
     if (!button) return;
 
-    const session = getSession();
-    if (!session || session.role !== 'Super Admin') {
-      alert('Aksi ubah/hapus data OHS Talk hanya dapat dilakukan oleh Super Admin.');
-      return;
-    }
-
     const action = button.dataset.action;
     const id = button.dataset.id;
     const rows = readList(OHS_TALK_KEY);
     const target = rows.find(function (item) { return item.id === id; });
     if (!target) return;
+
+    if (action === 'detail') {
+      const detailText = [
+        'No ID: ' + (target.noId || '-'),
+        'Nama Peserta: ' + (target.namaPeserta || '-'),
+        'Jabatan Peserta: ' + (target.jabatanPeserta || '-'),
+        'Departemen Peserta: ' + (target.departemenPeserta || '-'),
+        'Perusahaan Peserta: ' + (target.perusahaanPeserta || '-'),
+        'CCOW: ' + (target.ccow || '-'),
+        'Kategori: ' + (target.kategori || '-'),
+        'Tanggal Pelaksanaan: ' + (target.tanggalPelaksanaan || '-'),
+        'Waktu Pelaksanaan: ' + (target.waktuPelaksanaan || '-'),
+        'Lokasi: ' + (target.lokasi || '-'),
+        'Detail Lokasi: ' + (target.detailLokasi || '-'),
+        'Pemateri: ' + (target.pemateri || '-'),
+        'Perusahaan Pemateri: ' + (target.perusahaanPemateri || '-'),
+        'Topik: ' + (target.topik || '-'),
+        'Jumlah Foto Kegiatan: ' + (Array.isArray(target.fotoKegiatan) ? target.fotoKegiatan.length : 0)
+      ].join('\n');
+      alert(detailText);
+      return;
+    }
+
+    const session = getSession();
+    if (!session || session.role !== 'Super Admin') {
+      alert('Aksi ubah/hapus data OHS Talk hanya dapat dilakukan oleh Super Admin.');
+      return;
+    }
 
     if (action === 'edit') {
       editingId = target.id;

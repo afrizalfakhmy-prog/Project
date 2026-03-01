@@ -75,7 +75,8 @@
       const pjaText = namaPja.includes(' - ') ? namaPja.split(' - ')[0] : namaPja;
       const tr = document.createElement('tr');
       tr.innerHTML = '<td>' + (pjaText || '-') + '</td>' +
-        '<td><button type="button" class="table-btn" data-action="edit" data-id="' + item.id + '">Ubah</button> ' +
+        '<td><button type="button" class="table-btn" data-action="detail" data-id="' + item.id + '">Detail</button> ' +
+        '<button type="button" class="table-btn" data-action="edit" data-id="' + item.id + '">Ubah</button> ' +
         '<button type="button" class="table-btn danger" data-action="delete" data-id="' + item.id + '">Hapus</button></td>';
       tbody.appendChild(tr);
     });
@@ -133,6 +134,14 @@
     const rows = readPja();
     const target = rows.find(function (item) { return item.id === id; });
     if (!target) return;
+
+    if (action === 'detail') {
+      const users = readUsers();
+      const linkedUser = users.find(function (user) { return user.id === target.userId; });
+      const nama = linkedUser ? (linkedUser.nama || linkedUser.username || '-') : (target.userLabel || '-');
+      alert('Nama PJA: ' + nama + '\nUser ID: ' + (target.userId || '-'));
+      return;
+    }
 
     if (action === 'edit') {
       openForm();

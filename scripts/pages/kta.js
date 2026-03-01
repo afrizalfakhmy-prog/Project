@@ -221,10 +221,11 @@
         '<td>' + toNameOnlyLabel(item.namaPjaLabel) + '</td>' +
         '<td>' + (item.status || (item.perbaikanLangsung === 'Ya' ? 'Open' : '-')) + '</td>' +
         '<td>' +
+          '<button type="button" class="table-btn" data-action="detail" data-id="' + item.id + '">Detail</button>' +
           (canManage
-            ? '<button type="button" class="table-btn" data-action="edit" data-id="' + item.id + '">Ubah</button> ' +
+            ? ' <button type="button" class="table-btn" data-action="edit" data-id="' + item.id + '">Ubah</button> ' +
               '<button type="button" class="table-btn danger" data-action="delete" data-id="' + item.id + '">Hapus</button>'
-            : '-') +
+            : '') +
         '</td>';
       tbody.appendChild(tr);
     });
@@ -340,17 +341,44 @@
     const button = event.target.closest('button[data-action]');
     if (!button) return;
 
-    const session = getSession();
-    if (!session || session.role !== 'Super Admin') {
-      alert('Aksi ubah/hapus data KTA hanya dapat dilakukan oleh Super Admin.');
-      return;
-    }
-
     const action = button.dataset.action;
     const id = button.dataset.id;
     const rows = readList(KTA_KEY);
     const target = rows.find(function (item) { return item.id === id; });
     if (!target) return;
+
+    if (action === 'detail') {
+      const detailText = [
+        'No ID: ' + (target.noId || '-'),
+        'Tanggal Laporan: ' + (target.tanggalLaporan || '-'),
+        'Nama Pelapor: ' + (target.namaPelapor || '-'),
+        'Jabatan: ' + (target.jabatan || '-'),
+        'Departemen: ' + (target.departemen || '-'),
+        'Perusahaan: ' + (target.perusahaan || '-'),
+        'CCOW: ' + (target.ccow || '-'),
+        'Tanggal Temuan: ' + (target.tanggalTemuan || '-'),
+        'Kategori Temuan: ' + (target.kategoriTemuan || '-'),
+        'Lokasi Temuan: ' + (target.lokasiTemuan || '-'),
+        'Detail Lokasi: ' + (target.detailLokasiTemuan || '-'),
+        'Risk Level: ' + (target.riskLevel || '-'),
+        'Nama PJA: ' + toNameOnlyLabel(target.namaPjaLabel),
+        'Detail Temuan: ' + (target.detailTemuan || '-'),
+        'Perbaikan Langsung: ' + (target.perbaikanLangsung || '-'),
+        'Tindakan Perbaikan: ' + (target.tindakanPerbaikan || '-'),
+        'Tanggal Perbaikan: ' + (target.tanggalPerbaikan || '-'),
+        'Status: ' + (target.status || '-'),
+        'Jumlah Foto Temuan: ' + (Array.isArray(target.fotoTemuan) ? target.fotoTemuan.length : 0),
+        'Jumlah Foto Perbaikan: ' + (Array.isArray(target.fotoPerbaikan) ? target.fotoPerbaikan.length : 0)
+      ].join('\n');
+      alert(detailText);
+      return;
+    }
+
+    const session = getSession();
+    if (!session || session.role !== 'Super Admin') {
+      alert('Aksi ubah/hapus data KTA hanya dapat dilakukan oleh Super Admin.');
+      return;
+    }
 
     if (action === 'edit') {
       editingId = target.id;

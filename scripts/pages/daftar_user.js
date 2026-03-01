@@ -182,6 +182,7 @@
         '<td>' + (user.departemen || '') + '</td>' +
         '<td>' + (user.perusahaan || '') + '</td>' +
         '<td>' +
+        '<button type="button" class="table-btn" data-action="detail" data-id="' + user.id + '">Detail</button> ' +
         ((canEdit || canDelete)
           ? (canEdit
             ? '<button type="button" class="table-btn" data-action="edit" data-id="' + user.id + '">Ubah</button> '
@@ -287,6 +288,29 @@
     const users = readUsers();
     const target = users.find(function (item) { return item.id === id; });
     if (!target) return;
+
+    if (action === 'detail') {
+      const detailText = [
+        'Username: ' + (target.username || '-'),
+        'Nama Lengkap: ' + (target.nama || '-'),
+        'Kategori: ' + (target.kategori || target.role || '-'),
+        'Tempat Lahir: ' + (target.tempat || '-'),
+        'Tanggal Lahir: ' + (target.tgl || '-'),
+        'No HP: ' + (target.hp || '-'),
+        'Email: ' + (target.email || '-'),
+        'Alamat: ' + (target.alamat || '-'),
+        'No KTP: ' + (target.ktp || '-'),
+        'No Karyawan: ' + (target.karyawan || '-'),
+        'No Mine Permit: ' + (target.mine || '-'),
+        'Jabatan: ' + (target.jabatan || '-'),
+        'Kelompok Jabatan: ' + (target.kelompok || '-'),
+        'Departemen: ' + (target.departemen || '-'),
+        'Perusahaan: ' + (target.perusahaan || '-'),
+        'CCOW: ' + (target.ccow || '-')
+      ].join('\n');
+      alert(detailText);
+      return;
+    }
 
     if (action === 'edit' && !isSuperAdmin && !(isAdmin && isUserCategoryAccount(target))) {
       alert('Role Admin hanya dapat mengubah user dengan kategori User.');

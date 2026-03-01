@@ -260,10 +260,11 @@
         '<td>' + jumlahPekerja + '</td>' +
         '<td>' + jumlahLampiran + '</td>' +
         '<td>' +
+          '<button type="button" class="table-btn" data-action="detail" data-id="' + row.id + '">Detail</button>' +
           (canManage
-            ? '<button type="button" class="table-btn" data-action="edit" data-id="' + row.id + '">Ubah</button> ' +
+            ? ' <button type="button" class="table-btn" data-action="edit" data-id="' + row.id + '">Ubah</button> ' +
               '<button type="button" class="table-btn danger" data-action="delete" data-id="' + row.id + '">Hapus</button>'
-            : '-') +
+            : '') +
         '</td>';
       tbody.appendChild(tr);
     });
@@ -497,17 +498,45 @@
     const button = event.target.closest('button[data-action]');
     if (!button) return;
 
-    const session = getSession();
-    if (!session || session.role !== 'Super Admin') {
-      alert('Aksi ubah/hapus data Observasi hanya dapat dilakukan oleh Super Admin.');
-      return;
-    }
-
     const action = button.dataset.action;
     const id = button.dataset.id;
     const rows = readList(OBS_KEY);
     const target = rows.find(function (item) { return item.id === id; });
     if (!target) return;
+
+    if (action === 'detail') {
+      const pekerjaNames = Array.isArray(target.namaPekerja)
+        ? target.namaPekerja.map(function (item) { return item.nama || '-'; }).join(', ')
+        : '-';
+      const detailText = [
+        'No ID: ' + (target.noId || '-'),
+        'Tanggal Laporan: ' + (target.tanggalLaporan || '-'),
+        'Nama Observer: ' + (target.namaObserver || '-'),
+        'Jabatan Observer: ' + (target.jabatanObserver || '-'),
+        'Departemen Observer: ' + (target.departemenObserver || '-'),
+        'Perusahaan Observer: ' + (target.perusahaanObserver || '-'),
+        'CCOW: ' + (target.ccow || '-'),
+        'Tanggal Observasi: ' + (target.tanggalObservasi || '-'),
+        'Waktu Observasi: ' + (target.waktuObservasi || '-'),
+        'Lokasi: ' + (target.lokasi || '-'),
+        'Detail Lokasi: ' + (target.detailLokasi || '-'),
+        'Pengawas: ' + toNameOnlyLabel(target.pengawasLabel),
+        'Nama Pekerja: ' + (pekerjaNames || '-'),
+        'Aktivitas: ' + (target.aktivitas || '-'),
+        'No SOP / WIN / JSA: ' + (target.noSopWinJsa || '-'),
+        'Apresiasi: ' + (target.apresiasi || '-'),
+        'Tindak Lanjut: ' + (target.tindakLanjut || '-'),
+        'Jumlah Lampiran: ' + (Array.isArray(target.lampiran) ? target.lampiran.length : 0)
+      ].join('\n');
+      alert(detailText);
+      return;
+    }
+
+    const session = getSession();
+    if (!session || session.role !== 'Super Admin') {
+      alert('Aksi ubah/hapus data Observasi hanya dapat dilakukan oleh Super Admin.');
+      return;
+    }
 
     if (action === 'edit') {
       fillFormForEdit(target);

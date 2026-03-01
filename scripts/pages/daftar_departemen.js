@@ -48,7 +48,8 @@
     rows.forEach(function (item) {
       const tr = document.createElement('tr');
       tr.innerHTML = '<td>' + (item.name || '') + '</td>' +
-        '<td><button type="button" class="table-btn" data-action="edit" data-id="' + item.id + '">Ubah</button> ' +
+        '<td><button type="button" class="table-btn" data-action="detail" data-id="' + item.id + '">Detail</button> ' +
+        '<button type="button" class="table-btn" data-action="edit" data-id="' + item.id + '">Ubah</button> ' +
         '<button type="button" class="table-btn danger" data-action="delete" data-id="' + item.id + '">Hapus</button></td>';
       tbody.appendChild(tr);
     });
@@ -99,6 +100,11 @@
     const rows = readData();
     const target = rows.find(function (item) { return item.id === id; });
     if (!target) return;
+
+    if (action === 'detail') {
+      alert('Departemen: ' + (target.name || '-'));
+      return;
+    }
 
     if (action === 'edit') {
       openForm();
