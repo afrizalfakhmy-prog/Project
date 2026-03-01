@@ -242,6 +242,7 @@ button.ghost:hover {
   width: 100%;
   height: 96px;
   object-fit: cover;
+  margin-top: auto;
   border-radius: 10px;
   border: 1px solid #dbeafe;
   background: #ffffff;
