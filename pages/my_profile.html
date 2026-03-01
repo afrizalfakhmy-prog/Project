@@ -18,25 +18,64 @@
 
       <p class="subtitle">Detail profil diambil dari data Daftar User sesuai akun yang sedang login.</p>
 
-      <section class="profile-grid" aria-label="Detail Profil User">
-        <article class="profile-item"><span class="profile-label">Username</span><strong id="profile-username" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Password</span><strong id="profile-password" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Kategori</span><strong id="profile-kategori" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Nama Lengkap</span><strong id="profile-nama" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Tempat Lahir</span><strong id="profile-tempat" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Tanggal Lahir</span><strong id="profile-tgl" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">No HP</span><strong id="profile-hp" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Email</span><strong id="profile-email" class="profile-value">-</strong></article>
-        <article class="profile-item profile-item-full"><span class="profile-label">Alamat</span><strong id="profile-alamat" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">No KTP</span><strong id="profile-ktp" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">No Karyawan</span><strong id="profile-karyawan" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">No Mine Permit</span><strong id="profile-mine" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Jabatan</span><strong id="profile-jabatan" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Kelompok Jabatan</span><strong id="profile-kelompok" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Departemen</span><strong id="profile-departemen" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">Perusahaan</span><strong id="profile-perusahaan" class="profile-value">-</strong></article>
-        <article class="profile-item"><span class="profile-label">CCOW</span><strong id="profile-ccow" class="profile-value">-</strong></article>
-      </section>
+      <form id="my-profile-form">
+        <section class="profile-grid" aria-label="Detail Profil User">
+          <article class="profile-item"><span class="profile-label">Username</span><strong id="profile-username" class="profile-value">-</strong></article>
+          <article class="profile-item"><span class="profile-label">Kategori</span><strong id="profile-kategori" class="profile-value">-</strong></article>
+          <article class="profile-item"><span class="profile-label">Nama Lengkap</span><strong id="profile-nama" class="profile-value">-</strong></article>
+
+          <article class="profile-item">
+            <label class="profile-label" for="profile-password-input">Password</label>
+            <input id="profile-password-input" type="password" minlength="8" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-tempat-input">Tempat Lahir</label>
+            <input id="profile-tempat-input" type="text" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-tgl-input">Tanggal Lahir</label>
+            <input id="profile-tgl-input" type="date" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-hp-input">No HP</label>
+            <input id="profile-hp-input" type="text" inputmode="numeric" maxlength="13" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-email-input">Email</label>
+            <input id="profile-email-input" type="email" required />
+          </article>
+          <article class="profile-item profile-item-full">
+            <label class="profile-label" for="profile-alamat-input">Alamat</label>
+            <textarea id="profile-alamat-input" rows="3" required></textarea>
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-ktp-input">No KTP</label>
+            <input id="profile-ktp-input" type="text" inputmode="numeric" maxlength="17" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-karyawan-input">No Karyawan</label>
+            <input id="profile-karyawan-input" type="text" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-mine-input">No Mine Permit</label>
+            <input id="profile-mine-input" type="text" required />
+          </article>
+          <article class="profile-item">
+            <label class="profile-label" for="profile-jabatan-input">Jabatan</label>
+            <input id="profile-jabatan-input" type="text" required />
+          </article>
+
+          <article class="profile-item"><span class="profile-label">Kelompok Jabatan</span><strong id="profile-kelompok" class="profile-value">-</strong></article>
+          <article class="profile-item"><span class="profile-label">Departemen</span><strong id="profile-departemen" class="profile-value">-</strong></article>
+          <article class="profile-item"><span class="profile-label">Perusahaan</span><strong id="profile-perusahaan" class="profile-value">-</strong></article>
+          <article class="profile-item"><span class="profile-label">CCOW</span><strong id="profile-ccow" class="profile-value">-</strong></article>
+        </section>
+
+        <div class="form-inline-actions profile-actions">
+          <button type="submit">Simpan Perubahan</button>
+        </div>
+        <p id="profile-message" class="message" aria-live="polite"></p>
+      </form>
     </section>
   </main>
 
