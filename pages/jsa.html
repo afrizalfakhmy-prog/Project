@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSA | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>JSA</h1>
+        <div class="module-actions">
+          <button id="add-jsa-btn" type="button">Tambah</button>
+          <a class="link-btn" href="frontline_leadership.html">Kembali ke Frontline Leadership</a>
+        </div>
+      </header>
+
+      <form id="jsa-form" class="inline-form hidden">
+        <div class="field-wrap">
+          <label for="jsa-jenis">JSA</label>
+          <select id="jsa-jenis" required>
+            <option value="">(Pilih Jenis JSA)</option>
+            <option value="Baru">Baru</option>
+            <option value="Perubahan">Perubahan</option>
+          </select>
+          <small class="field-hint">Pilih jenis JSA: Baru atau Perubahan.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-tanggal">Tanggal</label>
+          <input id="jsa-tanggal" type="date" required />
+          <small class="field-hint">Isi tanggal pembuatan JSA.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-no">No JSA</label>
+          <input id="jsa-no" type="text" required />
+          <small class="field-hint">Isi nomor JSA sesuai format dokumen.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-departemen">Departemen</label>
+          <select id="jsa-departemen" required></select>
+          <small class="field-hint">Pilih departemen dari Daftar Departemen.</small>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-perusahaan">Perusahaan</label>
+          <select id="jsa-perusahaan" required></select>
+          <small class="field-hint">Pilih perusahaan dari Daftar Perusahaan.</small>
+        </div>
+
+        <div class="field-wrap full">
+          <label>Alat Pelindung Diri</label>
+          <div id="jsa-apd-list" class="multi-check-grid">
+            <label class="multi-check-item"><input type="checkbox" value="Masker Debu" /> <span>Masker Debu</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Sarung Tangan Karet" /> <span>Sarung Tangan Karet</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Sarung Tangan Kulit" /> <span>Sarung Tangan Kulit</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Sarung Tangan Las" /> <span>Sarung Tangan Las</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Jaket Las" /> <span>Jaket Las</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Pelindung Lutut" /> <span>Pelindung Lutut</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Masker Pengelasan" /> <span>Masker Pengelasan</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Sumbat / Tutup Telinga" /> <span>Sumbat / Tutup Telinga</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Pakaian Kerja Khusus" /> <span>Pakaian Kerja Khusus</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Pelindung Muka" /> <span>Pelindung Muka</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Kedok Las" /> <span>Kedok Las</span></label>
+            <label class="multi-check-item"><input type="checkbox" value="Pelindung Paha" /> <span>Pelindung Paha</span></label>
+            <label class="multi-check-item"><input id="jsa-apd-lainnya-check" type="checkbox" value="Lainnya" /> <span>Lainnya</span></label>
+          </div>
+          <div id="jsa-apd-lainnya-wrap" class="field-wrap hidden">
+            <label for="jsa-apd-lainnya">APD Lainnya</label>
+            <input id="jsa-apd-lainnya" type="text" />
+          </div>
+          <small class="field-hint">Centang APD yang digunakan. Jika pilih Lainnya, isi detail APD tambahan.</small>
+        </div>
+
+        <div class="field-wrap">
+          <label for="jsa-disiapkan">JSA Disiapkan Oleh</label>
+          <input id="jsa-disiapkan" type="text" readonly />
+          <small class="field-hint">Terisi otomatis berdasarkan nama akun yang login.</small>
+        </div>
+
+        <div class="field-wrap full">
+          <label>Tanda Tangan Pengawas</label>
+          <div class="signature-box">
+            <canvas id="jsa-sign-pengawas" class="signature-canvas" aria-label="Tanda Tangan Pengawas"></canvas>
+            <button id="jsa-clear-pengawas" type="button" class="ghost">Hapus Tanda Tangan Pengawas</button>
+          </div>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-tanggal-pengawas">Tanggal by Pengawas</label>
+          <input id="jsa-tanggal-pengawas" type="date" readonly />
+          <small class="field-hint">Terisi otomatis saat form diisi.</small>
+        </div>
+
+        <div class="field-wrap">
+          <label for="jsa-diperiksa">Diperiksa atau Dikaji Oleh</label>
+          <select id="jsa-diperiksa" required></select>
+          <small class="field-hint">Pilih user pemeriksa/kaji dari Daftar User.</small>
+        </div>
+        <div class="field-wrap full">
+          <label>Tanda Tangan HSE</label>
+          <div class="signature-box">
+            <canvas id="jsa-sign-hse" class="signature-canvas" aria-label="Tanda Tangan HSE"></canvas>
+            <button id="jsa-clear-hse" type="button" class="ghost">Hapus Tanda Tangan HSE</button>
+          </div>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-tanggal-hse">Tanggal by HSE</label>
+          <input id="jsa-tanggal-hse" type="date" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="jsa-disetujui">Disetujui Oleh</label>
+          <select id="jsa-disetujui" required></select>
+          <small class="field-hint">Pilih user penyetuju dari Daftar User.</small>
+        </div>
+        <div class="field-wrap full">
+          <label>Tanda Tangan Penyelia</label>
+          <div class="signature-box">
+            <canvas id="jsa-sign-penyelia" class="signature-canvas" aria-label="Tanda Tangan Penyelia"></canvas>
+            <button id="jsa-clear-penyelia" type="button" class="ghost">Hapus Tanda Tangan Penyelia</button>
+          </div>
+        </div>
+        <div class="field-wrap">
+          <label for="jsa-tanggal-penyelia">Tanggal by Penyelia</label>
+          <input id="jsa-tanggal-penyelia" type="date" required />
+        </div>
+
+        <div class="field-wrap full">
+          <label>Langkah Kerja</label>
+          <div id="jsa-langkah-list" class="jsa-langkah-list"></div>
+          <div class="form-inline-actions">
+            <button id="jsa-add-langkah-btn" type="button" class="ghost">Tambah Langkah Kerja</button>
+          </div>
+          <small class="field-hint">Tambahkan satu atau lebih Langkah Kerja. Setiap Langkah Kerja memiliki satu atau lebih Potensi Bahaya / Insiden.</small>
+        </div>
+
+        <div class="field-wrap full">
+          <label for="jsa-berlaku-sampai">JSA ini berlaku sampai :</label>
+          <input id="jsa-berlaku-sampai" type="date" required />
+        </div>
+
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan JSA</button>
+            <button id="jsa-cancel-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>No JSA</th>
+            <th>Tanggal</th>
+            <th>Departemen</th>
+            <th>Perusahaan</th>
+            <th>Disiapkan Oleh</th>
+            <th>Diperiksa Oleh</th>
+            <th>Disetujui Oleh</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="jsa-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/cloud_sync.js"></script>
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/detail_modal.js"></script>
+  <script src="../scripts/pages/jsa.js"></script>
+</body>
+</html>

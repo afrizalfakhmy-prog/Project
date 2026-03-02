@@ -3,7 +3,8 @@
 
   const routes = {
     KTA: 'kta.html',
-    TTA: 'tta.html'
+    TTA: 'tta.html',
+    JSA: 'jsa.html'
   };
 
   cardButtons.forEach(function (button) {

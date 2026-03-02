@@ -211,6 +211,7 @@
       'My Profile': 'pages/my_profile.html',
       Achievement: 'pages/achievement.html',
       'Frontline Leadership': 'pages/frontline_leadership.html',
+      JSA: 'pages/jsa.html',
       Inspeksi: 'pages/inspeksi.html',
       'OHS Talk': 'pages/ohs_talk.html',
       Observasi: 'pages/observasi.html',
