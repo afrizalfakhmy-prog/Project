@@ -3,6 +3,7 @@
   const USER_KEY = 'aios_users';
   const KTA_KEY = 'aios_kta';
   const TTA_KEY = 'aios_tta';
+  const JSA_KEY = 'aios_jsa';
 
   const cardsContainer = document.getElementById('tasklist-cards');
   const emptyText = document.getElementById('tasklist-empty');
@@ -51,6 +52,16 @@
     }) || null;
   }
 
+  function getRoleFlags() {
+    const session = getSession();
+    const role = String((session && session.role) || '').trim();
+    return {
+      role: role,
+      isSuperAdmin: role === 'Super Admin',
+      isAdmin: role === 'Admin'
+    };
+  }
+
   function isOpenOrProgress(status) {
     return status === 'Open' || status === 'Progress';
   }
@@ -72,6 +83,121 @@
         tanggalPerbaikan: row.tanggalPerbaikan || ''
       };
     });
+  }
+
+  function isJsaValidationCompleted(stage, row) {
+    const target = row || {};
+    const isHse = stage === 'hse';
+    const status = String(isHse ? target.validasiHse : target.validasiPenyelia || '').trim();
+    const date = String(isHse ? target.tanggalHse : target.tanggalPenyelia || '').trim();
+    const sign = String(isHse ? target.ttdHse : target.ttdPenyelia || '').trim();
+    const note = String(isHse ? target.catatanHse : target.catatanPenyelia || '').trim();
+    if (status === 'Approved') return !!(date && sign);
+    if (status === 'Not Approved') return !!note;
+    return false;
+  }
+
+  function isJsaCreator(target, currentUser) {
+    const row = target || {};
+    const user = currentUser || {};
+    const creatorUsername = String(row.disiapkanUsername || '').trim().toLowerCase();
+    const currentUsername = String(user.username || '').trim().toLowerCase();
+    if (creatorUsername && currentUsername && creatorUsername === currentUsername) return true;
+
+    const creatorName = String(row.disiapkanOleh || '').trim().toLowerCase();
+    const currentName = String(user.nama || user.username || '').trim().toLowerCase();
+    return !!creatorName && !!currentName && creatorName === currentName;
+  }
+
+  function buildJsaNotifications(rows, currentUser, roleFlags) {
+    const list = Array.isArray(rows) ? rows : [];
+    const isPrivilegedViewer = roleFlags.isSuperAdmin || roleFlags.isAdmin;
+
+    return list.reduce(function (acc, row) {
+      const target = row || {};
+      const hseStatus = String(target.validasiHse || '').trim();
+      const penyeliaStatus = String(target.validasiPenyelia || '').trim();
+      const hseApproved = hseStatus === 'Approved' && isJsaValidationCompleted('hse', target);
+      const hseRejected = hseStatus === 'Not Approved' && isJsaValidationCompleted('hse', target);
+      const penyeliaApproved = penyeliaStatus === 'Approved' && isJsaValidationCompleted('penyelia', target);
+      const penyeliaRejected = penyeliaStatus === 'Not Approved' && isJsaValidationCompleted('penyelia', target);
+
+      const hseAssigneeId = String(target.diperiksaId || '').trim();
+      const penyeliaAssigneeId = String(target.disetujuiId || '').trim();
+      const isCreator = isJsaCreator(target, currentUser);
+
+      const canViewHse = isPrivilegedViewer || (hseAssigneeId && hseAssigneeId === String(currentUser.id || '').trim());
+      const canViewPenyelia = isPrivilegedViewer || (penyeliaAssigneeId && penyeliaAssigneeId === String(currentUser.id || '').trim());
+      const canViewCreator = isPrivilegedViewer || isCreator;
+
+      if (hseRejected && canViewCreator) {
+        acc.push({
+          sourceType: 'JSA',
+          mode: 'rework',
+          stage: 'hse',
+          id: target.id,
+          noId: target.noJsa || '-',
+          tanggalLaporan: target.tanggal || '-',
+          namaPelapor: target.disiapkanOleh || '-',
+          perusahaan: target.perusahaan || '-',
+          status: 'Revisi JSA (Not Approved HSE)',
+          canEdit: isCreator,
+          actionLabel: 'Revisi JSA'
+        });
+      }
+
+      if (penyeliaRejected && canViewCreator) {
+        acc.push({
+          sourceType: 'JSA',
+          mode: 'rework',
+          stage: 'penyelia',
+          id: target.id,
+          noId: target.noJsa || '-',
+          tanggalLaporan: target.tanggal || '-',
+          namaPelapor: target.disiapkanOleh || '-',
+          perusahaan: target.perusahaan || '-',
+          status: 'Revisi JSA (Not Approved Penyelia)',
+          canEdit: isCreator,
+          actionLabel: 'Revisi JSA'
+        });
+      }
+
+      if (!hseApproved && !hseRejected && canViewHse && hseAssigneeId) {
+        acc.push({
+          sourceType: 'JSA',
+          mode: 'validate',
+          stage: 'hse',
+          id: target.id,
+          noId: target.noJsa || '-',
+          tanggalLaporan: target.tanggal || '-',
+          namaPelapor: target.disiapkanOleh || '-',
+          perusahaan: target.perusahaan || '-',
+          status: 'Menunggu Validasi HSE',
+          assigneeId: hseAssigneeId,
+          canEdit: hseAssigneeId === String(currentUser.id || '').trim(),
+          actionLabel: 'Isi Validasi'
+        });
+      }
+
+      if (!penyeliaApproved && !penyeliaRejected && hseApproved && canViewPenyelia && penyeliaAssigneeId) {
+        acc.push({
+          sourceType: 'JSA',
+          mode: 'validate',
+          stage: 'penyelia',
+          id: target.id,
+          noId: target.noJsa || '-',
+          tanggalLaporan: target.tanggal || '-',
+          namaPelapor: target.disiapkanOleh || '-',
+          perusahaan: target.perusahaan || '-',
+          status: 'Menunggu Validasi Penyelia',
+          assigneeId: penyeliaAssigneeId,
+          canEdit: penyeliaAssigneeId === String(currentUser.id || '').trim(),
+          actionLabel: 'Isi Validasi'
+        });
+      }
+
+      return acc;
+    }, []);
   }
 
   function getThumbnailUrl(fotos) {
@@ -129,13 +255,18 @@
 
     const ktaRows = mapRecords('KTA', readList(KTA_KEY));
     const ttaRows = mapRecords('TTA', readList(TTA_KEY));
+    const jsaRows = readList(JSA_KEY);
     const allRows = ktaRows.concat(ttaRows);
+    const roleFlags = getRoleFlags();
+    const isPrivilegedViewer = roleFlags.isSuperAdmin || roleFlags.isAdmin;
 
-    const notifications = allRows.filter(function (row) {
+    const baseNotifications = isPrivilegedViewer ? allRows : allRows.filter(function (row) {
       const reporterMatch = String(row.namaPelapor || '').toLowerCase() === String(currentUser.nama || '').toLowerCase();
       const pjaMatch = row.namaPjaId && row.namaPjaId === currentUser.id && isOpenOrProgress(row.status);
       return reporterMatch || pjaMatch;
     });
+    const jsaNotifications = buildJsaNotifications(jsaRows, currentUser, roleFlags);
+    const notifications = baseNotifications.concat(jsaNotifications);
 
     cardsContainer.innerHTML = '';
     if (notifications.length === 0) {
@@ -147,14 +278,33 @@
     emptyText.classList.add('hidden');
 
     notifications.forEach(function (row) {
-      const canEdit = row.namaPjaId === currentUser.id && isOpenOrProgress(row.status);
-      const thumb = getThumbnailUrl(row.fotoTemuan);
+      const isJsaRow = row.sourceType === 'JSA';
+      const canEdit = isJsaRow
+        ? !!row.canEdit
+        : (roleFlags.isSuperAdmin || (row.namaPjaId === currentUser.id && isOpenOrProgress(row.status)));
+      const canDelete = isJsaRow ? false : roleFlags.isSuperAdmin;
+      const thumb = isJsaRow ? '' : getThumbnailUrl(row.fotoTemuan);
+      const badgeLabel = isJsaRow
+        ? (row.mode === 'rework'
+          ? (row.stage === 'penyelia' ? 'REVISI PENYELIA' : 'REVISI HSE')
+          : (row.stage === 'penyelia' ? 'VALIDASI PENYELIA' : 'VALIDASI HSE'))
+        : '';
+      const badgeClass = isJsaRow
+        ? (row.mode === 'rework'
+          ? 'task-badge task-badge-rework'
+          : 'task-badge task-badge-validate')
+        : '';
 
       const card = document.createElement('article');
       card.className = 'task-card';
       card.dataset.sourceType = row.sourceType;
       card.dataset.recordId = row.id;
       card.dataset.canEdit = canEdit ? 'yes' : 'no';
+      card.dataset.canDelete = canDelete ? 'yes' : 'no';
+      if (isJsaRow) {
+        card.dataset.stage = String(row.stage || '');
+        card.dataset.mode = String(row.mode || 'validate');
+      }
 
       card.innerHTML = '<div class="task-thumb-wrap">' +
         (thumb
@@ -166,9 +316,20 @@
           '<p><strong>Tanggal Laporan:</strong> ' + row.tanggalLaporan + '</p>' +
           '<p><strong>Nama Pelapor:</strong> ' + row.namaPelapor + '</p>' +
           '<p><strong>Perusahaan Pelaporan:</strong> ' + row.perusahaan + '</p>' +
+          (isJsaRow ? '<p><span class="' + badgeClass + '">' + badgeLabel + '</span></p>' : '') +
           '<p><strong>Status:</strong> ' + row.status + '</p>' +
           '<p class="task-source">Sumber: ' + row.sourceType + '</p>' +
-          (canEdit ? '<p class="task-edit-hint">Klik card untuk edit tindak lanjut.</p>' : '') +
+          (isJsaRow
+            ? (canEdit
+              ? '<p class="task-edit-hint">Klik card atau tombol untuk lanjutkan proses JSA.</p>'
+              : '<p class="task-edit-hint">Notifikasi untuk user terpilih.</p>')
+            : (canEdit ? '<p class="task-edit-hint">Klik card untuk edit tindak lanjut.</p>' : '')) +
+          ((canEdit || canDelete)
+            ? '<div class="form-inline-actions">' +
+              (canEdit ? '<button type="button" class="table-btn" data-action="' + (isJsaRow ? 'open-jsa' : 'edit') + '">' + (isJsaRow ? (row.actionLabel || 'Isi Validasi') : 'Ubah') + '</button>' : '') +
+              (canDelete ? '<button type="button" class="table-btn danger" data-action="delete">Hapus</button>' : '') +
+              '</div>'
+            : '') +
         '</div>';
 
       cardsContainer.appendChild(card);
@@ -218,10 +379,77 @@
     const card = event.target.closest('.task-card');
     if (!card) return;
 
+    const actionButton = event.target.closest('button[data-action]');
+    if (actionButton) {
+      const action = actionButton.dataset.action;
+      const sourceType = card.dataset.sourceType;
+      const recordId = card.dataset.recordId;
+
+      if (sourceType === 'JSA') {
+        if (action === 'open-jsa') {
+          if (card.dataset.canEdit !== 'yes') {
+            alert('Notifikasi ini hanya dapat diisi oleh user yang ditunjuk pada form JSA.');
+            return;
+          }
+          const stage = String(card.dataset.stage || '').trim();
+          const mode = String(card.dataset.mode || 'validate').trim();
+          window.location.href = 'jsa.html?mode=' + encodeURIComponent(mode) + '&id=' + encodeURIComponent(recordId) + '&stage=' + encodeURIComponent(stage);
+          return;
+        }
+        return;
+      }
+
+      const key = sourceType === 'KTA' ? KTA_KEY : TTA_KEY;
+      const rows = readList(key);
+      const record = rows.find(function (row) { return row.id === recordId; });
+      if (!record) return;
+
+      if (action === 'delete') {
+        if (card.dataset.canDelete !== 'yes') {
+          alert('Hanya Super Admin yang dapat menghapus data pada Tasklist.');
+          return;
+        }
+        if (!confirm('Hapus notifikasi tasklist ini?')) return;
+        const nextRows = rows.filter(function (row) { return row.id !== recordId; });
+        writeList(key, nextRows);
+
+        if (recordTypeInput.value === sourceType && recordIdInput.value === recordId) {
+          hideEditPanel();
+        }
+        renderCards();
+        return;
+      }
+
+      if (action === 'edit') {
+        if (card.dataset.canEdit !== 'yes') {
+          alert('Anda tidak memiliki akses edit untuk item ini.');
+          return;
+        }
+
+        showEditPanel({
+          sourceType: sourceType,
+          id: record.id,
+          tindakanPerbaikan: record.tindakanPerbaikan || '',
+          tanggalPerbaikan: record.tanggalPerbaikan || '',
+          status: record.status || 'Open',
+          fotoPerbaikan: Array.isArray(record.fotoPerbaikan) ? record.fotoPerbaikan : []
+        });
+        return;
+      }
+    }
+
     if (card.dataset.canEdit !== 'yes') return;
 
     const sourceType = card.dataset.sourceType;
     const recordId = card.dataset.recordId;
+
+    if (sourceType === 'JSA') {
+      const stage = String(card.dataset.stage || '').trim();
+      const mode = String(card.dataset.mode || 'validate').trim();
+      window.location.href = 'jsa.html?mode=' + encodeURIComponent(mode) + '&id=' + encodeURIComponent(recordId) + '&stage=' + encodeURIComponent(stage);
+      return;
+    }
+
     const key = sourceType === 'KTA' ? KTA_KEY : TTA_KEY;
     const rows = readList(key);
     const record = rows.find(function (row) { return row.id === recordId; });
@@ -255,9 +483,10 @@
 
     const currentUser = getCurrentUser();
     if (!currentUser) return;
+    const roleFlags = getRoleFlags();
 
     const record = rows[idx];
-    const allowed = record.namaPjaId === currentUser.id && isOpenOrProgress(record.status || '');
+    const allowed = roleFlags.isSuperAdmin || (record.namaPjaId === currentUser.id && isOpenOrProgress(record.status || ''));
     if (!allowed) {
       alert('Anda tidak memiliki akses edit untuk item ini.');
       return;

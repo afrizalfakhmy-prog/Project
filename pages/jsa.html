@@ -13,11 +13,14 @@
         <h1>JSA</h1>
         <div class="module-actions">
           <button id="add-jsa-btn" type="button">Tambah</button>
-          <a class="link-btn" href="frontline_leadership.html">Kembali ke Frontline Leadership</a>
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
         </div>
       </header>
 
       <form id="jsa-form" class="inline-form hidden">
+        <div id="jsa-validation-mode-banner" class="field-wrap full hidden">
+          <p class="subtitle"><strong>Mode Validasi:</strong> Anda sedang mengisi tahap validasi.</p>
+        </div>
         <div class="field-wrap">
           <label for="jsa-jenis">JSA</label>
           <select id="jsa-jenis" required>
@@ -77,18 +80,21 @@
           <input id="jsa-disiapkan" type="text" readonly />
           <small class="field-hint">Terisi otomatis berdasarkan nama akun yang login.</small>
         </div>
+        <div class="field-wrap">
+          <label for="jsa-tanggal-pengawas">Tanggal by Pengawas</label>
+          <input id="jsa-tanggal-pengawas" type="date" readonly />
+          <small class="field-hint">Terisi otomatis saat form diisi.</small>
+        </div>
 
         <div class="field-wrap full">
           <label>Tanda Tangan Pengawas</label>
           <div class="signature-box">
             <canvas id="jsa-sign-pengawas" class="signature-canvas" aria-label="Tanda Tangan Pengawas"></canvas>
             <button id="jsa-clear-pengawas" type="button" class="ghost">Hapus Tanda Tangan Pengawas</button>
+            <input id="jsa-upload-pengawas" type="file" accept="image/*" />
+            <img id="jsa-preview-pengawas" class="signature-upload-preview hidden" alt="Preview Tanda Tangan Pengawas" />
+            <small class="field-hint">Bisa isi dengan digital sign atau upload gambar tanda tangan.</small>
           </div>
-        </div>
-        <div class="field-wrap">
-          <label for="jsa-tanggal-pengawas">Tanggal by Pengawas</label>
-          <input id="jsa-tanggal-pengawas" type="date" readonly />
-          <small class="field-hint">Terisi otomatis saat form diisi.</small>
         </div>
 
         <div class="field-wrap">
@@ -96,16 +102,31 @@
           <select id="jsa-diperiksa" required></select>
           <small class="field-hint">Pilih user pemeriksa/kaji dari Daftar User.</small>
         </div>
-        <div class="field-wrap full">
-          <label>Tanda Tangan HSE</label>
-          <div class="signature-box">
-            <canvas id="jsa-sign-hse" class="signature-canvas" aria-label="Tanda Tangan HSE"></canvas>
-            <button id="jsa-clear-hse" type="button" class="ghost">Hapus Tanda Tangan HSE</button>
-          </div>
+        <div class="field-wrap">
+          <label for="jsa-validasi-hse">Validasi by HSE</label>
+          <select id="jsa-validasi-hse">
+            <option value="">(Pilih Validasi)</option>
+            <option value="Approved">Approved</option>
+            <option value="Not Approved">Not Approved</option>
+          </select>
         </div>
         <div class="field-wrap">
           <label for="jsa-tanggal-hse">Tanggal by HSE</label>
-          <input id="jsa-tanggal-hse" type="date" required />
+          <input id="jsa-tanggal-hse" type="date" />
+        </div>
+        <div id="jsa-catatan-hse-wrap" class="field-wrap full hidden">
+          <label for="jsa-catatan-hse">Catatan by HSE</label>
+          <textarea id="jsa-catatan-hse" rows="3"></textarea>
+        </div>
+        <div class="field-wrap full">
+          <label>Tanda Tangan HSE</label>
+          <div id="jsa-sign-hse-box" class="signature-box">
+            <canvas id="jsa-sign-hse" class="signature-canvas" aria-label="Tanda Tangan HSE"></canvas>
+            <button id="jsa-clear-hse" type="button" class="ghost">Hapus Tanda Tangan HSE</button>
+            <input id="jsa-upload-hse" type="file" accept="image/*" />
+            <img id="jsa-preview-hse" class="signature-upload-preview hidden" alt="Preview Tanda Tangan HSE" />
+            <small class="field-hint">Bisa isi dengan digital sign atau upload gambar tanda tangan.</small>
+          </div>
         </div>
 
         <div class="field-wrap">
@@ -113,16 +134,31 @@
           <select id="jsa-disetujui" required></select>
           <small class="field-hint">Pilih user penyetuju dari Daftar User.</small>
         </div>
-        <div class="field-wrap full">
-          <label>Tanda Tangan Penyelia</label>
-          <div class="signature-box">
-            <canvas id="jsa-sign-penyelia" class="signature-canvas" aria-label="Tanda Tangan Penyelia"></canvas>
-            <button id="jsa-clear-penyelia" type="button" class="ghost">Hapus Tanda Tangan Penyelia</button>
-          </div>
+        <div class="field-wrap">
+          <label for="jsa-validasi-penyelia">Validasi by Penyelia</label>
+          <select id="jsa-validasi-penyelia">
+            <option value="">(Pilih Validasi)</option>
+            <option value="Approved">Approved</option>
+            <option value="Not Approved">Not Approved</option>
+          </select>
         </div>
         <div class="field-wrap">
           <label for="jsa-tanggal-penyelia">Tanggal by Penyelia</label>
-          <input id="jsa-tanggal-penyelia" type="date" required />
+          <input id="jsa-tanggal-penyelia" type="date" />
+        </div>
+        <div id="jsa-catatan-penyelia-wrap" class="field-wrap full hidden">
+          <label for="jsa-catatan-penyelia">Catatan by Penyelia</label>
+          <textarea id="jsa-catatan-penyelia" rows="3"></textarea>
+        </div>
+        <div class="field-wrap full">
+          <label>Tanda Tangan Penyelia</label>
+          <div id="jsa-sign-penyelia-box" class="signature-box">
+            <canvas id="jsa-sign-penyelia" class="signature-canvas" aria-label="Tanda Tangan Penyelia"></canvas>
+            <button id="jsa-clear-penyelia" type="button" class="ghost">Hapus Tanda Tangan Penyelia</button>
+            <input id="jsa-upload-penyelia" type="file" accept="image/*" />
+            <img id="jsa-preview-penyelia" class="signature-upload-preview hidden" alt="Preview Tanda Tangan Penyelia" />
+            <small class="field-hint">Bisa isi dengan digital sign atau upload gambar tanda tangan.</small>
+          </div>
         </div>
 
         <div class="field-wrap full">
@@ -136,7 +172,8 @@
 
         <div class="field-wrap full">
           <label for="jsa-berlaku-sampai">JSA ini berlaku sampai :</label>
-          <input id="jsa-berlaku-sampai" type="date" required />
+          <input id="jsa-berlaku-sampai" type="date" required readonly />
+          <small class="field-hint">Terisi otomatis dari field Tanggal + 30 hari.</small>
         </div>
 
         <div class="field-wrap full">

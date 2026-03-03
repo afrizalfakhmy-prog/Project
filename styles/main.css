@@ -336,6 +336,7 @@ button.ghost:hover {
 
 .inline-form {
   display: grid;
+  align-items: start;
   gap: 12px;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   margin-bottom: 18px;
@@ -438,6 +439,29 @@ button.ghost:hover {
 .task-edit-hint {
   color: #0f766e;
   font-size: 13px;
+}
+
+.task-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+}
+
+.task-badge-validate {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+.task-badge-rework {
+  background: #fff1f2;
+  color: #be123c;
+  border-color: #fecdd3;
 }
 
 .tasklist-edit {
@@ -715,7 +739,7 @@ button.ghost:hover {
   border: 1px solid #dbeafe;
   border-radius: 10px;
   padding: 10px;
-  background: #f8fbff;
+  background: #ffffff;
   display: grid;
   gap: 10px;
 }
@@ -723,10 +747,42 @@ button.ghost:hover {
 .signature-canvas {
   width: 100%;
   height: 160px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #64748b;
   border-radius: 8px;
   background: #ffffff;
   touch-action: none;
+}
+
+.signature-box-disabled {
+  opacity: 0.7;
+}
+
+.signature-box-disabled .signature-canvas {
+  pointer-events: none;
+  background: #f1f5f9;
+}
+
+.signature-upload-preview {
+  width: 180px;
+  max-width: 100%;
+  height: 90px;
+  object-fit: contain;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 4px;
+}
+
+#jsa-validation-mode-banner {
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  padding: 10px 12px;
+}
+
+#jsa-validation-mode-banner .subtitle {
+  margin: 0;
+  color: #1e3a8a;
 }
 
 .jsa-langkah-list {
@@ -792,11 +848,47 @@ button.ghost:hover {
   gap: 8px;
 }
 
+.jsa-control-set-list {
+  display: grid;
+  gap: 8px;
+}
+
+.jsa-control-set {
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.jsa-control-set-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.jsa-control-set-grid > .field-wrap {
+  height: 100%;
+}
+
+.jsa-control-set-grid .jsa-penanggung-input {
+  min-height: 92px;
+}
+
 .jsa-sub-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: start;
+}
+
+@media (min-width: 980px) {
+  .jsa-control-set-grid {
+    grid-template-columns: 2fr 1.35fr 2fr;
+    align-items: stretch;
+  }
 }
 
 .attachment-list {
