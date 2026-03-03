@@ -191,6 +191,10 @@ button.ghost:hover {
   text-align: left;
   background: #ffffff;
   color: #1e3a8a;
+.achievement-row-highlight {
+  background: #dbeafe !important;
+  transition: background-color 0.3s ease;
+}
   border: 1px solid #bfdbfe;
 }
 
@@ -575,6 +579,16 @@ button.ghost:hover {
   border-radius: 12px;
   background: #ffffff;
   padding: 12px;
+  text-align: center;
+}
+
+.achievement-kpi-card[data-status-filter] {
+  cursor: pointer;
+}
+
+.achievement-kpi-card[data-status-filter].active {
+  border-color: #1d4ed8;
+  background: #eff6ff;
 }
 
 .achievement-kpi-card p {

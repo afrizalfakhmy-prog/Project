@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inspeksi Camp | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body data-inspeksi-jenis="Inspeksi Camp">
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>Inspeksi Camp</h1>
+        <div class="module-actions">
+          <button id="inspeksi-add-btn" type="button">Tambah</button>
+          <a class="link-btn" href="inspeksi.html">Kembali ke Inspeksi</a>
+        </div>
+      </header>
+
+      <form id="inspeksi-form" class="inline-form hidden">
+        <div class="field-wrap">
+          <label for="inspeksi-jenis">Jenis Inspeksi</label>
+          <input id="inspeksi-jenis" type="text" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-no-id">No ID</label>
+          <input id="inspeksi-no-id" type="text" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-tanggal-laporan">Tanggal Laporan</label>
+          <input id="inspeksi-tanggal-laporan" type="date" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-tanggal">Tanggal Inspeksi</label>
+          <input id="inspeksi-tanggal" type="date" required />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-area">Area / Lokasi</label>
+          <select id="inspeksi-area" required>
+            <option value="">(Pilih Area / Lokasi)</option>
+            <option value="Mining">Mining</option>
+            <option value="Hauling">Hauling</option>
+            <option value="Port">Port</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Warehouse">Warehouse</option>
+            <option value="CHPP">CHPP</option>
+            <option value="Office">Office</option>
+            <option value="Camp">Camp</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-detail-area">Detail Area / Lokasi</label>
+          <input id="inspeksi-detail-area" type="text" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="inspeksi-nama-inspektor">Nama Inspektor</label>
+          <input id="inspeksi-nama-inspektor" type="text" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-jabatan-inspektor">Jabatan Inspektor</label>
+          <input id="inspeksi-jabatan-inspektor" type="text" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-departemen-inspektor">Departemen Inspektor</label>
+          <input id="inspeksi-departemen-inspektor" type="text" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-perusahaan-inspektor">Perusahaan Inspektor</label>
+          <input id="inspeksi-perusahaan-inspektor" type="text" readonly />
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-ccow">CCOW</label>
+          <input id="inspeksi-ccow" type="text" readonly />
+        </div>
+
+        <div class="field-wrap">
+          <label for="inspeksi-pengawas">Nama Pengawas</label>
+          <select id="inspeksi-pengawas" required></select>
+        </div>
+        <div class="field-wrap">
+          <label for="inspeksi-pja">Nama PJA</label>
+          <select id="inspeksi-pja" required></select>
+        </div>
+
+        <div class="field-wrap full">
+          <div class="form-inline-actions">
+            <button type="submit">Simpan Inspeksi</button>
+            <button id="inspeksi-cancel-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>No ID</th>
+            <th>Tanggal Laporan</th>
+            <th>Jenis Inspeksi</th>
+            <th>Area / Lokasi</th>
+            <th>Nama Inspektor</th>
+            <th>Nama Pengawas</th>
+            <th>Nama PJA</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="inspeksi-tbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../scripts/cloud_sync.js"></script>
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/detail_modal.js"></script>
+  <script src="../scripts/pages/inspeksi.js"></script>
+</body>
+</html>

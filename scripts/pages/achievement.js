@@ -4,6 +4,7 @@
   const KTA_KEY = 'aios_kta';
   const TTA_KEY = 'aios_tta';
   const OBS_KEY = 'aios_observasi';
+  const INSPEKSI_KEY = 'aios_inspeksi';
   const ROLE_USER = 'User';
   const ROLE_ADMIN = 'Admin';
   const ROLE_SUPER_ADMIN = 'Super Admin';
@@ -22,8 +23,10 @@
     'obsLimaRJawaban',
     'obsFitJawaban'
   ];
+  const INS_DIMENSIONS = ['jenisInspeksi', 'namaInspektor', 'departemenInspektor', 'perusahaanInspektor'];
   const DIMENSION_LABELS = {
     monthKey: 'Bulan',
+    status: 'Status',
     departemen: 'Departemen',
     perusahaan: 'Perusahaan',
     kategoriTemuan: 'Kategori Temuan',
@@ -43,7 +46,11 @@
     obsApdJawaban: 'Penggunaan APD',
     obsKompetensiJawaban: 'Kesesuaian Kompetensi',
     obsLimaRJawaban: 'Program 5R',
-    obsFitJawaban: 'Fit to Work'
+    obsFitJawaban: 'Fit to Work',
+    namaInspektor: 'Nama Inspektor',
+    jenisInspeksi: 'Jenis Inspeksi',
+    departemenInspektor: 'Departemen Inspektor',
+    perusahaanInspektor: 'Perusahaan Inspektor'
   };
 
   const STATUS_COLORS = {
@@ -57,16 +64,20 @@
   const userPanel = document.getElementById('achievement-user-panel');
   const adminPanel = document.getElementById('achievement-admin-panel');
   const submenu = document.getElementById('achievement-submenu');
+  const lastUpdatedText = document.getElementById('achievement-last-updated');
 
   const userKtaCanvas = document.getElementById('kta-user-chart');
   const userTtaCanvas = document.getElementById('tta-user-chart');
   const userObsCanvas = document.getElementById('obs-user-chart');
+  const userInspeksiCanvas = document.getElementById('inspeksi-user-chart');
   const userKtaDetail = document.getElementById('kta-user-detail');
   const userTtaDetail = document.getElementById('tta-user-detail');
   const userObsDetail = document.getElementById('obs-user-detail');
+  const userInspeksiDetail = document.getElementById('inspeksi-user-detail');
   const userKtaEmpty = document.getElementById('kta-user-empty');
   const userTtaEmpty = document.getElementById('tta-user-empty');
   const userObsEmpty = document.getElementById('obs-user-empty');
+  const userInspeksiEmpty = document.getElementById('inspeksi-user-empty');
 
   const kpiOpen = document.getElementById('kpi-open');
   const kpiProgress = document.getElementById('kpi-progress');
@@ -79,6 +90,9 @@
   const detailTbody = document.getElementById('achievement-admin-detail-tbody');
   const detailEmpty = document.getElementById('achievement-admin-detail-empty');
   const detailSection = document.querySelector('.achievement-table-wrap');
+  const detailInsSection = document.getElementById('achievement-inspeksi-table-wrap');
+  const detailInsTbody = document.getElementById('achievement-inspeksi-detail-tbody');
+  const detailInsEmpty = document.getElementById('achievement-inspeksi-detail-empty');
   const adminMonthlyCanvas = document.getElementById('admin-chart-monthly');
   const adminMonthlyDetail = document.getElementById('admin-monthly-detail');
   const adminMonthlyEmpty = document.getElementById('admin-monthly-empty');
@@ -102,16 +116,25 @@
     obsApdJawaban: document.getElementById('admin-chart-obsApdJawaban'),
     obsKompetensiJawaban: document.getElementById('admin-chart-obsKompetensiJawaban'),
     obsLimaRJawaban: document.getElementById('admin-chart-obsLimaRJawaban'),
-    obsFitJawaban: document.getElementById('admin-chart-obsFitJawaban')
+    obsFitJawaban: document.getElementById('admin-chart-obsFitJawaban'),
+    namaInspektor: document.getElementById('admin-chart-namaInspektor'),
+    jenisInspeksi: document.getElementById('admin-chart-jenisInspeksi'),
+    departemenInspektor: document.getElementById('admin-chart-departemenInspektor'),
+    perusahaanInspektor: document.getElementById('admin-chart-perusahaanInspektor')
   };
 
   const chartInstances = {};
   let activeModule = 'KTA';
   let activeFilters = createEmptyFilters();
+  let isUserRealtimeBound = false;
+  let isAdminRealtimeBound = false;
+  let userRefreshTimer = null;
+  let adminRefreshTimer = null;
 
   function createEmptyFilters() {
     return {
       monthKey: '',
+      status: '',
       departemen: '',
       perusahaan: '',
       kategoriTemuan: '',
@@ -131,11 +154,31 @@
       obsApdJawaban: '',
       obsKompetensiJawaban: '',
       obsLimaRJawaban: '',
-      obsFitJawaban: ''
+      obsFitJawaban: '',
+      namaInspektor: '',
+      jenisInspeksi: '',
+      departemenInspektor: '',
+      perusahaanInspektor: ''
     };
   }
 
+  function updateLastUpdatedLabel() {
+    if (!lastUpdatedText) return;
+    const now = new Date();
+    const formatted = now.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    lastUpdatedText.textContent = 'Data diperbarui: ' + formatted;
+  }
+
   function getActiveDimensions() {
+    if (activeModule === 'INS') {
+      return INS_DIMENSIONS.slice();
+    }
     if (activeModule === 'OBS') {
       return OBS_DIMENSIONS.slice();
     }
@@ -262,7 +305,27 @@
     });
   }
 
+  function normalizeInspeksiRows(rows) {
+    return rows.map(function (row) {
+      const reportDate = String(row.tanggalLaporan || row.tanggalInspeksi || '').trim();
+      const monthMeta = toMonthMeta(reportDate);
+      return {
+        id: row.id || '',
+        monthKey: monthMeta ? monthMeta.key : '',
+        noId: row.noId || '-',
+        tanggalLaporan: row.tanggalLaporan || row.tanggalInspeksi || '-',
+        namaInspektor: row.namaInspektor || '-',
+        jenisInspeksi: row.jenisInspeksi || '-',
+        departemenInspektor: row.departemenInspektor || '-',
+        perusahaanInspektor: row.perusahaanInspektor || '-'
+      };
+    });
+  }
+
   function getModuleRows(module) {
+    if (module === 'INS') {
+      return normalizeInspeksiRows(readList(INSPEKSI_KEY));
+    }
     if (module === 'OBS') {
       return normalizeObservasiRows(readList(OBS_KEY));
     }
@@ -375,6 +438,37 @@
       .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
   }
 
+  function aggregateMonthlyInspeksiForUser(rows, session, currentUser) {
+    const sessionUsername = String((session && session.username) || '').trim().toLowerCase();
+    const currentName = String((currentUser && currentUser.nama) || '').trim().toLowerCase();
+    const map = {};
+
+    rows.forEach(function (row) {
+      const rowCreatedBy = String((row && row.createdBy) || '').trim().toLowerCase();
+      const rowInspector = String((row && row.namaInspektor) || '').trim().toLowerCase();
+      const isOwnerByCreatedBy = sessionUsername && rowCreatedBy && rowCreatedBy === sessionUsername;
+      const isOwnerByInspector = currentName && rowInspector && rowInspector === currentName;
+      if (!isOwnerByCreatedBy && !isOwnerByInspector) return;
+
+      const monthMeta = toMonthMeta(row.tanggalLaporan || row.tanggalInspeksi);
+      if (!monthMeta) return;
+
+      if (!map[monthMeta.key]) {
+        map[monthMeta.key] = {
+          monthKey: monthMeta.key,
+          monthLabel: monthMeta.label,
+          total: 0
+        };
+      }
+
+      map[monthMeta.key].total += 1;
+    });
+
+    return Object.keys(map)
+      .map(function (key) { return map[key]; })
+      .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
+  }
+
   function destroyChart(key) {
     if (chartInstances[key]) {
       chartInstances[key].destroy();
@@ -465,7 +559,7 @@
     drawChart();
   }
 
-  function renderUserMonthlyObservasiChart(canvas, chartKey, emptyText, detailContainer, rows, onBarClick) {
+  function renderUserMonthlyTotalChart(canvas, chartKey, emptyText, detailContainer, rows, datasetLabel, detailPrefix, color, onBarClick) {
     destroyChart(chartKey);
 
     if (!rows.length) {
@@ -482,7 +576,7 @@
     if (emptyText) emptyText.classList.add('hidden');
     if (detailContainer) {
       detailContainer.innerHTML = rows.map(function (item) {
-        return '<span>' + item.monthLabel + ' | Total Observasi: <strong>' + item.total + '</strong></span>';
+        return '<span>' + item.monthLabel + ' | ' + detailPrefix + ': <strong>' + item.total + '</strong></span>';
       }).join('');
     }
 
@@ -495,9 +589,9 @@
         data: {
           labels: rows.map(function (item) { return item.monthLabel; }),
           datasets: [{
-            label: 'Total Observasi',
+            label: datasetLabel,
             data: rows.map(function (item) { return item.total; }),
-            backgroundColor: '#0ea5e9',
+            backgroundColor: color,
             borderRadius: 6
           }]
         },
@@ -534,6 +628,20 @@
     drawChart();
   }
 
+  function renderUserMonthlyObservasiChart(canvas, chartKey, emptyText, detailContainer, rows, onBarClick) {
+    renderUserMonthlyTotalChart(
+      canvas,
+      chartKey,
+      emptyText,
+      detailContainer,
+      rows,
+      'Total Observasi',
+      'Total Observasi',
+      '#0ea5e9',
+      onBarClick
+    );
+  }
+
   function countByDimension(rows, dimension) {
     const counter = {};
     rows.forEach(function (row) {
@@ -559,6 +667,10 @@
         return false;
       }
 
+      if (activeFilters.status && String(row.status || '') !== String(activeFilters.status)) {
+        return false;
+      }
+
       return dimensions.every(function (dimension) {
         if (!activeFilters[dimension]) return true;
         return String(row[dimension] || '') === String(activeFilters[dimension]);
@@ -567,7 +679,7 @@
   }
 
   function updateKpi(rows) {
-    if (activeModule === 'OBS') {
+    if (activeModule === 'OBS' || activeModule === 'INS') {
       kpiOpen.textContent = '-';
       kpiProgress.textContent = '-';
       kpiClose.textContent = '-';
@@ -603,11 +715,20 @@
       filterChips.appendChild(monthChip);
     }
 
+    if (activeFilters.status) {
+      const statusChip = document.createElement('button');
+      statusChip.type = 'button';
+      statusChip.className = 'legend-chip filter-chip-btn';
+      statusChip.dataset.dimension = 'status';
+      statusChip.textContent = DIMENSION_LABELS.status + ': ' + activeFilters.status + ' ×';
+      filterChips.appendChild(statusChip);
+    }
+
     const activeKeys = dimensions.filter(function (dimension) {
       return !!activeFilters[dimension];
     });
 
-    if (!activeKeys.length && !activeFilters.monthKey) {
+    if (!activeKeys.length && !activeFilters.monthKey && !activeFilters.status) {
       const infoChip = document.createElement('span');
       infoChip.className = 'legend-chip';
       infoChip.textContent = 'Belum ada filter aktif';
@@ -648,6 +769,42 @@
         '<td>' + row.status + '</td>';
       detailTbody.appendChild(tr);
     });
+  }
+
+  function renderInspeksiDetailTable(rows) {
+    if (!detailInsTbody || !detailInsEmpty) return;
+    detailInsTbody.innerHTML = '';
+    if (!rows.length) {
+      detailInsEmpty.classList.remove('hidden');
+      return;
+    }
+
+    detailInsEmpty.classList.add('hidden');
+    rows.forEach(function (row) {
+      const tr = document.createElement('tr');
+      tr.dataset.monthKey = String(row.monthKey || '');
+      tr.innerHTML =
+        '<td>' + row.noId + '</td>' +
+        '<td>' + row.tanggalLaporan + '</td>' +
+        '<td>' + row.namaInspektor + '</td>' +
+        '<td>' + row.jenisInspeksi + '</td>' +
+        '<td>' + row.departemenInspektor + '</td>' +
+        '<td>' + row.perusahaanInspektor + '</td>';
+      detailInsTbody.appendChild(tr);
+    });
+  }
+
+  function focusInspeksiRowByMonth(monthKey) {
+    if (!detailInsSection || !detailInsTbody || !monthKey) return;
+    const row = detailInsTbody.querySelector('tr[data-month-key="' + monthKey + '"]');
+    if (!row) return;
+
+    row.classList.add('achievement-row-highlight');
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    window.setTimeout(function () {
+      row.classList.remove('achievement-row-highlight');
+    }, 1400);
   }
 
   function renderAdminDimensionChart(dimension, rows) {
@@ -710,6 +867,32 @@
   function renderAdminMonthlyChart(rows) {
     if (!adminMonthlyCanvas) return;
 
+    if (activeModule === 'INS') {
+      const monthlyRows = aggregateMonthlyTotal(rows);
+      renderUserMonthlyTotalChart(
+        adminMonthlyCanvas,
+        'admin-monthly',
+        adminMonthlyEmpty,
+        adminMonthlyDetail,
+        monthlyRows,
+        'Total Inspeksi',
+        'Total Inspeksi',
+        '#14b8a6',
+        function (selected) {
+          const selectedMonth = selected && selected.monthKey ? selected.monthKey : '';
+          if (!selectedMonth) return;
+          activeFilters.monthKey = activeFilters.monthKey === selectedMonth ? '' : selectedMonth;
+          renderAdminDashboard();
+          if (activeFilters.monthKey) {
+            window.setTimeout(function () {
+              focusInspeksiRowByMonth(activeFilters.monthKey);
+            }, 0);
+          }
+        }
+      );
+      return;
+    }
+
     if (activeModule === 'OBS') {
       const monthlyRows = aggregateMonthlyTotal(rows);
       renderUserMonthlyObservasiChart(
@@ -750,20 +933,39 @@
     });
   }
 
+  function syncStatusCardActiveState() {
+    if (!kpiSection) return;
+    const statusCards = kpiSection.querySelectorAll('[data-status-filter]');
+    statusCards.forEach(function (card) {
+      const value = String(card.getAttribute('data-status-filter') || '').trim();
+      if (value && value === activeFilters.status) card.classList.add('active');
+      else card.classList.remove('active');
+    });
+  }
+
   function renderAdminDashboard() {
     const baseRows = getModuleRows(activeModule);
     const filteredRows = applyFilters(baseRows);
 
     updateDimensionCardVisibility();
     if (kpiSection) {
-      kpiSection.classList.toggle('hidden', activeModule === 'OBS');
+      kpiSection.classList.toggle('hidden', activeModule === 'OBS' || activeModule === 'INS');
     }
     if (detailSection) {
-      detailSection.classList.toggle('hidden', activeModule === 'OBS');
+      detailSection.classList.toggle('hidden', activeModule === 'OBS' || activeModule === 'INS');
+    }
+    if (detailInsSection) {
+      detailInsSection.classList.toggle('hidden', activeModule !== 'INS');
+    }
+    if (activeModule === 'OBS' || activeModule === 'INS') {
+      activeFilters.status = '';
     }
     updateKpi(filteredRows);
+    syncStatusCardActiveState();
     renderFilterChips();
-    if (activeModule !== 'OBS') {
+    if (activeModule === 'INS') {
+      renderInspeksiDetailTable(filteredRows);
+    } else if (activeModule !== 'OBS') {
       renderDetailTable(filteredRows);
     }
     renderAdminMonthlyChart(filteredRows);
@@ -779,6 +981,8 @@
         destroyChart(key);
       }
     });
+
+    updateLastUpdatedLabel();
   }
 
   function setSubmenuActive(module) {
@@ -803,13 +1007,91 @@
     const ktaRows = getModuleRows('KTA');
     const ttaRows = getModuleRows('TTA');
     const observasiRows = readList(OBS_KEY);
+    const inspeksiRows = readList(INSPEKSI_KEY);
     const ktaMonthly = aggregateMonthlyForUser(ktaRows, currentUser);
     const ttaMonthly = aggregateMonthlyForUser(ttaRows, currentUser);
     const observasiMonthly = aggregateMonthlyObservasiForUser(observasiRows, session, currentUser);
+    const inspeksiMonthly = aggregateMonthlyInspeksiForUser(inspeksiRows, session, currentUser);
 
     renderUserMonthlyChart(userKtaCanvas, 'user-kta', userKtaEmpty, userKtaDetail, ktaMonthly, 'KTA');
     renderUserMonthlyChart(userTtaCanvas, 'user-tta', userTtaEmpty, userTtaDetail, ttaMonthly, 'TTA');
     renderUserMonthlyObservasiChart(userObsCanvas, 'user-observasi', userObsEmpty, userObsDetail, observasiMonthly);
+    renderUserMonthlyTotalChart(
+      userInspeksiCanvas,
+      'user-inspeksi',
+      userInspeksiEmpty,
+      userInspeksiDetail,
+      inspeksiMonthly,
+      'Total Inspeksi',
+      'Total Inspeksi',
+      '#14b8a6'
+    );
+
+    updateLastUpdatedLabel();
+  }
+
+  function bindUserRealtimeRefresh() {
+    if (isUserRealtimeBound) return;
+    isUserRealtimeBound = true;
+
+    window.addEventListener('storage', function (event) {
+      if (!event) return;
+      const watchKeys = [SESSION_KEY, USER_KEY, KTA_KEY, TTA_KEY, OBS_KEY, INSPEKSI_KEY];
+      if (event.key !== null && watchKeys.indexOf(event.key) < 0) return;
+      if (userRefreshTimer) window.clearTimeout(userRefreshTimer);
+      userRefreshTimer = window.setTimeout(function () {
+        initUserDashboard();
+      }, 180);
+    });
+
+    window.addEventListener('aios:cloud-sync', function (event) {
+      const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
+        ? event.detail.changedKeys
+        : [];
+      if (changedKeys.length > 0) {
+        const watchKeys = [SESSION_KEY, USER_KEY, KTA_KEY, TTA_KEY, OBS_KEY, INSPEKSI_KEY];
+        const hasRelevantChange = changedKeys.some(function (key) {
+          return watchKeys.indexOf(key) >= 0;
+        });
+        if (!hasRelevantChange) return;
+      }
+      if (userRefreshTimer) window.clearTimeout(userRefreshTimer);
+      userRefreshTimer = window.setTimeout(function () {
+        initUserDashboard();
+      }, 180);
+    });
+  }
+
+  function bindAdminRealtimeRefresh() {
+    if (isAdminRealtimeBound) return;
+    isAdminRealtimeBound = true;
+
+    window.addEventListener('storage', function (event) {
+      if (!event) return;
+      const watchKeys = [SESSION_KEY, USER_KEY, KTA_KEY, TTA_KEY, OBS_KEY, INSPEKSI_KEY];
+      if (event.key !== null && watchKeys.indexOf(event.key) < 0) return;
+      if (adminRefreshTimer) window.clearTimeout(adminRefreshTimer);
+      adminRefreshTimer = window.setTimeout(function () {
+        renderAdminDashboard();
+      }, 180);
+    });
+
+    window.addEventListener('aios:cloud-sync', function (event) {
+      const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
+        ? event.detail.changedKeys
+        : [];
+      if (changedKeys.length > 0) {
+        const watchKeys = [SESSION_KEY, USER_KEY, KTA_KEY, TTA_KEY, OBS_KEY, INSPEKSI_KEY];
+        const hasRelevantChange = changedKeys.some(function (key) {
+          return watchKeys.indexOf(key) >= 0;
+        });
+        if (!hasRelevantChange) return;
+      }
+      if (adminRefreshTimer) window.clearTimeout(adminRefreshTimer);
+      adminRefreshTimer = window.setTimeout(function () {
+        renderAdminDashboard();
+      }, 180);
+    });
   }
 
   function initAdminDashboard() {
@@ -837,6 +1119,17 @@
       renderAdminDashboard();
     });
 
+    if (kpiSection) {
+      kpiSection.addEventListener('click', function (event) {
+        const card = event.target.closest('[data-status-filter]');
+        if (!card || activeModule === 'OBS' || activeModule === 'INS') return;
+        const status = String(card.getAttribute('data-status-filter') || '').trim();
+        if (!status) return;
+        activeFilters.status = activeFilters.status === status ? '' : status;
+        renderAdminDashboard();
+      });
+    }
+
     renderAdminDashboard();
   }
 
@@ -853,6 +1146,7 @@
       userPanel.classList.remove('hidden');
       adminPanel.classList.add('hidden');
       initUserDashboard();
+      bindUserRealtimeRefresh();
       return;
     }
 
@@ -860,6 +1154,7 @@
       userPanel.classList.add('hidden');
       adminPanel.classList.remove('hidden');
       initAdminDashboard();
+      bindAdminRealtimeRefresh();
       return;
     }
 

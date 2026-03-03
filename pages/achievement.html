@@ -15,9 +15,10 @@
           <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
         </div>
       </header>
+      <p id="achievement-last-updated" class="subtitle small">Data diperbarui: -</p>
 
       <section id="achievement-user-panel" class="hidden">
-        <p class="subtitle">Dashboard pencapaian bulanan KTA, TTA, dan Observasi.</p>
+        <p class="subtitle">Dashboard pencapaian bulanan KTA, TTA, Observasi, dan Inspeksi.</p>
 
         <section class="achievement-legend" aria-label="Keterangan Status">
           <span class="legend-chip legend-open">Open</span>
@@ -52,6 +53,15 @@
             <div id="obs-user-detail" class="status-detail"></div>
             <p id="obs-user-empty" class="subtitle small hidden">Belum ada data Observasi untuk ditampilkan.</p>
           </article>
+
+          <article class="achievement-card">
+            <h3>Grafik Bulanan Inspeksi</h3>
+            <div class="achievement-canvas-wrap">
+              <canvas id="inspeksi-user-chart"></canvas>
+            </div>
+            <div id="inspeksi-user-detail" class="status-detail"></div>
+            <p id="inspeksi-user-empty" class="subtitle small hidden">Belum ada data Inspeksi untuk ditampilkan.</p>
+          </article>
         </section>
       </section>
 
@@ -62,12 +72,13 @@
           <button type="button" class="submenu-btn active" data-module="KTA">Dashboard KTA</button>
           <button type="button" class="submenu-btn" data-module="TTA">Dashboard TTA</button>
           <button type="button" class="submenu-btn" data-module="OBS">Dashboard Observasi</button>
+          <button type="button" class="submenu-btn" data-module="INS">Dashboard Inspeksi</button>
         </div>
 
         <section class="achievement-kpi-grid">
-          <article class="achievement-kpi-card"><p>Status Open</p><h3 id="kpi-open">0</h3></article>
-          <article class="achievement-kpi-card"><p>Status Progress</p><h3 id="kpi-progress">0</h3></article>
-          <article class="achievement-kpi-card"><p>Status Close</p><h3 id="kpi-close">0</h3></article>
+          <article class="achievement-kpi-card" data-status-filter="Open"><p>Status Open</p><h3 id="kpi-open">0</h3></article>
+          <article class="achievement-kpi-card" data-status-filter="Progress"><p>Status Progress</p><h3 id="kpi-progress">0</h3></article>
+          <article class="achievement-kpi-card" data-status-filter="Close"><p>Status Close</p><h3 id="kpi-close">0</h3></article>
           <article class="achievement-kpi-card"><p>Total Temuan</p><h3 id="kpi-total">0</h3></article>
           <article class="achievement-kpi-card"><p>Persentase Open</p><h3 id="kpi-open-percent">0%</h3></article>
         </section>
@@ -157,6 +168,22 @@
             <h3>Berdasarkan Kondisi Fit to Work</h3>
             <div class="achievement-canvas-wrap"><canvas id="admin-chart-obsFitJawaban"></canvas></div>
           </article>
+          <article class="achievement-card achievement-card-full hidden" data-dimension-card="jenisInspeksi">
+            <h3>Berdasarkan Jenis Inspeksi</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-jenisInspeksi"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="namaInspektor">
+            <h3>Berdasarkan Nama Inspektor</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-namaInspektor"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="departemenInspektor">
+            <h3>Berdasarkan Departemen Inspektor</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-departemenInspektor"></canvas></div>
+          </article>
+          <article class="achievement-card hidden" data-dimension-card="perusahaanInspektor">
+            <h3>Berdasarkan Perusahaan Inspektor</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-perusahaanInspektor"></canvas></div>
+          </article>
         </section>
 
         <section class="achievement-card achievement-table-wrap">
@@ -179,6 +206,24 @@
             <tbody id="achievement-admin-detail-tbody"></tbody>
           </table>
           <p id="achievement-admin-detail-empty" class="subtitle small hidden">Tidak ada data sesuai filter.</p>
+        </section>
+
+        <section class="achievement-card achievement-table-wrap hidden" id="achievement-inspeksi-table-wrap">
+          <h3>Tabel Detail Inspeksi</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No ID</th>
+                <th>Tanggal Laporan</th>
+                <th>Nama Inspektor</th>
+                <th>Jenis Inspeksi</th>
+                <th>Departemen Inspektor</th>
+                <th>Perusahaan Inspektor</th>
+              </tr>
+            </thead>
+            <tbody id="achievement-inspeksi-detail-tbody"></tbody>
+          </table>
+          <p id="achievement-inspeksi-detail-empty" class="subtitle small hidden">Tidak ada data inspeksi sesuai filter.</p>
         </section>
       </section>
     </section>
