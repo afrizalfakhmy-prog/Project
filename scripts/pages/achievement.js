@@ -9,9 +9,10 @@
   const ROLE_ADMIN = 'Admin';
   const ROLE_SUPER_ADMIN = 'Super Admin';
 
-  const BASE_DIMENSIONS = ['departemen', 'perusahaan', 'kategoriTemuan', 'lokasiTemuan', 'riskLevel', 'namaPjaLabel'];
+  const BASE_DIMENSIONS = ['nama', 'departemen', 'perusahaan', 'kategoriTemuan', 'lokasiTemuan', 'riskLevel', 'namaPjaLabel'];
   const TTA_EXTRA_DIMENSIONS = ['namaPelakuLabel', 'jabatanPelaku', 'departemenPelaku', 'perusahaanPelaku'];
   const OBS_DIMENSIONS = [
+    'nama',
     'namaObserver',
     'jabatanObserver',
     'departemenObserver',
@@ -23,10 +24,11 @@
     'obsLimaRJawaban',
     'obsFitJawaban'
   ];
-  const INS_DIMENSIONS = ['jenisInspeksi', 'namaInspektor', 'departemenInspektor', 'perusahaanInspektor'];
+  const INS_DIMENSIONS = ['nama', 'jenisInspeksi', 'namaInspektor', 'departemenInspektor', 'perusahaanInspektor'];
   const DIMENSION_LABELS = {
     monthKey: 'Bulan',
     status: 'Status',
+    nama: 'Nama',
     departemen: 'Departemen',
     perusahaan: 'Perusahaan',
     kategoriTemuan: 'Kategori Temuan',
@@ -86,6 +88,9 @@
   const kpiOpenPercent = document.getElementById('kpi-open-percent');
 
   const filterChips = document.getElementById('active-filter-chips');
+  const nameFilterInput = document.getElementById('achievement-name-filter');
+  const nameFilterList = document.getElementById('achievement-name-filter-list');
+  const nameFilterResetButton = document.getElementById('achievement-name-filter-reset');
   const kpiSection = document.querySelector('.achievement-kpi-grid');
   const detailTbody = document.getElementById('achievement-admin-detail-tbody');
   const detailEmpty = document.getElementById('achievement-admin-detail-empty');
@@ -93,11 +98,15 @@
   const detailInsSection = document.getElementById('achievement-inspeksi-table-wrap');
   const detailInsTbody = document.getElementById('achievement-inspeksi-detail-tbody');
   const detailInsEmpty = document.getElementById('achievement-inspeksi-detail-empty');
+  const detailObsSection = document.getElementById('achievement-observasi-table-wrap');
+  const detailObsTbody = document.getElementById('achievement-observasi-detail-tbody');
+  const detailObsEmpty = document.getElementById('achievement-observasi-detail-empty');
   const adminMonthlyCanvas = document.getElementById('admin-chart-monthly');
   const adminMonthlyDetail = document.getElementById('admin-monthly-detail');
   const adminMonthlyEmpty = document.getElementById('admin-monthly-empty');
 
   const adminChartCanvasMap = {
+    nama: document.getElementById('admin-chart-nama'),
     departemen: document.getElementById('admin-chart-departemen'),
     perusahaan: document.getElementById('admin-chart-perusahaan'),
     kategoriTemuan: document.getElementById('admin-chart-kategoriTemuan'),
@@ -135,6 +144,7 @@
     return {
       monthKey: '',
       status: '',
+      nama: '',
       departemen: '',
       perusahaan: '',
       kategoriTemuan: '',
@@ -173,6 +183,21 @@
       minute: '2-digit'
     });
     lastUpdatedText.textContent = 'Data diperbarui: ' + formatted;
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getNamaDimensionLabel() {
+    if (activeModule === 'OBS') return 'Nama Observer';
+    if (activeModule === 'INS') return 'Nama Inspektor';
+    return 'Nama Pelapor';
   }
 
   function getActiveDimensions() {
@@ -259,6 +284,7 @@
         monthKey: monthMeta ? monthMeta.key : '',
         noId: row.noId || '-',
         tanggalLaporan: row.tanggalLaporan || '-',
+        nama: row.namaPelapor || '-',
         namaPelapor: row.namaPelapor || '-',
         departemen: row.departemen || '-',
         perusahaan: row.perusahaan || '-',
@@ -291,6 +317,7 @@
         monthKey: monthMeta ? monthMeta.key : '',
         noId: row.noId || '-',
         tanggalLaporan: row.tanggalLaporan || row.tanggalObservasi || '-',
+        nama: row.namaObserver || '-',
         namaObserver: row.namaObserver || '-',
         jabatanObserver: row.jabatanObserver || '-',
         departemenObserver: row.departemenObserver || '-',
@@ -314,6 +341,7 @@
         monthKey: monthMeta ? monthMeta.key : '',
         noId: row.noId || '-',
         tanggalLaporan: row.tanggalLaporan || row.tanggalInspeksi || '-',
+        nama: row.namaInspektor || '-',
         namaInspektor: row.namaInspektor || '-',
         jenisInspeksi: row.jenisInspeksi || '-',
         departemenInspektor: row.departemenInspektor || '-',
@@ -741,7 +769,8 @@
       chip.type = 'button';
       chip.className = 'legend-chip filter-chip-btn';
       chip.dataset.dimension = dimension;
-      chip.textContent = DIMENSION_LABELS[dimension] + ': ' + activeFilters[dimension] + ' ×';
+      const label = dimension === 'nama' ? getNamaDimensionLabel() : DIMENSION_LABELS[dimension];
+      chip.textContent = label + ': ' + activeFilters[dimension] + ' ×';
       filterChips.appendChild(chip);
     });
   }
@@ -791,6 +820,34 @@
         '<td>' + row.departemenInspektor + '</td>' +
         '<td>' + row.perusahaanInspektor + '</td>';
       detailInsTbody.appendChild(tr);
+    });
+  }
+
+  function renderObservasiDetailTable(rows) {
+    if (!detailObsTbody || !detailObsEmpty) return;
+    detailObsTbody.innerHTML = '';
+    if (!rows.length) {
+      detailObsEmpty.classList.remove('hidden');
+      return;
+    }
+
+    detailObsEmpty.classList.add('hidden');
+    rows.forEach(function (row) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + row.noId + '</td>' +
+        '<td>' + row.tanggalLaporan + '</td>' +
+        '<td>' + row.namaObserver + '</td>' +
+        '<td>' + row.jabatanObserver + '</td>' +
+        '<td>' + row.departemenObserver + '</td>' +
+        '<td>' + row.perusahaanObserver + '</td>' +
+        '<td>' + row.lokasi + '</td>' +
+        '<td>' + row.obsSopJawaban + '</td>' +
+        '<td>' + row.obsApdJawaban + '</td>' +
+        '<td>' + row.obsKompetensiJawaban + '</td>' +
+        '<td>' + row.obsLimaRJawaban + '</td>' +
+        '<td>' + row.obsFitJawaban + '</td>';
+      detailObsTbody.appendChild(tr);
     });
   }
 
@@ -933,6 +990,55 @@
     });
   }
 
+  function updateNamaDimensionTitle() {
+    const namaCard = document.querySelector('[data-dimension-card="nama"] h3');
+    if (!namaCard) return;
+
+    namaCard.textContent = 'Berdasarkan ' + getNamaDimensionLabel();
+  }
+
+  function applyFiltersWithoutNama(rows) {
+    const dimensions = getActiveDimensions();
+    return rows.filter(function (row) {
+      if (activeFilters.monthKey && String(row.monthKey || '') !== String(activeFilters.monthKey)) {
+        return false;
+      }
+
+      if (activeFilters.status && String(row.status || '') !== String(activeFilters.status)) {
+        return false;
+      }
+
+      return dimensions.every(function (dimension) {
+        if (dimension === 'nama') return true;
+        if (!activeFilters[dimension]) return true;
+        return String(row[dimension] || '') === String(activeFilters[dimension]);
+      });
+    });
+  }
+
+  function renderNamaFilterControl(rows) {
+    if (!nameFilterInput || !nameFilterList) return;
+
+    const rowsForOptions = applyFiltersWithoutNama(rows);
+    const options = Array.from(new Set(rowsForOptions.map(function (item) {
+      return String(item.nama || '-').trim();
+    }).filter(function (value) {
+      return !!value;
+    })));
+
+    options.sort(function (a, b) {
+      return a.localeCompare(b, 'id', { sensitivity: 'base' });
+    });
+
+    nameFilterList.innerHTML = options.map(function (value) {
+      return '<option value="' + escapeHtml(value) + '"></option>';
+    }).join('');
+
+    nameFilterInput.placeholder = 'Cari dan pilih ' + getNamaDimensionLabel().toLowerCase() + '...';
+    nameFilterInput.disabled = options.length === 0;
+    nameFilterInput.value = activeFilters.nama || '';
+  }
+
   function syncStatusCardActiveState() {
     if (!kpiSection) return;
     const statusCards = kpiSection.querySelectorAll('[data-status-filter]');
@@ -948,6 +1054,8 @@
     const filteredRows = applyFilters(baseRows);
 
     updateDimensionCardVisibility();
+    updateNamaDimensionTitle();
+    renderNamaFilterControl(baseRows);
     if (kpiSection) {
       kpiSection.classList.toggle('hidden', activeModule === 'OBS' || activeModule === 'INS');
     }
@@ -957,6 +1065,9 @@
     if (detailInsSection) {
       detailInsSection.classList.toggle('hidden', activeModule !== 'INS');
     }
+    if (detailObsSection) {
+      detailObsSection.classList.toggle('hidden', activeModule !== 'OBS');
+    }
     if (activeModule === 'OBS' || activeModule === 'INS') {
       activeFilters.status = '';
     }
@@ -965,6 +1076,8 @@
     renderFilterChips();
     if (activeModule === 'INS') {
       renderInspeksiDetailTable(filteredRows);
+    } else if (activeModule === 'OBS') {
+      renderObservasiDetailTable(filteredRows);
     } else if (activeModule !== 'OBS') {
       renderDetailTable(filteredRows);
     }
@@ -1126,6 +1239,38 @@
         const status = String(card.getAttribute('data-status-filter') || '').trim();
         if (!status) return;
         activeFilters.status = activeFilters.status === status ? '' : status;
+        renderAdminDashboard();
+      });
+    }
+
+    if (nameFilterInput) {
+      const applyNamaFilter = function () {
+        const selected = String(nameFilterInput.value || '').trim();
+        activeFilters.nama = selected;
+        renderAdminDashboard();
+      };
+
+      nameFilterInput.addEventListener('change', applyNamaFilter);
+
+      nameFilterInput.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        applyNamaFilter();
+      });
+
+      nameFilterInput.addEventListener('input', function () {
+        if (String(nameFilterInput.value || '').trim()) return;
+        if (!activeFilters.nama) return;
+        activeFilters.nama = '';
+        renderAdminDashboard();
+      });
+    }
+
+    if (nameFilterResetButton) {
+      nameFilterResetButton.addEventListener('click', function () {
+        if (nameFilterInput) nameFilterInput.value = '';
+        if (!activeFilters.nama) return;
+        activeFilters.nama = '';
         renderAdminDashboard();
       });
     }

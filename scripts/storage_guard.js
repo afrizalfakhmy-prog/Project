@@ -34,7 +34,9 @@
     'aios_kta',
     'aios_tta',
     'aios_ohs_talk',
-    'aios_observasi'
+    'aios_observasi',
+    'aios_jsa',
+    'aios_inspeksi'
   ];
 
   function getBackupKey(key) {

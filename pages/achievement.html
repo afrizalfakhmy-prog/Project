@@ -75,6 +75,21 @@
           <button type="button" class="submenu-btn" data-module="INS">Dashboard Inspeksi</button>
         </div>
 
+        <section class="achievement-filter-row" aria-label="Filter Nama">
+          <label for="achievement-name-filter">Filter Nama</label>
+          <div class="achievement-filter-inline">
+            <input
+              id="achievement-name-filter"
+              type="text"
+              list="achievement-name-filter-list"
+              placeholder="Cari dan pilih nama..."
+              autocomplete="off"
+            />
+            <button id="achievement-name-filter-reset" type="button" class="ghost">Reset</button>
+          </div>
+          <datalist id="achievement-name-filter-list"></datalist>
+        </section>
+
         <section class="achievement-kpi-grid">
           <article class="achievement-kpi-card" data-status-filter="Open"><p>Status Open</p><h3 id="kpi-open">0</h3></article>
           <article class="achievement-kpi-card" data-status-filter="Progress"><p>Status Progress</p><h3 id="kpi-progress">0</h3></article>
@@ -91,6 +106,10 @@
             <div class="achievement-canvas-wrap"><canvas id="admin-chart-monthly"></canvas></div>
             <div id="admin-monthly-detail" class="status-detail"></div>
             <p id="admin-monthly-empty" class="subtitle small hidden">Belum ada data untuk ditampilkan.</p>
+          </article>
+          <article class="achievement-card" data-dimension-card="nama">
+            <h3>Berdasarkan Nama</h3>
+            <div class="achievement-canvas-wrap"><canvas id="admin-chart-nama"></canvas></div>
           </article>
           <article class="achievement-card" data-dimension-card="departemen">
             <h3>Berdasarkan Departemen</h3>
@@ -224,6 +243,30 @@
             <tbody id="achievement-inspeksi-detail-tbody"></tbody>
           </table>
           <p id="achievement-inspeksi-detail-empty" class="subtitle small hidden">Tidak ada data inspeksi sesuai filter.</p>
+        </section>
+
+        <section class="achievement-card achievement-table-wrap hidden" id="achievement-observasi-table-wrap">
+          <h3>Tabel Detail Observasi</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No ID</th>
+                <th>Tanggal Laporan</th>
+                <th>Nama Observer</th>
+                <th>Jabatan Observer</th>
+                <th>Departemen Observer</th>
+                <th>Perusahaan Observer</th>
+                <th>Lokasi</th>
+                <th>SOP / WIN / JSA</th>
+                <th>Penggunaan APD</th>
+                <th>Kesesuaian Kompetensi</th>
+                <th>Program 5R</th>
+                <th>Fit to Work</th>
+              </tr>
+            </thead>
+            <tbody id="achievement-observasi-detail-tbody"></tbody>
+          </table>
+          <p id="achievement-observasi-detail-empty" class="subtitle small hidden">Tidak ada data observasi sesuai filter.</p>
         </section>
       </section>
     </section>
