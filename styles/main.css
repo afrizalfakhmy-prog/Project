@@ -560,8 +560,14 @@ button.ghost:hover {
   flex-wrap: wrap;
 }
 
-.achievement-filter-row {
+.achievement-filter-grid {
   margin-top: 12px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 360px));
+}
+
+.achievement-filter-row {
   display: grid;
   gap: 6px;
   max-width: 360px;
@@ -571,6 +577,10 @@ button.ghost:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+}
+
+.achievement-filter-inline-dates {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .achievement-filter-row label {
@@ -629,6 +639,14 @@ button.ghost:hover {
 .filter-chip-btn {
   cursor: pointer;
   background: #f8fafc;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.filter-chip-btn:hover {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
 }
 
 .achievement-table-wrap {
@@ -1135,6 +1153,10 @@ button.ghost:hover {
 
   .achievement-filter-row {
     max-width: 100%;
+  }
+
+  .achievement-filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .achievement-filter-inline {

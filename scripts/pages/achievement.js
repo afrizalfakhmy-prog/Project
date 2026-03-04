@@ -26,6 +26,7 @@
   ];
   const INS_DIMENSIONS = ['nama', 'jenisInspeksi', 'namaInspektor', 'departemenInspektor', 'perusahaanInspektor'];
   const DIMENSION_LABELS = {
+    dateRange: 'Tanggal',
     monthKey: 'Bulan',
     status: 'Status',
     nama: 'Nama',
@@ -88,6 +89,8 @@
   const kpiOpenPercent = document.getElementById('kpi-open-percent');
 
   const filterChips = document.getElementById('active-filter-chips');
+  const dateFromInput = document.getElementById('achievement-date-from');
+  const dateToInput = document.getElementById('achievement-date-to');
   const nameFilterInput = document.getElementById('achievement-name-filter');
   const nameFilterList = document.getElementById('achievement-name-filter-list');
   const nameFilterResetButton = document.getElementById('achievement-name-filter-reset');
@@ -102,6 +105,7 @@
   const detailObsTbody = document.getElementById('achievement-observasi-detail-tbody');
   const detailObsEmpty = document.getElementById('achievement-observasi-detail-empty');
   const adminMonthlyCanvas = document.getElementById('admin-chart-monthly');
+  const adminMonthlyYearLabel = document.getElementById('admin-monthly-year-label');
   const adminMonthlyDetail = document.getElementById('admin-monthly-detail');
   const adminMonthlyEmpty = document.getElementById('admin-monthly-empty');
 
@@ -142,6 +146,8 @@
 
   function createEmptyFilters() {
     return {
+      dateFrom: '',
+      dateTo: '',
       monthKey: '',
       status: '',
       nama: '',
@@ -387,23 +393,19 @@
       .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
   }
 
-  function aggregateMonthlyForAdmin(rows) {
-    const map = {};
+  function aggregateMonthlyForAdmin(rows, range) {
+    const resolvedRange = range || resolveDateRange(rows, '', '');
+    const map = createMonthlyStatusSeed(resolvedRange);
 
     rows.forEach(function (row) {
       const monthMeta = toMonthMeta(row.tanggalLaporan);
       if (!monthMeta) return;
 
-      if (!map[monthMeta.key]) {
-        map[monthMeta.key] = {
-          monthKey: monthMeta.key,
-          monthLabel: monthMeta.label,
-          Open: 0,
-          Progress: 0,
-          Close: 0
-        };
-      }
+      const reportDate = parseDateInputValue(row.tanggalLaporan);
+      if (!reportDate) return;
+      if (reportDate < resolvedRange.from || reportDate > resolvedRange.to) return;
 
+      if (!map[monthMeta.key]) return;
       map[monthMeta.key][normalizeStatus(row.status)] += 1;
     });
 
@@ -412,27 +414,108 @@
       .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
   }
 
-  function aggregateMonthlyTotal(rows) {
-    const map = {};
+  function aggregateMonthlyTotal(rows, range) {
+    const resolvedRange = range || resolveDateRange(rows, '', '');
+    const map = createMonthlyTotalSeed(resolvedRange);
 
     rows.forEach(function (row) {
       const monthMeta = toMonthMeta(row.tanggalLaporan);
       if (!monthMeta) return;
 
-      if (!map[monthMeta.key]) {
-        map[monthMeta.key] = {
-          monthKey: monthMeta.key,
-          monthLabel: monthMeta.label,
-          total: 0
-        };
-      }
+      const reportDate = parseDateInputValue(row.tanggalLaporan);
+      if (!reportDate) return;
+      if (reportDate < resolvedRange.from || reportDate > resolvedRange.to) return;
 
+      if (!map[monthMeta.key]) return;
       map[monthMeta.key].total += 1;
     });
 
     return Object.keys(map)
       .map(function (key) { return map[key]; })
       .sort(function (a, b) { return a.monthKey.localeCompare(b.monthKey); });
+  }
+
+  function parseDateInputValue(value) {
+    const text = String(value || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+    const parsed = new Date(text + 'T00:00:00');
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function toInputDateValue(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
+  }
+
+  function resolveDateRange(rows, preferredFrom, preferredTo) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const defaultFrom = new Date(currentYear, 0, 1);
+    const defaultTo = new Date(currentYear, 11, 31);
+
+    let fromDate = parseDateInputValue(preferredFrom) || defaultFrom;
+    let toDate = parseDateInputValue(preferredTo) || defaultTo;
+
+    if (fromDate > toDate) {
+      const swap = fromDate;
+      fromDate = toDate;
+      toDate = swap;
+    }
+
+    const label = toInputDateValue(fromDate) + ' s/d ' + toInputDateValue(toDate);
+
+    return {
+      from: fromDate,
+      to: toDate,
+      fromValue: toInputDateValue(fromDate),
+      toValue: toInputDateValue(toDate),
+      label: label
+    };
+  }
+
+  function createMonthlyStatusSeed(range) {
+    const map = {};
+    const cursor = new Date(range.from.getFullYear(), range.from.getMonth(), 1);
+    const end = new Date(range.to.getFullYear(), range.to.getMonth(), 1);
+
+    while (cursor <= end) {
+      const monthValue = String(cursor.getMonth() + 1).padStart(2, '0');
+      const monthKey = String(cursor.getFullYear()) + '-' + monthValue;
+      const monthLabel = cursor.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+      map[monthKey] = {
+        monthKey: monthKey,
+        monthLabel: monthLabel,
+        Open: 0,
+        Progress: 0,
+        Close: 0
+      };
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    return map;
+  }
+
+  function createMonthlyTotalSeed(range) {
+    const map = {};
+    const cursor = new Date(range.from.getFullYear(), range.from.getMonth(), 1);
+    const end = new Date(range.to.getFullYear(), range.to.getMonth(), 1);
+
+    while (cursor <= end) {
+      const monthValue = String(cursor.getMonth() + 1).padStart(2, '0');
+      const monthKey = String(cursor.getFullYear()) + '-' + monthValue;
+      const monthLabel = cursor.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+      map[monthKey] = {
+        monthKey: monthKey,
+        monthLabel: monthLabel,
+        total: 0
+      };
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    return map;
   }
 
   function aggregateMonthlyObservasiForUser(rows, session, currentUser) {
@@ -670,6 +753,174 @@
     );
   }
 
+  function renderAdminMonthlyStatusLineChart(canvas, chartKey, emptyText, detailContainer, rows, onPointClick) {
+    destroyChart(chartKey);
+
+    if (!rows.length) {
+      if (emptyText) emptyText.classList.remove('hidden');
+      if (detailContainer) detailContainer.innerHTML = '';
+      return;
+    }
+
+    if (!canvas || typeof canvas.getContext !== 'function') {
+      if (emptyText) emptyText.classList.remove('hidden');
+      return;
+    }
+
+    if (emptyText) emptyText.classList.add('hidden');
+    renderUserDetail(detailContainer, rows);
+
+    const drawChart = function () {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      chartInstances[chartKey] = new window.Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: rows.map(function (item) { return item.monthLabel; }),
+          datasets: [
+            {
+              label: 'Open',
+              data: rows.map(function (item) { return item.Open; }),
+              borderColor: STATUS_COLORS.Open,
+              backgroundColor: STATUS_COLORS.Open,
+              pointBackgroundColor: STATUS_COLORS.Open,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'Progress',
+              data: rows.map(function (item) { return item.Progress; }),
+              borderColor: STATUS_COLORS.Progress,
+              backgroundColor: STATUS_COLORS.Progress,
+              pointBackgroundColor: STATUS_COLORS.Progress,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'Close',
+              data: rows.map(function (item) { return item.Close; }),
+              borderColor: STATUS_COLORS.Close,
+              backgroundColor: STATUS_COLORS.Close,
+              pointBackgroundColor: STATUS_COLORS.Close,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.25,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          },
+          onClick: function (_evt, activeElements) {
+            if (typeof onPointClick !== 'function') return;
+            if (!activeElements || !activeElements.length) return;
+            const idx = activeElements[0].index;
+            const selected = rows[idx] || null;
+            onPointClick(selected);
+          }
+        }
+      });
+
+      if (chartInstances[chartKey]) {
+        chartInstances[chartKey].resize();
+        chartInstances[chartKey].update();
+      }
+    };
+
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(drawChart);
+      return;
+    }
+
+    drawChart();
+  }
+
+  function renderAdminMonthlyTotalLineChart(canvas, chartKey, emptyText, detailContainer, rows, datasetLabel, detailPrefix, color, onPointClick) {
+    destroyChart(chartKey);
+
+    if (!rows.length) {
+      if (emptyText) emptyText.classList.remove('hidden');
+      if (detailContainer) detailContainer.innerHTML = '';
+      return;
+    }
+
+    if (!canvas || typeof canvas.getContext !== 'function') {
+      if (emptyText) emptyText.classList.remove('hidden');
+      return;
+    }
+
+    if (emptyText) emptyText.classList.add('hidden');
+    if (detailContainer) {
+      detailContainer.innerHTML = rows.map(function (item) {
+        return '<span>' + item.monthLabel + ' | ' + detailPrefix + ': <strong>' + item.total + '</strong></span>';
+      }).join('');
+    }
+
+    const drawChart = function () {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      chartInstances[chartKey] = new window.Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: rows.map(function (item) { return item.monthLabel; }),
+          datasets: [{
+            label: datasetLabel,
+            data: rows.map(function (item) { return item.total; }),
+            borderColor: color,
+            backgroundColor: color,
+            pointBackgroundColor: color,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.25,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          },
+          onClick: function (_evt, activeElements) {
+            if (typeof onPointClick !== 'function') return;
+            if (!activeElements || !activeElements.length) return;
+            const idx = activeElements[0].index;
+            const selected = rows[idx] || null;
+            onPointClick(selected);
+          }
+        }
+      });
+
+      if (chartInstances[chartKey]) {
+        chartInstances[chartKey].resize();
+        chartInstances[chartKey].update();
+      }
+    };
+
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(drawChart);
+      return;
+    }
+
+    drawChart();
+  }
+
   function countByDimension(rows, dimension) {
     const counter = {};
     rows.forEach(function (row) {
@@ -691,6 +942,16 @@
   function applyFilters(rows) {
     const dimensions = getActiveDimensions();
     return rows.filter(function (row) {
+      if (activeFilters.dateFrom || activeFilters.dateTo) {
+        const reportDate = parseDateInputValue(row.tanggalLaporan);
+        if (!reportDate) return false;
+
+        const fromDate = parseDateInputValue(activeFilters.dateFrom);
+        const toDate = parseDateInputValue(activeFilters.dateTo);
+        if (fromDate && reportDate < fromDate) return false;
+        if (toDate && reportDate > toDate) return false;
+      }
+
       if (activeFilters.monthKey && String(row.monthKey || '') !== String(activeFilters.monthKey)) {
         return false;
       }
@@ -734,6 +995,15 @@
     filterChips.innerHTML = '';
     const dimensions = getActiveDimensions();
 
+    if (activeFilters.dateFrom || activeFilters.dateTo) {
+      const rangeChip = document.createElement('button');
+      rangeChip.type = 'button';
+      rangeChip.className = 'legend-chip filter-chip-btn';
+      rangeChip.dataset.dimension = 'dateRange';
+      rangeChip.textContent = DIMENSION_LABELS.dateRange + ': ' + (activeFilters.dateFrom || '-') + ' s/d ' + (activeFilters.dateTo || '-') + ' ×';
+      filterChips.appendChild(rangeChip);
+    }
+
     if (activeFilters.monthKey) {
       const monthChip = document.createElement('button');
       monthChip.type = 'button';
@@ -756,7 +1026,7 @@
       return !!activeFilters[dimension];
     });
 
-    if (!activeKeys.length && !activeFilters.monthKey && !activeFilters.status) {
+    if (!activeKeys.length && !activeFilters.dateFrom && !activeFilters.dateTo && !activeFilters.monthKey && !activeFilters.status) {
       const infoChip = document.createElement('span');
       infoChip.className = 'legend-chip';
       infoChip.textContent = 'Belum ada filter aktif';
@@ -923,14 +1193,21 @@
 
   function renderAdminMonthlyChart(rows) {
     if (!adminMonthlyCanvas) return;
+    if (adminMonthlyDetail) {
+      adminMonthlyDetail.innerHTML = '';
+    }
+    const activeRange = resolveDateRange(rows, activeFilters.dateFrom, activeFilters.dateTo);
+    if (adminMonthlyYearLabel) {
+      adminMonthlyYearLabel.textContent = 'Periode: ' + activeRange.label;
+    }
 
     if (activeModule === 'INS') {
-      const monthlyRows = aggregateMonthlyTotal(rows);
-      renderUserMonthlyTotalChart(
+      const monthlyRows = aggregateMonthlyTotal(rows, activeRange);
+      renderAdminMonthlyTotalLineChart(
         adminMonthlyCanvas,
         'admin-monthly',
         adminMonthlyEmpty,
-        adminMonthlyDetail,
+        null,
         monthlyRows,
         'Total Inspeksi',
         'Total Inspeksi',
@@ -951,13 +1228,16 @@
     }
 
     if (activeModule === 'OBS') {
-      const monthlyRows = aggregateMonthlyTotal(rows);
-      renderUserMonthlyObservasiChart(
+      const monthlyRows = aggregateMonthlyTotal(rows, activeRange);
+      renderAdminMonthlyTotalLineChart(
         adminMonthlyCanvas,
         'admin-monthly',
         adminMonthlyEmpty,
-        adminMonthlyDetail,
+        null,
         monthlyRows,
+        'Total Observasi',
+        'Total Observasi',
+        '#0ea5e9',
         function (selected) {
           const selectedMonth = selected && selected.monthKey ? selected.monthKey : '';
           if (!selectedMonth) return;
@@ -968,8 +1248,8 @@
       return;
     }
 
-    const monthlyRows = aggregateMonthlyForAdmin(rows);
-    renderUserMonthlyChart(adminMonthlyCanvas, 'admin-monthly', adminMonthlyEmpty, adminMonthlyDetail, monthlyRows, activeModule);
+    const monthlyRows = aggregateMonthlyForAdmin(rows, activeRange);
+    renderAdminMonthlyStatusLineChart(adminMonthlyCanvas, 'admin-monthly', adminMonthlyEmpty, null, monthlyRows);
   }
 
   function updateDimensionCardVisibility() {
@@ -1000,6 +1280,16 @@
   function applyFiltersWithoutNama(rows) {
     const dimensions = getActiveDimensions();
     return rows.filter(function (row) {
+      if (activeFilters.dateFrom || activeFilters.dateTo) {
+        const reportDate = parseDateInputValue(row.tanggalLaporan);
+        if (!reportDate) return false;
+
+        const fromDate = parseDateInputValue(activeFilters.dateFrom);
+        const toDate = parseDateInputValue(activeFilters.dateTo);
+        if (fromDate && reportDate < fromDate) return false;
+        if (toDate && reportDate > toDate) return false;
+      }
+
       if (activeFilters.monthKey && String(row.monthKey || '') !== String(activeFilters.monthKey)) {
         return false;
       }
@@ -1039,6 +1329,19 @@
     nameFilterInput.value = activeFilters.nama || '';
   }
 
+  function syncDateRangeControl(rows) {
+    if (!dateFromInput || !dateToInput) return;
+
+    const range = resolveDateRange(rows, activeFilters.dateFrom, activeFilters.dateTo);
+    activeFilters.dateFrom = range.fromValue;
+    activeFilters.dateTo = range.toValue;
+
+    dateFromInput.value = range.fromValue;
+    dateToInput.value = range.toValue;
+    dateFromInput.max = range.toValue;
+    dateToInput.min = range.fromValue;
+  }
+
   function syncStatusCardActiveState() {
     if (!kpiSection) return;
     const statusCards = kpiSection.querySelectorAll('[data-status-filter]');
@@ -1051,6 +1354,7 @@
 
   function renderAdminDashboard() {
     const baseRows = getModuleRows(activeModule);
+    syncDateRangeControl(baseRows);
     const filteredRows = applyFilters(baseRows);
 
     updateDimensionCardVisibility();
@@ -1228,9 +1532,31 @@
       if (!chip) return;
       const dimension = chip.dataset.dimension;
       if (!dimension) return;
-      activeFilters[dimension] = '';
+      if (dimension === 'dateRange') {
+        activeFilters.dateFrom = '';
+        activeFilters.dateTo = '';
+        activeFilters.monthKey = '';
+      } else {
+        activeFilters[dimension] = '';
+      }
       renderAdminDashboard();
     });
+
+    if (dateFromInput) {
+      dateFromInput.addEventListener('change', function () {
+        activeFilters.dateFrom = String(dateFromInput.value || '').trim();
+        activeFilters.monthKey = '';
+        renderAdminDashboard();
+      });
+    }
+
+    if (dateToInput) {
+      dateToInput.addEventListener('change', function () {
+        activeFilters.dateTo = String(dateToInput.value || '').trim();
+        activeFilters.monthKey = '';
+        renderAdminDashboard();
+      });
+    }
 
     if (kpiSection) {
       kpiSection.addEventListener('click', function (event) {

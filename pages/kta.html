@@ -61,8 +61,43 @@
         </div>
         <div class="field-wrap">
           <label for="kta-kategori-temuan">Kategori Temuan</label>
-          <input id="kta-kategori-temuan" type="text" required />
-          <small class="field-hint">Isi kategori temuan secara singkat dan jelas.</small>
+          <input id="kta-kategori-temuan" type="text" list="kta-kategori-temuan-list" placeholder="Cari dan pilih kategori temuan..." required />
+          <datalist id="kta-kategori-temuan-list">
+            <option value="A1 - Perkakas atau peralatan rusak atau tidak sesuai"></option>
+            <option value="A2 - Sistem atau alat pengamanan atau pelindung mesin tidak lengkap"></option>
+            <option value="A3 - Peringatan atau rambu tidak lengkap"></option>
+            <option value="A4 - Housekeeping tidak baik"></option>
+            <option value="A5 - Batu menggantung tidak digugurkan"></option>
+            <option value="A6 - Kebisingan tinggi"></option>
+            <option value="A7 - Temperatur rendah atau tinggi"></option>
+            <option value="A8 - Ventilasi tidak memadai"></option>
+            <option value="A9 - Berdebu"></option>
+            <option value="A10 - Penerangan kurang"></option>
+            <option value="A11 - Lereng kritis"></option>
+            <option value="A12 - Tali keselamatan tidak sesuai"></option>
+            <option value="A13 - Bagian benda kerja atau material yang tajam"></option>
+            <option value="A14 - Kebakaran atau peledakan"></option>
+            <option value="A15 - Sistem drainage tidak baik"></option>
+            <option value="A16 - Arus dan angin kencang"></option>
+            <option value="A17 - Alat atau sistem pengaman yang tidak lengkap"></option>
+            <option value="A18 - Penyangga tidak memadai"></option>
+            <option value="A19 - Permukaan yang tidak rata atau berlubang"></option>
+            <option value="A20 - Ruang kerja yang terbatas"></option>
+            <option value="A21 - Pohon yang mengganggu / rebah"></option>
+            <option value="A22 - Kondisi overheat"></option>
+            <option value="A23 - Tidak adanya akses perlintasan orang yang aman"></option>
+            <option value="A24 - Kondisi jalan licin"></option>
+            <option value="A25 - Tumpukan barang yang tidak aman"></option>
+            <option value="A26 - Hujan / cuaca"></option>
+            <option value="A27 - Sump melebar / meluap"></option>
+            <option value="A28 - Kondisi geologi"></option>
+            <option value="A29 - Unit parkir di area berbahaya"></option>
+            <option value="A30 - Komunikasi yang terganggu"></option>
+            <option value="A31 - Jalan tidak memadai (Blind Spot, Grade, Median, dll)"></option>
+            <option value="A32 - Rambu-rambu tidak tersedia / kondisi rusak"></option>
+            <option value="Other"></option>
+          </datalist>
+          <small class="field-hint">Pilih kategori temuan sesuai kondisi yang ditemukan.</small>
         </div>
         <div class="field-wrap">
           <label for="kta-lokasi-temuan">Lokasi Temuan</label>

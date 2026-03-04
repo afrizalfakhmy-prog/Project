@@ -46,6 +46,11 @@
   let fotoPerbaikanDraft = [];
   const IMAGE_MAX_EDGE = 1280;
   const IMAGE_QUALITY = 0.75;
+  const allowedKategoriTemuan = new Set(
+    Array.from(kategoriTemuanInput ? kategoriTemuanInput.options : [])
+      .map(function (option) { return String(option.value || '').trim(); })
+      .filter(function (value) { return value.length > 0; })
+  );
 
   function todayValue() {
     return new Date().toISOString().slice(0, 10);
@@ -62,6 +67,10 @@
     const limit = String(limitDate || '').trim();
     if (!date || !limit) return false;
     return date > limit;
+  }
+
+  function isAllowedKategoriTemuan(value) {
+    return allowedKategoriTemuan.has(String(value || '').trim());
   }
 
   function getSession() {
@@ -374,6 +383,9 @@
     }
     if (!payload.jamTemuan) return 'Jam Temuan wajib diisi.';
     if (!payload.kategoriTemuan) return 'Kategori Temuan wajib diisi.';
+    if (!isAllowedKategoriTemuan(payload.kategoriTemuan)) {
+      return 'Kategori Temuan harus dipilih dari daftar yang tersedia.';
+    }
     if (!payload.lokasiTemuan) return 'Lokasi Temuan wajib dipilih.';
     if (!payload.detailLokasiTemuan) return 'Detail Lokasi Temuan wajib diisi.';
     if (!payload.riskLevel) return 'Risk Level wajib dipilih.';

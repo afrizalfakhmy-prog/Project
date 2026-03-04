@@ -75,19 +75,29 @@
           <button type="button" class="submenu-btn" data-module="INS">Dashboard Inspeksi</button>
         </div>
 
-        <section class="achievement-filter-row" aria-label="Filter Nama">
-          <label for="achievement-name-filter">Filter Nama</label>
-          <div class="achievement-filter-inline">
-            <input
-              id="achievement-name-filter"
-              type="text"
-              list="achievement-name-filter-list"
-              placeholder="Cari dan pilih nama..."
-              autocomplete="off"
-            />
-            <button id="achievement-name-filter-reset" type="button" class="ghost">Reset</button>
+        <section class="achievement-filter-grid" aria-label="Filter Dashboard">
+          <div class="achievement-filter-row">
+            <label for="achievement-date-from">Filter Range Tanggal</label>
+            <div class="achievement-filter-inline achievement-filter-inline-dates">
+              <input id="achievement-date-from" type="date" />
+              <input id="achievement-date-to" type="date" />
+            </div>
           </div>
-          <datalist id="achievement-name-filter-list"></datalist>
+
+          <div class="achievement-filter-row">
+            <label for="achievement-name-filter">Filter Nama</label>
+            <div class="achievement-filter-inline">
+              <input
+                id="achievement-name-filter"
+                type="text"
+                list="achievement-name-filter-list"
+                placeholder="Cari dan pilih nama..."
+                autocomplete="off"
+              />
+              <button id="achievement-name-filter-reset" type="button" class="ghost">Reset</button>
+            </div>
+            <datalist id="achievement-name-filter-list"></datalist>
+          </div>
         </section>
 
         <section class="achievement-kpi-grid">
@@ -103,8 +113,8 @@
         <section class="achievement-grid">
           <article class="achievement-card achievement-card-full" data-dimension-card="monthly">
             <h3>Grafik Pencapaian Bulanan</h3>
+            <p id="admin-monthly-year-label" class="subtitle small">Periode: -</p>
             <div class="achievement-canvas-wrap"><canvas id="admin-chart-monthly"></canvas></div>
-            <div id="admin-monthly-detail" class="status-detail"></div>
             <p id="admin-monthly-empty" class="subtitle small hidden">Belum ada data untuk ditampilkan.</p>
           </article>
           <article class="achievement-card" data-dimension-card="nama">

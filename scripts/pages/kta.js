@@ -17,6 +17,7 @@
 
   const tanggalTemuanInput = document.getElementById('kta-tanggal-temuan');
   const kategoriTemuanInput = document.getElementById('kta-kategori-temuan');
+  const kategoriTemuanList = document.getElementById('kta-kategori-temuan-list');
   const lokasiTemuanInput = document.getElementById('kta-lokasi-temuan');
   const detailLokasiInput = document.getElementById('kta-detail-lokasi');
   const riskLevelInput = document.getElementById('kta-risk-level');
@@ -36,6 +37,11 @@
   let editingId = '';
   let fotoTemuanDraft = [];
   let fotoPerbaikanDraft = [];
+  const allowedKategoriTemuan = new Set(
+    Array.from(kategoriTemuanList ? kategoriTemuanList.options : [])
+      .map(function (option) { return String(option.value || '').trim(); })
+      .filter(function (value) { return value.length > 0; })
+  );
 
   function todayValue() {
     return new Date().toISOString().slice(0, 10);
@@ -52,6 +58,19 @@
     const limit = String(limitDate || '').trim();
     if (!date || !limit) return false;
     return date > limit;
+  }
+
+  function isAllowedKategoriTemuan(value) {
+    return allowedKategoriTemuan.has(String(value || '').trim());
+  }
+
+  function syncKategoriTemuanValidity() {
+    const currentValue = String(kategoriTemuanInput.value || '').trim();
+    if (!currentValue || isAllowedKategoriTemuan(currentValue)) {
+      kategoriTemuanInput.setCustomValidity('');
+      return;
+    }
+    kategoriTemuanInput.setCustomValidity('Kategori Temuan harus dipilih dari daftar yang tersedia.');
   }
 
   function getSession() {
@@ -256,6 +275,7 @@
     noIdInput.value = buildNoId();
     populatePjaDropdown();
     togglePerbaikanSection();
+    syncKategoriTemuanValidity();
   }
 
   function validate(payload) {
@@ -264,6 +284,9 @@
       return 'Tanggal Temuan tidak boleh melebihi Tanggal Laporan.';
     }
     if (!payload.kategoriTemuan) return 'Kategori Temuan wajib diisi.';
+    if (!isAllowedKategoriTemuan(payload.kategoriTemuan)) {
+      return 'Kategori Temuan harus dipilih dari daftar yang tersedia.';
+    }
     if (!payload.lokasiTemuan) return 'Lokasi Temuan wajib dipilih.';
     if (!payload.detailLokasiTemuan) return 'Detail Lokasi Temuan wajib diisi.';
     if (!payload.riskLevel) return 'Risk Level wajib dipilih.';
@@ -422,6 +445,7 @@
 
       tanggalTemuanInput.value = target.tanggalTemuan || '';
       kategoriTemuanInput.value = target.kategoriTemuan || '';
+      syncKategoriTemuanValidity();
       lokasiTemuanInput.value = target.lokasiTemuan || '';
       detailLokasiInput.value = target.detailLokasiTemuan || '';
       riskLevelInput.value = target.riskLevel || '';
@@ -481,6 +505,9 @@
     }
   });
 
+  kategoriTemuanInput.addEventListener('input', syncKategoriTemuanValidity);
+  kategoriTemuanInput.addEventListener('change', syncKategoriTemuanValidity);
+
   perbaikanLangsungInput.addEventListener('change', togglePerbaikanSection);
 
   if (cancelButton) {
@@ -506,6 +533,7 @@
   populateReporterProfile(session.username);
   populatePjaDropdown();
   togglePerbaikanSection();
+  syncKategoriTemuanValidity();
   closeForm();
   renderRows();
 })();
