@@ -128,6 +128,7 @@
   const komisioningPanel = document.getElementById('spip-komisioning-panel');
   const komisioningTanggalKomisioningInput = document.getElementById('spip-komisioning-tanggal-komisioning');
   const komisioningTanggalExpiredInput = document.getElementById('spip-komisioning-tanggal-expired');
+  const komisioningEmailInput = document.getElementById('spip-komisioning-email');
   const komisioningKomisionerInput = document.getElementById('spip-komisioning-komisioner');
   const komisioningKeteranganInput = document.getElementById('spip-komisioning-keterangan');
   const komisioningNamaInputerInput = document.getElementById('spip-komisioning-nama-inputer');
@@ -183,6 +184,21 @@
     const dateValue = String(expiredDate || '').trim();
     if (!dateValue) return 'Active';
     return dateValue > todayValue() ? 'Active' : 'Expired';
+  }
+
+  function parseEmailList(rawValue) {
+    return String(rawValue || '')
+      .split(/[\n,;]+/)
+      .map(function (item) { return String(item || '').trim(); })
+      .filter(function (item) { return item.length > 0; });
+  }
+
+  function normalizeEmailList(rawValue) {
+    return parseEmailList(rawValue).join(', ');
+  }
+
+  function isValidEmailAddress(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
   }
 
   function syncMainCommissionFieldsFromSubForm() {
@@ -359,6 +375,7 @@
       'Tahun Pembuatan: ' + String(target.tahunPembuatan || '').trim(),
       'Tanggal Komisioning: ' + String(target.tanggalKomisioning || '').trim(),
       'Tanggal Expired: ' + String(target.tanggalExpired || '').trim(),
+      'Email: ' + String(target.email || '').trim(),
       'Komisioner: ' + String(target.komisioner || '').trim(),
       'Keterangan: ' + String(target.keterangan || '').trim()
     ];
@@ -476,6 +493,172 @@
     }, 2200);
   }
 
+  function openSpipEmailDraft(record, recipients) {
+    const target = record || {};
+    const list = Array.isArray(recipients) ? recipients.filter(Boolean) : [];
+    if (!list.length) return;
+
+    const subject = 'SPIP Komisioning - ' + String(target.noUnitRegister || '-').trim();
+    const bodyLines = [
+      'Halo,',
+      '',
+      'Berikut data SPIP yang telah disimpan:',
+      '- No Unit / Register: ' + String(target.noUnitRegister || '-').trim(),
+      '- Nama SPIP: ' + String(target.namaSpip || '-').trim(),
+      '- Tanggal Komisioning: ' + String(target.tanggalKomisioning || '-').trim(),
+      '- Tanggal Expired: ' + String(target.tanggalExpired || '-').trim(),
+      '',
+      'File PDF sudah dipicu untuk diekspor. Mohon lampirkan file PDF hasil ekspor sebelum mengirim email ini.',
+      '',
+      'Terima kasih.'
+    ];
+
+    const mailtoUrl =
+      'mailto:' + list.join(',') +
+      '?subject=' + encodeURIComponent(subject) +
+      '&body=' + encodeURIComponent(bodyLines.join('\n'));
+
+    window.location.href = mailtoUrl;
+  }
+
+  function getSpipEmailApiConfig() {
+    const globalConfig = window.AIOS_SPIP_EMAIL_API || {};
+    const endpoint = String(globalConfig.endpoint || '').trim();
+    const token = String(globalConfig.token || '').trim();
+    return { endpoint: endpoint, token: token };
+  }
+
+  function buildSpipEmailSubject(record) {
+    const target = record || {};
+    return 'SPIP Komisioning - ' + String(target.noUnitRegister || '-').trim();
+  }
+
+  function buildSpipEmailBody(record) {
+    const target = record || {};
+    return [
+      'Halo,',
+      '',
+      'Berikut data SPIP yang telah disimpan:',
+      '- No Unit / Register: ' + String(target.noUnitRegister || '-').trim(),
+      '- Nama SPIP: ' + String(target.namaSpip || '-').trim(),
+      '- Tanggal Komisioning: ' + String(target.tanggalKomisioning || '-').trim(),
+      '- Tanggal Expired: ' + String(target.tanggalExpired || '-').trim(),
+      '- Status: ' + String(target.status || '-').trim(),
+      '',
+      'Terlampir file PDF hasil ekspor SPIP.',
+      '',
+      'Terima kasih.'
+    ].join('\n');
+  }
+
+  function createSpipPdfBlob(record) {
+    const target = record || {};
+    const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
+    if (!jsPdfApi) {
+      throw new Error('Library PDF belum tersedia.');
+    }
+
+    const doc = new jsPdfApi({ unit: 'pt', format: 'a4' });
+    let y = 56;
+    const left = 48;
+    const lineHeight = 18;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('SPIP Komisioning', left, y);
+    y += 26;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+
+    const lines = [
+      ['No Unit / Register', target.noUnitRegister || '-'],
+      ['Nama SPIP', target.namaSpip || '-'],
+      ['Kategori', target.kategori || '-'],
+      ['Jenis', target.jenis || '-'],
+      ['Merk', target.merk || '-'],
+      ['Model', target.model || '-'],
+      ['Tahun Pembuatan', target.tahunPembuatan || '-'],
+      ['Perusahaan', target.perusahaan || '-'],
+      ['CCOW', target.ccow || '-'],
+      ['Tanggal Komisioning', target.tanggalKomisioning || '-'],
+      ['Tanggal Expired', target.tanggalExpired || '-'],
+      ['Status', target.status || '-'],
+      ['Email', target.email || '-'],
+      ['Komisioner', target.komisioner || '-'],
+      ['Keterangan', target.keterangan || '-']
+    ];
+
+    lines.forEach(function (entry) {
+      const label = String(entry[0] || '').trim();
+      const value = String(entry[1] || '-').trim() || '-';
+      const composed = label + ': ' + value;
+      const wrapped = doc.splitTextToSize(composed, 500);
+      doc.text(wrapped, left, y);
+      y += lineHeight * wrapped.length;
+      if (y > 770) {
+        doc.addPage();
+        y = 56;
+      }
+    });
+
+    return doc.output('blob');
+  }
+
+  async function sendSpipPdfToEmailApi(record, recipients, pdfBlob) {
+    const config = getSpipEmailApiConfig();
+    if (!config.endpoint) {
+      throw new Error('Endpoint API email belum dikonfigurasi.');
+    }
+
+    const target = record || {};
+    const formData = new FormData();
+    formData.append('recipients', JSON.stringify(recipients));
+    formData.append('subject', buildSpipEmailSubject(target));
+    formData.append('body', buildSpipEmailBody(target));
+    formData.append('payload', JSON.stringify(target));
+    formData.append('file', pdfBlob, 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf');
+
+    const headers = {};
+    if (config.token) {
+      headers.Authorization = 'Bearer ' + config.token;
+    }
+
+    const response = await fetch(config.endpoint, {
+      method: 'POST',
+      headers: headers,
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(function () { return ''; });
+      throw new Error(errorText || ('Gagal kirim email. Status: ' + response.status));
+    }
+  }
+
+  async function triggerExportAndEmail(record, emailRawValue) {
+    const recipients = parseEmailList(emailRawValue);
+    if (!recipients.length) {
+      alert('Email wajib diisi minimal 1 alamat untuk ekspor & kirim email.');
+      return false;
+    }
+
+    const target = record || {};
+    exportSpipToPdf(target);
+
+    try {
+      const pdfBlob = createSpipPdfBlob(target);
+      await sendSpipPdfToEmailApi(target, recipients, pdfBlob);
+      alert('PDF berhasil dikirim ke email tujuan.');
+      return true;
+    } catch (_error) {
+      openSpipEmailDraft(target, recipients);
+      alert('Pengiriman email otomatis gagal / belum dikonfigurasi. Draft email dibuka sebagai fallback.');
+    }
+
+    return true;
+  }
+
   function buildQrPayloadText() {
     const lines = [
       'No Unit / Register: ' + String(noUnitInput.value || '').trim(),
@@ -487,6 +670,7 @@
       'Tahun Pembuatan: ' + String(tahunInput.value || '').trim(),
       'Tanggal Komisioning: ' + String(tanggalKomisioningInput.value || '').trim(),
       'Tanggal Expired: ' + String(tanggalExpiredInput.value || '').trim(),
+      'Email: ' + normalizeEmailList(komisioningEmailInput ? komisioningEmailInput.value : ''),
       'Komisioner: ' + String(komisionerInput.value || '').trim(),
       'Keterangan: ' + String(keteranganInput.value || '').trim()
     ];
@@ -543,6 +727,7 @@
       return {
         tanggalKomisioning: String(target.tanggalKomisioning || '').trim(),
         tanggalExpired: String(target.tanggalExpired || '').trim(),
+        email: String(target.email || '').trim(),
         komisioner: String(target.komisioner || '').trim(),
         keterangan: String(target.keterangan || '').trim()
       };
@@ -552,6 +737,7 @@
     return {
       tanggalKomisioning: String(latest.tanggalKomisioning || target.tanggalKomisioning || '').trim(),
       tanggalExpired: String(latest.tanggalExpired || target.tanggalExpired || '').trim(),
+      email: String(latest.email || target.email || '').trim(),
       komisioner: String(latest.komisioner || target.komisioner || '').trim(),
       keterangan: String(latest.keterangan || target.keterangan || '').trim()
     };
@@ -605,6 +791,7 @@
     const latestKomisioning = getLatestKomisioningSnapshot(target);
     if (komisioningTanggalKomisioningInput) komisioningTanggalKomisioningInput.value = latestKomisioning.tanggalKomisioning;
     if (komisioningTanggalExpiredInput) komisioningTanggalExpiredInput.value = latestKomisioning.tanggalExpired;
+    if (komisioningEmailInput) komisioningEmailInput.value = latestKomisioning.email;
     if (komisioningKomisionerInput) komisioningKomisionerInput.value = latestKomisioning.komisioner;
     if (komisioningKeteranganInput) komisioningKeteranganInput.value = latestKomisioning.keterangan;
     syncMainCommissionFieldsFromSubForm();
@@ -676,6 +863,7 @@
     const latestKomisioning = getLatestKomisioningSnapshot(target);
     if (komisioningTanggalKomisioningInput) komisioningTanggalKomisioningInput.value = latestKomisioning.tanggalKomisioning;
     if (komisioningTanggalExpiredInput) komisioningTanggalExpiredInput.value = latestKomisioning.tanggalExpired;
+    if (komisioningEmailInput) komisioningEmailInput.value = latestKomisioning.email;
     if (komisioningKomisionerInput) komisioningKomisionerInput.value = latestKomisioning.komisioner;
     if (komisioningKeteranganInput) komisioningKeteranganInput.value = latestKomisioning.keterangan;
     syncMainCommissionFieldsFromSubForm();
@@ -721,6 +909,7 @@
         '<td>' + String(index + 1) + '</td>' +
         '<td>' + (item.tanggalKomisioning || '-') + '</td>' +
         '<td>' + (item.tanggalExpired || '-') + '</td>' +
+        '<td>' + (item.email || '-') + '</td>' +
         '<td>' + (item.status || '-') + '</td>' +
         '<td>' + (item.komisioner || '-') + '</td>' +
         '<td>' + (item.keterangan || '-') + '</td>' +
@@ -775,6 +964,7 @@
         komisioningHistory: history,
         tanggalKomisioning: String(latest.tanggalKomisioning || '').trim(),
         tanggalExpired: String(latest.tanggalExpired || '').trim(),
+        email: String(latest.email || '').trim(),
         komisioner: String(latest.komisioner || '').trim(),
         keterangan: String(latest.keterangan || '').trim(),
         status: resolveStatusFromExpiredDate(String(latest.tanggalExpired || '').trim()),
@@ -935,6 +1125,7 @@
         'CCOW: ' + (target.ccow || '-'),
         'Tanggal Komisioning: ' + (target.tanggalKomisioning || '-'),
         'Tanggal Expired: ' + (target.tanggalExpired || '-'),
+        'Email: ' + (target.email || '-'),
         'Status: ' + (target.status || '-'),
         'Komisioner: ' + (target.komisioner || '-'),
         'Keterangan: ' + (target.keterangan || '-')
@@ -956,6 +1147,7 @@
         buildDetailLineHtml('CCOW', target.ccow || '-'),
         buildDetailLineHtml('Tanggal Komisioning', target.tanggalKomisioning || '-'),
         buildDetailLineHtml('Tanggal Expired', target.tanggalExpired || '-'),
+        buildDetailLineHtml('Email', target.email || '-'),
         buildDetailLineHtml('Status', target.status || '-'),
         buildDetailLineHtml('Komisioner', target.komisioner || '-'),
         buildDetailLineHtml('Keterangan', target.keterangan || '-')
@@ -995,6 +1187,7 @@
     syncKomisioningInputerIdentity();
     if (komisioningTanggalKomisioningInput) komisioningTanggalKomisioningInput.value = '';
     if (komisioningTanggalExpiredInput) komisioningTanggalExpiredInput.value = '';
+    if (komisioningEmailInput) komisioningEmailInput.value = '';
     if (komisioningKomisionerInput) komisioningKomisionerInput.value = '';
     if (komisioningKeteranganInput) komisioningKeteranganInput.value = '';
     syncMainCommissionFieldsFromSubForm();
@@ -1076,6 +1269,12 @@
     });
   }
 
+  if (komisioningEmailInput) {
+    komisioningEmailInput.addEventListener('input', function () {
+      updateQrCode();
+    });
+  }
+
   if (komisioningKeteranganInput) {
     komisioningKeteranganInput.addEventListener('input', function () {
       syncMainCommissionFieldsFromSubForm();
@@ -1152,6 +1351,7 @@
       fotoSpip: fotoDraft,
       tanggalKomisioning: String((komisioningTanggalKomisioningInput && komisioningTanggalKomisioningInput.value) || '').trim(),
       tanggalExpired: String((komisioningTanggalExpiredInput && komisioningTanggalExpiredInput.value) || '').trim(),
+      email: normalizeEmailList((komisioningEmailInput && komisioningEmailInput.value) || ''),
       status: resolveStatusFromExpiredDate((komisioningTanggalExpiredInput && komisioningTanggalExpiredInput.value) || ''),
       komisioner: String((komisioningKomisionerInput && komisioningKomisionerInput.value) || '').trim(),
       qrPayload: buildQrPayloadText(),
@@ -1192,7 +1392,7 @@
   });
 
   if (komisioningSaveButton) {
-    komisioningSaveButton.addEventListener('click', function () {
+    komisioningSaveButton.addEventListener('click', async function () {
       const roleFlags = getRoleFlags();
       if (!roleFlags.canManage) {
         alert('Simpan komisioning hanya untuk Super Admin dan Admin.');
@@ -1203,6 +1403,7 @@
 
       const tanggalKomisioning = String((komisioningTanggalKomisioningInput && komisioningTanggalKomisioningInput.value) || '').trim();
       const tanggalExpired = String((komisioningTanggalExpiredInput && komisioningTanggalExpiredInput.value) || '').trim();
+      const email = normalizeEmailList((komisioningEmailInput && komisioningEmailInput.value) || '');
       const komisioner = String((komisioningKomisionerInput && komisioningKomisionerInput.value) || '').trim();
       const keterangan = String((komisioningKeteranganInput && komisioningKeteranganInput.value) || '').trim();
 
@@ -1218,6 +1419,18 @@
         alert('Komisioner wajib diisi.');
         return;
       }
+      if (!email) {
+        alert('Email wajib diisi.');
+        return;
+      }
+
+      const invalidEmail = parseEmailList(email).find(function (item) {
+        return !isValidEmailAddress(item);
+      });
+      if (invalidEmail) {
+        alert('Format email tidak valid: ' + invalidEmail);
+        return;
+      }
 
       syncMainCommissionFieldsFromSubForm();
       syncStatusFromExpiredDate();
@@ -1231,6 +1444,7 @@
         ccowInputer: String((komisioningCcowInputerInput && komisioningCcowInputerInput.value) || '').trim(),
         tanggalKomisioning: tanggalKomisioning,
         tanggalExpired: tanggalExpired,
+        email: email,
         status: resolveStatusFromExpiredDate(tanggalExpired),
         komisioner: komisioner,
         keterangan: keterangan,
@@ -1240,6 +1454,24 @@
       if (!recordId) {
         draftKomisioningHistory = draftKomisioningHistory.concat(historyEntry);
         renderKomisioningHistory({ komisioningHistory: draftKomisioningHistory });
+        const tempRecordForExport = {
+          noUnitRegister: String(noUnitInput.value || '').trim(),
+          namaSpip: String(namaInput.value || '').trim(),
+          kategori: String(kategoriInput.value || '').trim(),
+          jenis: getJenisValueForPayload(),
+          merk: String(merkInput.value || '').trim(),
+          model: String(modelInput.value || '').trim(),
+          tahunPembuatan: String(tahunInput.value || '').trim(),
+          perusahaan: String(perusahaanInput.value || '').trim(),
+          ccow: String(ccowInput.value || '').trim(),
+          tanggalKomisioning: tanggalKomisioning,
+          tanggalExpired: tanggalExpired,
+          email: email,
+          komisioner: komisioner,
+          keterangan: keterangan,
+          qrPayload: buildQrPayloadText()
+        };
+        await triggerExportAndEmail(tempRecordForExport, email);
         alert('Sub Form SPIP berhasil disimpan.');
         return;
       }
@@ -1259,6 +1491,7 @@
       rows[idx] = Object.assign({}, record, {
         tanggalKomisioning: tanggalKomisioning,
         tanggalExpired: tanggalExpired,
+        email: email,
         komisioner: komisioner,
         keterangan: keterangan,
         status: resolveStatusFromExpiredDate(tanggalExpired),
@@ -1276,6 +1509,7 @@
       writeList(SPIP_KEY, rows);
       renderTable();
       renderKomisioningHistory(rows[idx]);
+      await triggerExportAndEmail(rows[idx], email);
       alert('Sub Form SPIP berhasil disimpan.');
     });
   }
@@ -1321,6 +1555,7 @@
       showKomisioningPanel({
         tanggalKomisioning: String(tanggalKomisioningInput.value || '').trim(),
         tanggalExpired: String(tanggalExpiredInput.value || '').trim(),
+        email: String((komisioningEmailInput && komisioningEmailInput.value) || '').trim(),
         komisioner: String(komisionerInput.value || '').trim(),
         keterangan: String(keteranganInput.value || '').trim(),
         komisioningHistory: draftKomisioningHistory.slice()

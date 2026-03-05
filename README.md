@@ -84,3 +84,57 @@ localStorage.setItem('aios_supabase_anon_key', 'YOUR_SUPABASE_ANON_KEY');
 ```
 
 Setelah itu, perubahan data dari Super Admin akan otomatis dipull oleh sesi Admin/User secara periodik.
+
+## Email API untuk SPIP (otomatis kirim PDF)
+
+Untuk mengaktifkan kirim email otomatis saat `Simpan Komisioning`, jalankan backend sederhana di folder `email-api`.
+
+### 1) Setup backend
+
+```bash
+cd email-api
+npm install
+```
+
+Copy file env:
+
+```bash
+copy .env.example .env
+```
+
+Lalu isi nilai SMTP di `.env`:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+
+Opsional keamanan:
+
+- `EMAIL_API_BEARER_TOKEN` untuk validasi token Bearer
+- `ALLOWED_ORIGINS` untuk whitelist origin frontend
+
+### 2) Jalankan backend
+
+```bash
+npm start
+```
+
+Default endpoint: `http://localhost:8080/api/spip/send-email`
+
+### 3) Konfigurasi frontend SPIP
+
+Tambahkan script global sebelum `scripts/pages/spip.js` dimuat (contoh di `pages/spip.html`):
+
+```html
+<script>
+	window.AIOS_SPIP_EMAIL_API = {
+		endpoint: 'http://localhost:8080/api/spip/send-email',
+		token: 'isi-jika-menggunakan-bearer-token'
+	};
+</script>
+```
+
+Jika endpoint tidak diisi / gagal, aplikasi tetap fallback ke draft email (`mailto`).

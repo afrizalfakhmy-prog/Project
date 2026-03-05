@@ -1,9 +1,11 @@
 ﻿# dependencies
 backend/node_modules/
+email-api/node_modules/
 .tools/
 
 # env files
 backend/.env
+email-api/.env
 backend/data/chat.json
 backend/data/presence.json
 

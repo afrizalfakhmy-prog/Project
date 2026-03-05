@@ -207,6 +207,10 @@
             <input id="spip-komisioning-tanggal-expired" type="date" />
           </div>
           <div class="field-wrap full">
+            <label for="spip-komisioning-email">Email</label>
+            <textarea id="spip-komisioning-email" rows="2" placeholder="Pisahkan lebih dari 1 email dengan koma atau baris baru"></textarea>
+          </div>
+          <div class="field-wrap full">
             <label for="spip-komisioning-komisioner">Komisioner</label>
             <textarea id="spip-komisioning-komisioner" rows="3"></textarea>
           </div>
@@ -231,6 +235,7 @@
                   <th>No</th>
                   <th>Tanggal Komisioning</th>
                   <th>Tanggal Expired</th>
+                  <th>Email</th>
                   <th>Status</th>
                   <th>Komisioner</th>
                   <th>Keterangan</th>
@@ -273,6 +278,13 @@
   <script src="../scripts/cloud_sync.js"></script>
   <script src="../scripts/storage_guard.js"></script>
   <script src="../scripts/detail_modal.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    window.AIOS_SPIP_EMAIL_API = window.AIOS_SPIP_EMAIL_API || {
+      endpoint: 'http://localhost:8080/api/spip/send-email',
+      token: ''
+    };
+  </script>
   <script src="../scripts/pages/spip.js"></script>
 </body>
 </html>
