@@ -493,34 +493,6 @@
     }, 2200);
   }
 
-  function openSpipEmailDraft(record, recipients) {
-    const target = record || {};
-    const list = Array.isArray(recipients) ? recipients.filter(Boolean) : [];
-    if (!list.length) return;
-
-    const subject = 'SPIP Komisioning - ' + String(target.noUnitRegister || '-').trim();
-    const bodyLines = [
-      'Halo,',
-      '',
-      'Berikut data SPIP yang telah disimpan:',
-      '- No Unit / Register: ' + String(target.noUnitRegister || '-').trim(),
-      '- Nama SPIP: ' + String(target.namaSpip || '-').trim(),
-      '- Tanggal Komisioning: ' + String(target.tanggalKomisioning || '-').trim(),
-      '- Tanggal Expired: ' + String(target.tanggalExpired || '-').trim(),
-      '',
-      'File PDF sudah dipicu untuk diekspor. Mohon lampirkan file PDF hasil ekspor sebelum mengirim email ini.',
-      '',
-      'Terima kasih.'
-    ];
-
-    const mailtoUrl =
-      'mailto:' + list.join(',') +
-      '?subject=' + encodeURIComponent(subject) +
-      '&body=' + encodeURIComponent(bodyLines.join('\n'));
-
-    window.location.href = mailtoUrl;
-  }
-
   function getSpipEmailApiConfig() {
     const globalConfig = window.AIOS_SPIP_EMAIL_API || {};
     const endpoint = String(globalConfig.endpoint || '').trim();
@@ -649,14 +621,11 @@
     try {
       const pdfBlob = createSpipPdfBlob(target);
       await sendSpipPdfToEmailApi(target, recipients, pdfBlob);
-      alert('PDF berhasil dikirim ke email tujuan.');
       return true;
-    } catch (_error) {
-      openSpipEmailDraft(target, recipients);
-      alert('Pengiriman email otomatis gagal / belum dikonfigurasi. Draft email dibuka sebagai fallback.');
+    } catch (error) {
+      alert('Pengiriman email otomatis gagal: ' + String((error && error.message) || 'Unknown error'));
+      return false;
     }
-
-    return true;
   }
 
   function buildQrPayloadText() {
@@ -909,7 +878,6 @@
         '<td>' + String(index + 1) + '</td>' +
         '<td>' + (item.tanggalKomisioning || '-') + '</td>' +
         '<td>' + (item.tanggalExpired || '-') + '</td>' +
-        '<td>' + (item.email || '-') + '</td>' +
         '<td>' + (item.status || '-') + '</td>' +
         '<td>' + (item.komisioner || '-') + '</td>' +
         '<td>' + (item.keterangan || '-') + '</td>' +
@@ -1471,8 +1439,12 @@
           keterangan: keterangan,
           qrPayload: buildQrPayloadText()
         };
-        await triggerExportAndEmail(tempRecordForExport, email);
-        alert('Sub Form SPIP berhasil disimpan.');
+        const emailSent = await triggerExportAndEmail(tempRecordForExport, email);
+        if (emailSent) {
+          alert('Sub Form SPIP berhasil disimpan dan email terkirim.');
+        } else {
+          alert('Sub Form SPIP berhasil disimpan, tetapi email tidak terkirim otomatis.');
+        }
         return;
       }
 
@@ -1509,8 +1481,12 @@
       writeList(SPIP_KEY, rows);
       renderTable();
       renderKomisioningHistory(rows[idx]);
-      await triggerExportAndEmail(rows[idx], email);
-      alert('Sub Form SPIP berhasil disimpan.');
+      const emailSent = await triggerExportAndEmail(rows[idx], email);
+      if (emailSent) {
+        alert('Sub Form SPIP berhasil disimpan dan email terkirim.');
+      } else {
+        alert('Sub Form SPIP berhasil disimpan, tetapi email tidak terkirim otomatis.');
+      }
     });
   }
 

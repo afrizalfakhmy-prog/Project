@@ -137,7 +137,7 @@ Tambahkan script global sebelum `scripts/pages/spip.js` dimuat (contoh di `pages
 </script>
 ```
 
-Jika endpoint tidak diisi / gagal, aplikasi tetap fallback ke draft email (`mailto`).
+Jika endpoint tidak diisi / gagal, pengiriman email otomatis akan gagal dan sistem menampilkan pesan error.
 
 ### 4) Checklist testing manual (end-to-end)
 
@@ -163,7 +163,7 @@ Jika endpoint tidak diisi / gagal, aplikasi tetap fallback ke draft email (`mail
 7. Uji validasi email:
 	- isi salah satu email invalid
 	- pastikan muncul alert format email tidak valid dan proses kirim dibatalkan
-8. Uji fallback `mailto`:
+8. Uji skenario gagal kirim otomatis:
 	- matikan backend / kosongkan `endpoint`
 	- klik `Simpan Komisioning`
-	- pastikan draft email terbuka otomatis sebagai fallback.
+	- pastikan muncul pesan error pengiriman email otomatis.
