@@ -397,6 +397,84 @@ button.ghost:hover {
   margin-top: 14px;
 }
 
+.tasklist-section {
+  margin-top: 16px;
+  grid-column: 1 / -1;
+}
+
+.tasklist-section-title {
+  margin: 0;
+  font-size: 16px;
+  color: #1e3a8a;
+}
+
+.tasklist-section-empty {
+  margin-top: 8px;
+}
+
+.tasklist-grid-group {
+  margin-top: 10px;
+}
+
+.checkbox-stack {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  justify-items: start;
+}
+
+.checkbox-stack label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  justify-content: flex-start;
+  width: auto;
+  text-align: left;
+}
+
+.checkbox-stack input[type='checkbox'] {
+  width: auto;
+  min-width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.spip-qr-box {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.spip-qr-box img {
+  width: 240px;
+  height: 240px;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.spip-qr-box textarea {
+  min-height: 240px;
+  resize: vertical;
+}
+
+.spip-action-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spip-action-btn {
+  padding: 7px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  min-width: 82px;
+  text-align: center;
+}
+
 .task-card {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
@@ -1143,6 +1221,16 @@ button.ghost:hover {
   .task-thumb-wrap {
     width: 100%;
     height: 150px;
+  }
+
+  .spip-qr-box {
+    grid-template-columns: 1fr;
+  }
+
+  .spip-qr-box img {
+    width: min(240px, 100%);
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
 
   .achievement-submenu {

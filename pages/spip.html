@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPIP | A-IOS</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card module-card">
+      <header class="module-header">
+        <h1>SPIP</h1>
+        <div class="module-actions">
+          <button id="add-spip-btn" type="button">Tambahkan</button>
+          <a class="link-btn" href="../index.html">Kembali ke Dashboard</a>
+        </div>
+      </header>
+
+      <form id="spip-form" class="inline-form hidden">
+        <div class="field-wrap">
+          <label for="spip-kategori">Kategori</label>
+          <select id="spip-kategori" required>
+            <option value="">(Pilih Kategori)</option>
+            <option value="A2B">A2B</option>
+            <option value="Sarana">Sarana</option>
+            <option value="Alat Support">Alat Support</option>
+            <option value="Alat Angkat">Alat Angkat</option>
+            <option value="Fix Asset">Fix Asset</option>
+            <option value="Bangunan">Bangunan</option>
+            <option value="Infrastruktur Tambang">Infrastruktur Tambang</option>
+            <option value="Support Khusus">Support Khusus</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-jenis">Jenis</label>
+          <select id="spip-jenis" required>
+            <option value="">(Pilih Kategori terlebih dahulu)</option>
+          </select>
+        </div>
+
+        <div id="spip-jenis-custom-wrap" class="field-wrap hidden">
+          <label for="spip-jenis-custom">Jenis Lainnya</label>
+          <input id="spip-jenis-custom" type="text" placeholder="Isi jenis lainnya" />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-nama">Nama SPIP</label>
+          <input id="spip-nama" type="text" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-no-unit">No Unit / Register</label>
+          <input id="spip-no-unit" type="text" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-merk">Merk</label>
+          <input id="spip-merk" type="text" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-model">Model</label>
+          <input id="spip-model" type="text" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-no-seri">No Seri</label>
+          <input id="spip-no-seri" type="text" required />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-tahun">Tahun Pembuatan</label>
+          <input id="spip-tahun" type="number" min="1900" max="2100" step="1" placeholder="YYYY" required />
+        </div>
+
+        <div class="field-wrap">
+          <label>Area Kerja</label>
+          <div class="checkbox-stack">
+            <label><input type="checkbox" name="spip-area" value="Lampunut" /> Lampunut</label>
+            <label><input type="checkbox" name="spip-area" value="Haju" /> Haju</label>
+            <label><input type="checkbox" name="spip-area" value="Tuhup" /> Tuhup</label>
+          </div>
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-dept">Dept In Charge</label>
+          <select id="spip-dept" required>
+            <option value="">(Pilih Departemen)</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-perusahaan">Perusahaan</label>
+          <select id="spip-perusahaan" required>
+            <option value="">(Pilih Perusahaan)</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-perusahaan-custodian">Perusahaan Custodian</label>
+          <select id="spip-perusahaan-custodian" required>
+            <option value="">(Pilih Perusahaan Custodian)</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-ccow">CCOW</label>
+          <select id="spip-ccow" required>
+            <option value="">(Pilih CCOW)</option>
+            <option value="PT. Maruwai Coal">PT. Maruwai Coal</option>
+            <option value="PT. Lahai Coal">PT. Lahai Coal</option>
+          </select>
+        </div>
+
+        <div class="field-wrap full">
+          <label for="spip-foto">Foto SPIP</label>
+          <input id="spip-foto" type="file" accept="image/*" multiple />
+          <small class="field-hint">Upload satu atau lebih foto, lalu hapus/ganti dari thumbnail jika diperlukan.</small>
+          <div id="spip-foto-preview" class="ohs-photo-grid"></div>
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-tanggal-komisioning">Tanggal Komisioning</label>
+          <input id="spip-tanggal-komisioning" type="date" required readonly />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-tanggal-expired">Tanggal Expired</label>
+          <input id="spip-tanggal-expired" type="date" required readonly />
+        </div>
+
+        <div class="field-wrap">
+          <label for="spip-status">Status</label>
+          <select id="spip-status" required disabled>
+            <option value="Active">Active</option>
+            <option value="Expired">Expired</option>
+          </select>
+          <small class="field-hint">Status otomatis: jika Tanggal Expired lebih dari hari ini maka Active, jika sama/kurang dari hari ini maka Expired.</small>
+        </div>
+
+        <div class="field-wrap full">
+          <label for="spip-komisioner">Komisioner</label>
+          <textarea id="spip-komisioner" rows="3" required readonly></textarea>
+        </div>
+
+        <div class="field-wrap full">
+          <label>Stiker Komisioning (QR Code)</label>
+          <div class="spip-qr-box">
+            <img id="spip-qr-image" alt="QR Code Stiker Komisioning" />
+            <textarea id="spip-qr-payload" rows="6" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="field-wrap full">
+          <label for="spip-keterangan">Keterangan</label>
+          <textarea id="spip-keterangan" rows="3" readonly></textarea>
+        </div>
+
+        <div class="field-wrap full">
+          <div id="spip-form-actions" class="form-inline-actions">
+            <button type="submit">Simpan SPIP</button>
+            <button id="spip-reset-btn" type="button" class="ghost">Reset</button>
+            <button id="spip-cancel-btn" type="button" class="ghost">Batal</button>
+          </div>
+          <div id="spip-readonly-actions" class="form-inline-actions hidden">
+            <button id="spip-readonly-cancel-btn" type="button" class="ghost">Batal</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="form-inline-actions" style="margin-top: 12px;">
+        <button id="spip-komisioning-open-btn" type="button">Detail Komisioning</button>
+      </div>
+
+      <section id="spip-komisioning-panel" class="tasklist-edit hidden">
+        <h3>Sub Form SPIP - Komisioning</h3>
+        <div class="inline-form">
+          <div class="field-wrap">
+            <label for="spip-komisioning-nama-inputer">Nama Inputer</label>
+            <input id="spip-komisioning-nama-inputer" type="text" readonly />
+          </div>
+          <div class="field-wrap">
+            <label for="spip-komisioning-jabatan-inputer">Jabatan Inputer</label>
+            <input id="spip-komisioning-jabatan-inputer" type="text" readonly />
+          </div>
+          <div class="field-wrap">
+            <label for="spip-komisioning-departemen-inputer">Departemen Inputer</label>
+            <input id="spip-komisioning-departemen-inputer" type="text" readonly />
+          </div>
+          <div class="field-wrap">
+            <label for="spip-komisioning-perusahaan-inputer">Perusahaan Inputer</label>
+            <input id="spip-komisioning-perusahaan-inputer" type="text" readonly />
+          </div>
+          <div class="field-wrap">
+            <label for="spip-komisioning-ccow-inputer">CCOW Inputer</label>
+            <input id="spip-komisioning-ccow-inputer" type="text" readonly />
+          </div>
+
+          <div class="field-wrap">
+            <label for="spip-komisioning-tanggal-komisioning">Tanggal Komisioning</label>
+            <input id="spip-komisioning-tanggal-komisioning" type="date" />
+          </div>
+          <div class="field-wrap">
+            <label for="spip-komisioning-tanggal-expired">Tanggal Expired</label>
+            <input id="spip-komisioning-tanggal-expired" type="date" />
+          </div>
+          <div class="field-wrap full">
+            <label for="spip-komisioning-komisioner">Komisioner</label>
+            <textarea id="spip-komisioning-komisioner" rows="3"></textarea>
+          </div>
+          <div class="field-wrap full">
+            <label for="spip-komisioning-keterangan">Keterangan</label>
+            <textarea id="spip-komisioning-keterangan" rows="3"></textarea>
+          </div>
+          <div class="field-wrap full">
+            <div class="form-inline-actions">
+              <button id="spip-komisioning-save-btn" type="button">Simpan Komisioning</button>
+              <button id="spip-komisioning-cancel-btn" type="button" class="ghost">Batal</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="table-wrap" style="margin-top: 12px;">
+          <h4>Histori Isian Komisioning</h4>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Tanggal Komisioning</th>
+                  <th>Tanggal Expired</th>
+                  <th>Status</th>
+                  <th>Komisioner</th>
+                  <th>Keterangan</th>
+                  <th>Waktu Simpan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="spip-komisioning-history-tbody"></tbody>
+            </table>
+          </div>
+          <p id="spip-komisioning-history-empty" class="subtitle hidden">Belum ada histori komisioning.</p>
+        </section>
+      </section>
+
+      <section class="table-wrap" style="margin-top: 14px;">
+        <h3>Daftar SPIP</h3>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>No Unit / Register</th>
+                <th>Nama SPIP</th>
+                <th>Kategori</th>
+                <th>Jenis</th>
+                <th>Status</th>
+                <th>Tanggal Expired</th>
+                <th>Komisioner</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="spip-tbody"></tbody>
+          </table>
+        </div>
+        <p id="spip-empty" class="subtitle hidden">Belum ada data SPIP.</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="../scripts/cloud_sync.js"></script>
+  <script src="../scripts/storage_guard.js"></script>
+  <script src="../scripts/detail_modal.js"></script>
+  <script src="../scripts/pages/spip.js"></script>
+</body>
+</html>

@@ -245,6 +245,64 @@
     });
   }
 
+  function buildCardElement(row, roleFlags, currentUser) {
+    const isJsaRow = row.sourceType === 'JSA';
+    const canEdit = isJsaRow
+      ? !!row.canEdit
+      : (roleFlags.isSuperAdmin || (row.namaPjaId === currentUser.id && isOpenOrProgress(row.status)));
+    const canDelete = isJsaRow ? false : roleFlags.isSuperAdmin;
+    const thumb = isJsaRow ? '' : getThumbnailUrl(row.fotoTemuan);
+    const badgeLabel = isJsaRow
+      ? (row.mode === 'rework'
+        ? (row.stage === 'penyelia' ? 'REVISI PENYELIA' : 'REVISI HSE')
+        : (row.stage === 'penyelia' ? 'VALIDASI PENYELIA' : 'VALIDASI HSE'))
+      : '';
+    const badgeClass = isJsaRow
+      ? (row.mode === 'rework'
+        ? 'task-badge task-badge-rework'
+        : 'task-badge task-badge-validate')
+      : '';
+
+    const card = document.createElement('article');
+    card.className = 'task-card';
+    card.dataset.sourceType = row.sourceType;
+    card.dataset.recordId = row.id;
+    card.dataset.canEdit = canEdit ? 'yes' : 'no';
+    card.dataset.canDelete = canDelete ? 'yes' : 'no';
+    if (isJsaRow) {
+      card.dataset.stage = String(row.stage || '');
+      card.dataset.mode = String(row.mode || 'validate');
+    }
+
+    card.innerHTML = '<div class="task-thumb-wrap">' +
+      (thumb
+        ? '<img class="task-thumb" src="' + thumb + '" alt="Thumbnail Temuan" />'
+        : '<div class="task-thumb task-thumb-empty">Tidak ada thumbnail</div>') +
+      '</div>' +
+      '<div class="task-body">' +
+        '<p><strong>No ID:</strong> ' + row.noId + '</p>' +
+        '<p><strong>Tanggal Laporan:</strong> ' + row.tanggalLaporan + '</p>' +
+        '<p><strong>Nama Pelapor:</strong> ' + row.namaPelapor + '</p>' +
+        '<p><strong>Perusahaan Pelaporan:</strong> ' + row.perusahaan + '</p>' +
+        (isJsaRow ? '<p><span class="' + badgeClass + '">' + badgeLabel + '</span></p>' : '') +
+        '<p><strong>Status:</strong> ' + row.status + '</p>' +
+        '<p class="task-source">Sumber: ' + row.sourceType + '</p>' +
+        (isJsaRow
+          ? (canEdit
+            ? '<p class="task-edit-hint">Klik card atau tombol untuk lanjutkan proses JSA.</p>'
+            : '<p class="task-edit-hint">Notifikasi untuk user terpilih.</p>')
+          : (canEdit ? '<p class="task-edit-hint">Klik card untuk edit tindak lanjut.</p>' : '')) +
+        ((canEdit || canDelete)
+          ? '<div class="form-inline-actions">' +
+            (canEdit ? '<button type="button" class="table-btn" data-action="' + (isJsaRow ? 'open-jsa' : 'edit') + '">' + (isJsaRow ? (row.actionLabel || 'Isi Validasi') : 'Ubah') + '</button>' : '') +
+            (canDelete ? '<button type="button" class="table-btn danger" data-action="delete">Hapus</button>' : '') +
+            '</div>'
+          : '') +
+      '</div>';
+
+    return card;
+  }
+
   function renderCards() {
     const currentUser = getCurrentUser();
     if (!currentUser) {
@@ -267,6 +325,16 @@
     });
     const jsaNotifications = buildJsaNotifications(jsaRows, currentUser, roleFlags);
     const notifications = baseNotifications.concat(jsaNotifications);
+    const groupedNotifications = {
+      KTA: [],
+      TTA: [],
+      JSA: []
+    };
+    notifications.forEach(function (item) {
+      const key = String(item.sourceType || '').toUpperCase();
+      if (!groupedNotifications[key]) return;
+      groupedNotifications[key].push(item);
+    });
 
     cardsContainer.innerHTML = '';
     if (notifications.length === 0) {
@@ -277,62 +345,35 @@
 
     emptyText.classList.add('hidden');
 
-    notifications.forEach(function (row) {
-      const isJsaRow = row.sourceType === 'JSA';
-      const canEdit = isJsaRow
-        ? !!row.canEdit
-        : (roleFlags.isSuperAdmin || (row.namaPjaId === currentUser.id && isOpenOrProgress(row.status)));
-      const canDelete = isJsaRow ? false : roleFlags.isSuperAdmin;
-      const thumb = isJsaRow ? '' : getThumbnailUrl(row.fotoTemuan);
-      const badgeLabel = isJsaRow
-        ? (row.mode === 'rework'
-          ? (row.stage === 'penyelia' ? 'REVISI PENYELIA' : 'REVISI HSE')
-          : (row.stage === 'penyelia' ? 'VALIDASI PENYELIA' : 'VALIDASI HSE'))
-        : '';
-      const badgeClass = isJsaRow
-        ? (row.mode === 'rework'
-          ? 'task-badge task-badge-rework'
-          : 'task-badge task-badge-validate')
-        : '';
+    [
+      { type: 'KTA', title: 'Notifikasi KTA' },
+      { type: 'TTA', title: 'Notifikasi TTA' },
+      { type: 'JSA', title: 'Notifikasi JSA' }
+    ].forEach(function (sectionMeta) {
+      const section = document.createElement('section');
+      section.className = 'tasklist-section';
 
-      const card = document.createElement('article');
-      card.className = 'task-card';
-      card.dataset.sourceType = row.sourceType;
-      card.dataset.recordId = row.id;
-      card.dataset.canEdit = canEdit ? 'yes' : 'no';
-      card.dataset.canDelete = canDelete ? 'yes' : 'no';
-      if (isJsaRow) {
-        card.dataset.stage = String(row.stage || '');
-        card.dataset.mode = String(row.mode || 'validate');
+      const title = document.createElement('h3');
+      title.className = 'tasklist-section-title';
+      title.textContent = sectionMeta.title;
+      section.appendChild(title);
+
+      const rows = groupedNotifications[sectionMeta.type] || [];
+      if (rows.length === 0) {
+        const sectionEmpty = document.createElement('p');
+        sectionEmpty.className = 'tasklist-section-empty subtitle';
+        sectionEmpty.textContent = 'Belum ada notifikasi ' + sectionMeta.type + '.';
+        section.appendChild(sectionEmpty);
+      } else {
+        const groupGrid = document.createElement('div');
+        groupGrid.className = 'tasklist-grid tasklist-grid-group';
+        rows.forEach(function (row) {
+          groupGrid.appendChild(buildCardElement(row, roleFlags, currentUser));
+        });
+        section.appendChild(groupGrid);
       }
 
-      card.innerHTML = '<div class="task-thumb-wrap">' +
-        (thumb
-          ? '<img class="task-thumb" src="' + thumb + '" alt="Thumbnail Temuan" />'
-          : '<div class="task-thumb task-thumb-empty">Tidak ada thumbnail</div>') +
-        '</div>' +
-        '<div class="task-body">' +
-          '<p><strong>No ID:</strong> ' + row.noId + '</p>' +
-          '<p><strong>Tanggal Laporan:</strong> ' + row.tanggalLaporan + '</p>' +
-          '<p><strong>Nama Pelapor:</strong> ' + row.namaPelapor + '</p>' +
-          '<p><strong>Perusahaan Pelaporan:</strong> ' + row.perusahaan + '</p>' +
-          (isJsaRow ? '<p><span class="' + badgeClass + '">' + badgeLabel + '</span></p>' : '') +
-          '<p><strong>Status:</strong> ' + row.status + '</p>' +
-          '<p class="task-source">Sumber: ' + row.sourceType + '</p>' +
-          (isJsaRow
-            ? (canEdit
-              ? '<p class="task-edit-hint">Klik card atau tombol untuk lanjutkan proses JSA.</p>'
-              : '<p class="task-edit-hint">Notifikasi untuk user terpilih.</p>')
-            : (canEdit ? '<p class="task-edit-hint">Klik card untuk edit tindak lanjut.</p>' : '')) +
-          ((canEdit || canDelete)
-            ? '<div class="form-inline-actions">' +
-              (canEdit ? '<button type="button" class="table-btn" data-action="' + (isJsaRow ? 'open-jsa' : 'edit') + '">' + (isJsaRow ? (row.actionLabel || 'Isi Validasi') : 'Ubah') + '</button>' : '') +
-              (canDelete ? '<button type="button" class="table-btn danger" data-action="delete">Hapus</button>' : '') +
-              '</div>'
-            : '') +
-        '</div>';
-
-      cardsContainer.appendChild(card);
+      cardsContainer.appendChild(section);
     });
   }
 

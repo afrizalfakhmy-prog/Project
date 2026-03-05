@@ -73,7 +73,13 @@
     const imageItems = normalizeImages(options && options.images ? options.images : []);
 
     if (titleEl) titleEl.textContent = title || 'Detail Data';
-    if (contentEl) contentEl.textContent = contentText || '-';
+    if (contentEl) {
+      const htmlContent = options && typeof options.htmlContent === 'string'
+        ? String(options.htmlContent || '').trim()
+        : '';
+      if (htmlContent) contentEl.innerHTML = htmlContent;
+      else contentEl.textContent = contentText || '-';
+    }
 
     if (mediaSection && mediaGrid) {
       mediaGrid.innerHTML = '';

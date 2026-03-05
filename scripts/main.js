@@ -215,6 +215,8 @@
       Inspeksi: 'pages/inspeksi.html',
       'OHS Talk': 'pages/ohs_talk.html',
       Observasi: 'pages/observasi.html',
+      SPIP: 'pages/spip.html',
+      OSPEK: 'pages/ospek.html',
       Tasklist: 'pages/tasklist.html',
       'Daftar User': 'pages/daftar_user.html',
       'Daftar Departemen': 'pages/daftar_departemen.html',

@@ -36,7 +36,8 @@
     'aios_ohs_talk',
     'aios_observasi',
     'aios_jsa',
-    'aios_inspeksi'
+    'aios_inspeksi',
+    'aios_spip'
   ];
 
   function getBackupKey(key) {
