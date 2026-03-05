@@ -138,3 +138,32 @@ Tambahkan script global sebelum `scripts/pages/spip.js` dimuat (contoh di `pages
 ```
 
 Jika endpoint tidak diisi / gagal, aplikasi tetap fallback ke draft email (`mailto`).
+
+### 4) Checklist testing manual (end-to-end)
+
+1. Jalankan backend email API:
+	- `cd email-api`
+	- `npm install`
+	- `copy .env.example .env`
+	- isi SMTP valid di `.env`
+	- `npm start`
+2. Buka halaman SPIP dari frontend.
+3. Buat / pilih data SPIP, lalu buka `Detail Komisioning`.
+4. Isi field wajib:
+	- `Tanggal Komisioning`
+	- `Tanggal Expired`
+	- `Email` (bisa lebih dari satu, pisahkan koma/baris baru)
+	- `Komisioner`
+5. Klik `Simpan Komisioning`.
+6. Verifikasi hasil:
+	- dialog print/export PDF muncul
+	- backend menerima request `POST /api/spip/send-email`
+	- email diterima oleh seluruh penerima pada field `Email`
+	- lampiran PDF terbaca normal
+7. Uji validasi email:
+	- isi salah satu email invalid
+	- pastikan muncul alert format email tidak valid dan proses kirim dibatalkan
+8. Uji fallback `mailto`:
+	- matikan backend / kosongkan `endpoint`
+	- klik `Simpan Komisioning`
+	- pastikan draft email terbuka otomatis sebagai fallback.
