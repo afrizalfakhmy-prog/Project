@@ -279,8 +279,9 @@
   <script src="../scripts/detail_modal.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
+    const isLocalHost = ['localhost', '127.0.0.1'].indexOf(window.location.hostname) >= 0;
     window.AIOS_SPIP_EMAIL_API = window.AIOS_SPIP_EMAIL_API || {
-      endpoint: 'http://localhost:8080/api/spip/send-email',
+      endpoint: isLocalHost ? 'http://localhost:8080/api/spip/send-email' : '/api/spip/send-email',
       token: ''
     };
   </script>

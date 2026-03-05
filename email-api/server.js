@@ -22,7 +22,7 @@ app.use(cors({
   }
 }));
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -123,9 +123,23 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
     const subject = String(req.body.subject || '').trim() || 'SPIP Komisioning';
     const body = String(req.body.body || '').trim() || 'Terlampir file SPIP.';
 
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ message: 'PDF attachment is required in field "file".' });
+    const rawBase64 = String(req.body.fileBase64 || '').trim();
+    const normalizedBase64 = rawBase64.replace(/^data:application\/pdf;base64,/i, '');
+    const attachmentFromJson = normalizedBase64
+      ? Buffer.from(normalizedBase64, 'base64')
+      : null;
+
+    const attachmentBuffer = req.file && req.file.buffer
+      ? req.file.buffer
+      : attachmentFromJson;
+
+    if (!attachmentBuffer || !attachmentBuffer.length) {
+      return res.status(400).json({ message: 'PDF attachment is required (multipart file or fileBase64).' });
     }
+
+    const fileName = String(req.body.fileName || '').trim()
+      || (req.file && req.file.originalname)
+      || 'SPIP-Komisioning.pdf';
 
     const transporter = createTransporter();
     const fromAddress = String(process.env.SMTP_FROM || process.env.SMTP_USER || '').trim();
@@ -137,9 +151,9 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
       text: body,
       attachments: [
         {
-          filename: req.file.originalname || 'SPIP-Komisioning.pdf',
-          content: req.file.buffer,
-          contentType: req.file.mimetype || 'application/pdf'
+          filename: fileName,
+          content: attachmentBuffer,
+          contentType: 'application/pdf'
         }
       ]
     });
@@ -147,7 +161,7 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
     return res.json({
       ok: true,
       sentTo: recipients,
-      fileName: req.file.originalname || 'SPIP-Komisioning.pdf'
+      fileName: fileName
     });
   } catch (error) {
     return res.status(500).json({

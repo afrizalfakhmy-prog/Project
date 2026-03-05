@@ -577,6 +577,25 @@
     return doc.output('blob');
   }
 
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const result = String(reader.result || '');
+        const commaIndex = result.indexOf(',');
+        if (commaIndex < 0) {
+          resolve('');
+          return;
+        }
+        resolve(result.slice(commaIndex + 1));
+      };
+      reader.onerror = function () {
+        reject(new Error('Gagal mengubah PDF ke base64.'));
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
+
   async function sendSpipPdfToEmailApi(record, recipients, pdfBlob) {
     const config = getSpipEmailApiConfig();
     if (!config.endpoint) {
@@ -584,12 +603,11 @@
     }
 
     const target = record || {};
-    const formData = new FormData();
-    formData.append('recipients', JSON.stringify(recipients));
-    formData.append('subject', buildSpipEmailSubject(target));
-    formData.append('body', buildSpipEmailBody(target));
-    formData.append('payload', JSON.stringify(target));
-    formData.append('file', pdfBlob, 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf');
+    const fileName = 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf';
+    const fileBase64 = await blobToBase64(pdfBlob);
+    if (!fileBase64) {
+      throw new Error('File PDF tidak valid untuk dikirim.');
+    }
 
     const headers = {};
     if (config.token) {
@@ -598,8 +616,17 @@
 
     const response = await fetch(config.endpoint, {
       method: 'POST',
-      headers: headers,
-      body: formData
+      headers: Object.assign({}, headers, {
+        'Content-Type': 'application/json'
+      }),
+      body: JSON.stringify({
+        recipients: recipients,
+        subject: buildSpipEmailSubject(target),
+        body: buildSpipEmailBody(target),
+        payload: target,
+        fileName: fileName,
+        fileBase64: fileBase64
+      })
     });
 
     if (!response.ok) {

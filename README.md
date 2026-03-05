@@ -124,6 +124,21 @@ npm start
 
 Default endpoint: `http://localhost:8080/api/spip/send-email`
 
+Untuk deployment Vercel, frontend otomatis memakai endpoint same-origin: `/api/spip/send-email`.
+Serverless function sudah tersedia di `api/spip/send-email.js`.
+
+### Konfigurasi Environment Variable di Vercel
+
+Set variable berikut pada project Vercel:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE` (`true`/`false`)
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+- `EMAIL_API_BEARER_TOKEN` (opsional, jika dipakai isi juga `window.AIOS_SPIP_EMAIL_API.token`)
+
 ### 3) Konfigurasi frontend SPIP
 
 Tambahkan script global sebelum `scripts/pages/spip.js` dimuat (contoh di `pages/spip.html`):
