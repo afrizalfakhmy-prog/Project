@@ -569,69 +569,139 @@
     });
   }
 
+  function loadImageElement(url) {
+    return new Promise(function (resolve, reject) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function () {
+        reject(new Error('Gagal memuat gambar.'));
+      };
+      img.src = url;
+    });
+  }
+
+  function drawRoundedRect(ctx, x, y, width, height, radius) {
+    const r = Math.max(0, Math.min(radius || 0, width / 2, height / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
   async function createSpipJpgBlob(record) {
     const target = record || {};
     const canvas = document.createElement('canvas');
-    canvas.width = 1100;
-    canvas.height = 1600;
+    canvas.width = 1024;
+    canvas.height = 1800;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Canvas context tidak tersedia.');
     }
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#e5e7eb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#092e7a';
-    ctx.fillRect(40, 30, canvas.width - 80, 130);
+    const cardX = 18;
+    const cardY = 14;
+    const cardW = canvas.width - 36;
+    const cardH = canvas.height - 28;
+
+    ctx.fillStyle = '#f3f4f6';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    const centerX = canvas.width / 2;
+    let y = 70;
 
     try {
       const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
-      const logoDataUrl = await loadImageAsDataUrl(logoUrl, 420, 140);
-      await new Promise(function (resolve, reject) {
-        const logo = new Image();
-        logo.onload = function () {
-          ctx.drawImage(logo, 58, 52, 240, 90);
-          resolve();
-        };
-        logo.onerror = reject;
-        logo.src = logoDataUrl;
-      });
+      const logoDataUrl = await loadImageAsDataUrl(logoUrl, 360, 120);
+      const logo = await loadImageElement(logoDataUrl);
+      const lw = 220;
+      const lh = 78;
+      ctx.drawImage(logo, centerX - (lw / 2), y, lw, lh);
     } catch (_error) {
       // Ignore logo load failure.
     }
+    y += 110;
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 56px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Stiker Komisioning', centerX, y);
+
+    y += 42;
+    ctx.fillStyle = '#334155';
+    ctx.font = '36px Arial';
+    ctx.fillText('PT. Alamtri Minerals Indonesia', centerX, y);
+
+    y += 34;
+    const qrBoxX = 36;
+    const qrBoxY = y;
+    const qrBoxW = canvas.width - 72;
+    const qrBoxH = 940;
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 38px Arial';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxH, 22);
+    ctx.fill();
+    ctx.stroke();
+
+    const qrPayload = String(target.qrPayload || buildQrPayloadTextFromRecord(target) || '').trim();
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrPayload || '-');
+
+    try {
+      const qrImage = await loadImageElement(qrUrl);
+      const margin = 18;
+      const size = Math.min(qrBoxW - (margin * 2), qrBoxH - (margin * 2));
+      ctx.drawImage(qrImage, qrBoxX + margin, qrBoxY + margin, size, size);
+    } catch (_error) {
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(qrBoxX + 20, qrBoxY + 20, qrBoxW - 40, qrBoxH - 40);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '28px Arial';
+      ctx.fillText('QR gagal dimuat', centerX, qrBoxY + (qrBoxH / 2));
+    }
+
+    y = qrBoxY + qrBoxH + 52;
+
+    const leftCompany = String(target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
+    const rightCompany = String(target.ccow || target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
+    ctx.font = 'bold 44px Arial';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'left';
+    ctx.fillText(leftCompany, 34, y);
     ctx.textAlign = 'right';
-    ctx.fillText('Stiker Komisioning SPIP', canvas.width - 64, 90);
-    ctx.font = '24px Arial';
-    ctx.fillText('PT. Maruwai Coal', canvas.width - 64, 128);
+    ctx.fillText(rightCompany, canvas.width - 34, y);
 
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#f8fafc';
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 2;
-    ctx.fillRect(40, 185, canvas.width - 80, 1360);
-    ctx.strokeRect(40, 185, canvas.width - 80, 1360);
+    y += 56;
 
     const rows = [
       ['No Unit / Register', target.noUnitRegister || '-'],
+      ['Nama SPIP', target.namaSpip || '-'],
       ['Kategori', target.kategori || '-'],
       ['Jenis', target.jenis || '-'],
-      ['Nama SPIP', target.namaSpip || '-'],
       ['Merk', target.merk || '-'],
       ['Model', target.model || '-'],
-      ['No Seri', target.noSeri || '-'],
       ['Tahun Pembuatan', target.tahunPembuatan || '-'],
-      ['Perusahaan', target.perusahaan || '-'],
-      ['CCOW', target.ccow || '-'],
       ['Tanggal Komisioning', target.tanggalKomisioning || '-'],
-      ['Tanggal Expired', target.tanggalExpired || '-'],
-      ['Status', target.status || '-'],
-      ['Email', target.email || '-'],
-      ['Komisioner', target.komisioner || '-'],
-      ['Keterangan', target.keterangan || '-']
+      ['Tanggal Expired', target.tanggalExpired || '-']
     ];
 
     function wrap(text, maxWidth) {
@@ -651,22 +721,22 @@
       return lines.length ? lines : ['-'];
     }
 
-    let y = 235;
     rows.forEach(function (entry) {
       const label = String(entry[0] || '').trim();
-      const valueLines = wrap(String(entry[1] || '-').trim() || '-', 560);
+      const valueLines = wrap(String(entry[1] || '-').trim() || '-', 470);
 
       ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 24px Arial';
-      ctx.fillText(label, 70, y);
+      ctx.font = 'bold 48px Arial';
+      ctx.fillText(label + ':', 32, y);
 
-      ctx.font = '24px Arial';
-      ctx.fillText(':', 360, y);
+      ctx.font = '48px Arial';
       valueLines.forEach(function (line, index) {
-        ctx.fillText(line, 385, y + (index * 30));
+        const offsetY = y + (index * 54);
+        const valueX = 32 + ctx.measureText(label + ': ').width;
+        ctx.fillText(line, valueX, offsetY);
       });
 
-      y += Math.max(52, 26 + (valueLines.length * 30));
+      y += Math.max(74, 20 + (valueLines.length * 54));
     });
 
     const jpgBlob = await new Promise(function (resolve, reject) {
@@ -676,7 +746,7 @@
           return;
         }
         resolve(blob);
-      }, 'image/jpeg', 0.76);
+      }, 'image/jpeg', 0.7);
     });
 
     return jpgBlob;
