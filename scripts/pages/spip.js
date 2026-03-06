@@ -508,18 +508,28 @@
   function buildSpipEmailBody(record) {
     const target = record || {};
     return [
-      'Halo,',
+      'Assalamualaikum Wr. Wb',
       '',
-      'Berikut data SPIP yang telah disimpan:',
-      '- No Unit / Register: ' + String(target.noUnitRegister || '-').trim(),
-      '- Nama SPIP: ' + String(target.namaSpip || '-').trim(),
-      '- Tanggal Komisioning: ' + String(target.tanggalKomisioning || '-').trim(),
-      '- Tanggal Expired: ' + String(target.tanggalExpired || '-').trim(),
-      '- Status: ' + String(target.status || '-').trim(),
+      'Semangat Pagi!!!',
       '',
-      'Terlampir file PDF hasil ekspor SPIP.',
+      'Dengan hormat,',
+      'Berikut kami kirimkan Stiker Komisioning untuk unit berikut ini :',
+      'No Unit / Register : ' + String(target.noUnitRegister || '-').trim(),
+      'Kategori : ' + String(target.kategori || '-').trim(),
+      'Jenis : ' + String(target.jenis || '-').trim(),
+      'Nama SPIP : ' + String(target.namaSpip || '-').trim(),
+      'Merk : ' + String(target.merk || '-').trim(),
+      'Model : ' + String(target.model || '-').trim(),
+      'No Seri : ' + String(target.noSeri || '-').trim(),
+      'Tahun Pembuatan : ' + String(target.tahunPembuatan || '-').trim(),
+      'Tanggal Komisioning : ' + String(target.tanggalKomisioning || '-').trim(),
+      'Tanggal Expired : ' + String(target.tanggalExpired || '-').trim(),
       '',
-      'Terima kasih.'
+      'Demikian, atas kerjasamanya saya ucapkan terima kasih.',
+      '',
+      'Regards,',
+      'OHS Department',
+      'PT. Maruwai Coal'
     ].join('\n');
   }
 
@@ -1453,6 +1463,7 @@
         jenis: getJenisValueForPayload(),
         merk: String(merkInput.value || '').trim(),
         model: String(modelInput.value || '').trim(),
+        noSeri: String(noSeriInput.value || '').trim(),
         tahunPembuatan: String(tahunInput.value || '').trim(),
         perusahaan: String(perusahaanInput.value || '').trim(),
         ccow: String(ccowInput.value || '').trim(),
@@ -1511,6 +1522,7 @@
         jenis: String(nextRecord.jenis || tempRecordForExport.jenis || '').trim(),
         merk: String(nextRecord.merk || tempRecordForExport.merk || '').trim(),
         model: String(nextRecord.model || tempRecordForExport.model || '').trim(),
+        noSeri: String(nextRecord.noSeri || tempRecordForExport.noSeri || '').trim(),
         tahunPembuatan: String(nextRecord.tahunPembuatan || tempRecordForExport.tahunPembuatan || '').trim(),
         perusahaan: String(nextRecord.perusahaan || tempRecordForExport.perusahaan || '').trim(),
         ccow: String(nextRecord.ccow || tempRecordForExport.ccow || '').trim(),

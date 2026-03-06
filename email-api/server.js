@@ -5,6 +5,23 @@ const cors = require('cors');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 
+function readEnv(key) {
+  const raw = String(process.env[key] || '').trim();
+  if (!raw) return '';
+  const quoted = (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"));
+  return quoted ? raw.slice(1, -1).trim() : raw;
+}
+
+function normalizeRefreshToken(value) {
+  const token = String(value || '').trim();
+  if (!token) return '';
+  try {
+    return decodeURIComponent(token);
+  } catch (_error) {
+    return token;
+  }
+}
+
 const app = express();
 const port = Number(process.env.PORT || 8080);
 
@@ -83,10 +100,10 @@ function requireBearerToken(req, res, next) {
 }
 
 function createTransporter() {
-  const gmailUser = String(process.env.GMAIL_USER || process.env.SMTP_USER || '').trim();
-  const gmailClientId = String(process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim();
-  const gmailClientSecret = String(process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '').trim();
-  const gmailRefreshToken = String(process.env.GMAIL_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN || '').trim();
+  const gmailUser = readEnv('GMAIL_USER') || readEnv('SMTP_USER');
+  const gmailClientId = readEnv('GMAIL_CLIENT_ID') || readEnv('GOOGLE_CLIENT_ID');
+  const gmailClientSecret = readEnv('GMAIL_CLIENT_SECRET') || readEnv('GOOGLE_CLIENT_SECRET');
+  const gmailRefreshToken = normalizeRefreshToken(readEnv('GMAIL_REFRESH_TOKEN') || readEnv('GOOGLE_REFRESH_TOKEN'));
   const gmailValues = {
     GMAIL_USER: gmailUser,
     GMAIL_CLIENT_ID: gmailClientId,
@@ -114,11 +131,11 @@ function createTransporter() {
     throw new Error('Incomplete Gmail OAuth2 configuration. Missing: ' + missingGmail.join(', '));
   }
 
-  const host = String(process.env.SMTP_HOST || '').trim();
-  const user = String(process.env.SMTP_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || '').trim();
-  const portValue = Number(process.env.SMTP_PORT || 587);
-  const secureValue = String(process.env.SMTP_SECURE || 'false').trim().toLowerCase() === 'true';
+  const host = readEnv('SMTP_HOST');
+  const user = readEnv('SMTP_USER');
+  const pass = readEnv('SMTP_PASS');
+  const portValue = Number(readEnv('SMTP_PORT') || 587);
+  const secureValue = String(readEnv('SMTP_SECURE') || 'false').toLowerCase() === 'true';
   const smtpValues = {
     SMTP_HOST: host,
     SMTP_USER: user,
@@ -179,7 +196,7 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
       || 'SPIP-Komisioning.pdf';
 
     const transporter = createTransporter();
-    const fromAddress = String(process.env.SMTP_FROM || process.env.SMTP_USER || '').trim();
+    const fromAddress = readEnv('SMTP_FROM') || readEnv('SMTP_USER');
 
     await transporter.sendMail({
       from: fromAddress,
