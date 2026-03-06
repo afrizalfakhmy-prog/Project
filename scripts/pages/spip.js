@@ -413,49 +413,13 @@
     }, 500);
   }
 
-  async function blobToDataUrl(blob) {
-    return new Promise(function (resolve, reject) {
-      const reader = new FileReader();
-      reader.onload = function () {
-        resolve(String(reader.result || ''));
-      };
-      reader.onerror = function () {
-        reject(new Error('Gagal membaca file gambar.'));
-      };
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  async function fetchImageAsDataUrl(url) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Gagal memuat gambar: ' + response.status);
-    }
-    const blob = await response.blob();
-    return blobToDataUrl(blob);
-  }
-
-  function drawPdfLabelValue(doc, x, y, label, value) {
-    const labelText = String(label || '').trim() + ':';
-    const valueText = String(value || '-').trim() || '-';
-
-    doc.setFont('helvetica', 'bold');
-    doc.text(labelText, x, y);
-
-    const labelWidth = doc.getTextWidth(labelText);
-    doc.setFont('helvetica', 'normal');
-    doc.text(' ' + valueText, x + labelWidth + 1, y);
-  }
-
-  async function exportSpipToPdf(record, providedBlob) {
+  function exportSpipToPdf(record) {
     const target = record || {};
     try {
-      const pdfBlob = providedBlob || await createSpipPdfBlob(target);
+      const pdfBlob = createSpipPdfBlob(target);
       downloadBlob(pdfBlob, getSpipPdfFileName(target));
-      return pdfBlob;
     } catch (error) {
       alert('Gagal membuat file ekspor PDF: ' + String((error && error.message) || 'Unknown error'));
-      return null;
     }
   }
 
@@ -499,89 +463,56 @@
     ].join('\n');
   }
 
-  async function createSpipPdfBlob(record) {
+  function createSpipPdfBlob(record) {
     const target = record || {};
     const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
     if (!jsPdfApi) {
       throw new Error('Library PDF belum tersedia.');
     }
 
-    const qrPayload = String(target.qrPayload || buildQrPayloadTextFromRecord(target) || '').trim();
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=900x900&data=' + encodeURIComponent(qrPayload || '-');
-    const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
+    const doc = new jsPdfApi({ unit: 'pt', format: 'a4' });
+    let y = 56;
+    const left = 48;
+    const lineHeight = 18;
 
-    const doc = new jsPdfApi({ unit: 'mm', format: 'a4' });
-    const cardX = 5;
-    const cardY = 5;
-    const cardW = 200;
-    const cardH = 287;
-
-    doc.setDrawColor(185, 195, 210);
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(cardX, cardY, cardW, cardH, 4, 4, 'FD');
-
-    // Logo (best effort). If the asset cannot be loaded, PDF generation still continues.
-    try {
-      const logoDataUrl = await fetchImageAsDataUrl(logoUrl);
-      doc.addImage(logoDataUrl, 'PNG', 82, 16, 46, 18);
-    } catch (_error) {
-    }
-
-    doc.setTextColor(15, 23, 42);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.text('Stiker Komisioning', 105, 50, { align: 'center' });
+    doc.setFontSize(16);
+    doc.text('SPIP Komisioning', left, y);
+    y += 26;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
-    doc.text('PT. Alamtri Minerals Indonesia', 105, 55, { align: 'center' });
+    doc.setFontSize(11);
 
-    const qrBoxX = 10;
-    const qrBoxY = 60;
-    const qrSize = 190;
+    const lines = [
+      ['No Unit / Register', target.noUnitRegister || '-'],
+      ['Nama SPIP', target.namaSpip || '-'],
+      ['Kategori', target.kategori || '-'],
+      ['Jenis', target.jenis || '-'],
+      ['Merk', target.merk || '-'],
+      ['Model', target.model || '-'],
+      ['Tahun Pembuatan', target.tahunPembuatan || '-'],
+      ['Perusahaan', target.perusahaan || '-'],
+      ['CCOW', target.ccow || '-'],
+      ['Tanggal Komisioning', target.tanggalKomisioning || '-'],
+      ['Tanggal Expired', target.tanggalExpired || '-'],
+      ['Status', target.status || '-'],
+      ['Email', target.email || '-'],
+      ['Komisioner', target.komisioner || '-'],
+      ['Keterangan', target.keterangan || '-']
+    ];
 
-    doc.setDrawColor(185, 195, 210);
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(qrBoxX, qrBoxY, qrSize, qrSize, 3, 3, 'FD');
-
-    try {
-      const qrDataUrl = await fetchImageAsDataUrl(qrUrl);
-      doc.addImage(qrDataUrl, 'PNG', qrBoxX + 2, qrBoxY + 2, qrSize - 4, qrSize - 4);
-    } catch (_error) {
-      doc.setTextColor(100, 116, 139);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.text('QR gagal dimuat', 105, qrBoxY + (qrSize / 2), { align: 'center' });
-      doc.setTextColor(15, 23, 42);
-    }
-
-    const leftCompany = String(target.perusahaan || '-').trim() || '-';
-    const rightCompany = String(target.ccow || target.perusahaan || '-').trim() || '-';
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.8);
-    doc.text(leftCompany, 10, 255);
-    doc.text(rightCompany, 200, 255, { align: 'right' });
-
-    let lineY = 263;
-    const lineGap = 7;
-    doc.setFontSize(6.7);
-    drawPdfLabelValue(doc, 10, lineY, 'No Unit / Register', target.noUnitRegister || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Nama SPIP', target.namaSpip || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Kategori', target.kategori || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Jenis', target.jenis || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Merk', target.merk || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Model', target.model || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Tahun Pembuatan', target.tahunPembuatan || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Tanggal Komisioning', target.tanggalKomisioning || '-');
-    lineY += lineGap;
-    drawPdfLabelValue(doc, 10, lineY, 'Tanggal Expired', target.tanggalExpired || '-');
+    lines.forEach(function (entry) {
+      const label = String(entry[0] || '').trim();
+      const value = String(entry[1] || '-').trim() || '-';
+      const composed = label + ': ' + value;
+      const wrapped = doc.splitTextToSize(composed, 500);
+      doc.text(wrapped, left, y);
+      y += lineHeight * wrapped.length;
+      if (y > 770) {
+        doc.addPage();
+        y = 56;
+      }
+    });
 
     return doc.output('blob');
   }
@@ -652,17 +583,10 @@
     }
 
     const target = record || {};
-    let pdfBlob;
+    exportSpipToPdf(target);
 
     try {
-      pdfBlob = await createSpipPdfBlob(target);
-      await exportSpipToPdf(target, pdfBlob);
-    } catch (error) {
-      alert('Gagal membuat file ekspor PDF: ' + String((error && error.message) || 'Unknown error'));
-      return false;
-    }
-
-    try {
+      const pdfBlob = createSpipPdfBlob(target);
       await sendSpipPdfToEmailApi(target, recipients, pdfBlob);
       return true;
     } catch (error) {
