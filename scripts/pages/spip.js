@@ -650,7 +650,7 @@
       await sendSpipPdfToEmailApi(target, recipients, pdfBlob);
       return true;
     } catch (error) {
-      alert('Pengiriman email otomatis gagal: ' + String((error && error.message) || 'Unknown error'));
+      alert('Pengiriman email otomatis gagal. Data komisioning tidak disimpan. Detail: ' + String((error && error.message) || 'Unknown error'));
       return false;
     }
   }
@@ -1446,32 +1446,32 @@
         savedAt: new Date().toISOString()
       };
 
+      const tempRecordForExport = {
+        noUnitRegister: String(noUnitInput.value || '').trim(),
+        namaSpip: String(namaInput.value || '').trim(),
+        kategori: String(kategoriInput.value || '').trim(),
+        jenis: getJenisValueForPayload(),
+        merk: String(merkInput.value || '').trim(),
+        model: String(modelInput.value || '').trim(),
+        tahunPembuatan: String(tahunInput.value || '').trim(),
+        perusahaan: String(perusahaanInput.value || '').trim(),
+        ccow: String(ccowInput.value || '').trim(),
+        tanggalKomisioning: tanggalKomisioning,
+        tanggalExpired: tanggalExpired,
+        email: email,
+        status: resolveStatusFromExpiredDate(tanggalExpired),
+        komisioner: komisioner,
+        keterangan: keterangan,
+        qrPayload: buildQrPayloadText()
+      };
+
       if (!recordId) {
+        const emailSent = await triggerExportAndEmail(tempRecordForExport, email);
+        if (!emailSent) return;
+
         draftKomisioningHistory = draftKomisioningHistory.concat(historyEntry);
         renderKomisioningHistory({ komisioningHistory: draftKomisioningHistory });
-        const tempRecordForExport = {
-          noUnitRegister: String(noUnitInput.value || '').trim(),
-          namaSpip: String(namaInput.value || '').trim(),
-          kategori: String(kategoriInput.value || '').trim(),
-          jenis: getJenisValueForPayload(),
-          merk: String(merkInput.value || '').trim(),
-          model: String(modelInput.value || '').trim(),
-          tahunPembuatan: String(tahunInput.value || '').trim(),
-          perusahaan: String(perusahaanInput.value || '').trim(),
-          ccow: String(ccowInput.value || '').trim(),
-          tanggalKomisioning: tanggalKomisioning,
-          tanggalExpired: tanggalExpired,
-          email: email,
-          komisioner: komisioner,
-          keterangan: keterangan,
-          qrPayload: buildQrPayloadText()
-        };
-        const emailSent = await triggerExportAndEmail(tempRecordForExport, email);
-        if (emailSent) {
-          alert('Sub Form SPIP berhasil disimpan dan email terkirim.');
-        } else {
-          alert('Sub Form SPIP berhasil disimpan, tetapi email tidak terkirim otomatis.');
-        }
+        alert('Sub Form SPIP berhasil disimpan dan email terkirim.');
         return;
       }
 
@@ -1487,7 +1487,7 @@
 
       const record = rows[idx] || {};
       const existingHistory = Array.isArray(record.komisioningHistory) ? record.komisioningHistory.slice() : [];
-      rows[idx] = Object.assign({}, record, {
+      const nextRecord = Object.assign({}, record, {
         tanggalKomisioning: tanggalKomisioning,
         tanggalExpired: tanggalExpired,
         email: email,
@@ -1503,17 +1503,29 @@
         komisioningHistory: existingHistory.concat(historyEntry),
         updatedAt: new Date().toISOString()
       });
-      draftKomisioningHistory = Array.isArray(rows[idx].komisioningHistory) ? rows[idx].komisioningHistory.slice() : [];
 
+      const payloadForEmail = Object.assign({}, tempRecordForExport, {
+        noUnitRegister: String(nextRecord.noUnitRegister || tempRecordForExport.noUnitRegister || '').trim(),
+        namaSpip: String(nextRecord.namaSpip || tempRecordForExport.namaSpip || '').trim(),
+        kategori: String(nextRecord.kategori || tempRecordForExport.kategori || '').trim(),
+        jenis: String(nextRecord.jenis || tempRecordForExport.jenis || '').trim(),
+        merk: String(nextRecord.merk || tempRecordForExport.merk || '').trim(),
+        model: String(nextRecord.model || tempRecordForExport.model || '').trim(),
+        tahunPembuatan: String(nextRecord.tahunPembuatan || tempRecordForExport.tahunPembuatan || '').trim(),
+        perusahaan: String(nextRecord.perusahaan || tempRecordForExport.perusahaan || '').trim(),
+        ccow: String(nextRecord.ccow || tempRecordForExport.ccow || '').trim(),
+        qrPayload: String(nextRecord.qrPayload || tempRecordForExport.qrPayload || '').trim()
+      });
+
+      const emailSent = await triggerExportAndEmail(payloadForEmail, email);
+      if (!emailSent) return;
+
+      rows[idx] = nextRecord;
+      draftKomisioningHistory = Array.isArray(nextRecord.komisioningHistory) ? nextRecord.komisioningHistory.slice() : [];
       writeList(SPIP_KEY, rows);
       renderTable();
-      renderKomisioningHistory(rows[idx]);
-      const emailSent = await triggerExportAndEmail(rows[idx], email);
-      if (emailSent) {
-        alert('Sub Form SPIP berhasil disimpan dan email terkirim.');
-      } else {
-        alert('Sub Form SPIP berhasil disimpan, tetapi email tidak terkirim otomatis.');
-      }
+      renderKomisioningHistory(nextRecord);
+      alert('Sub Form SPIP berhasil disimpan dan email terkirim.');
     });
   }
 

@@ -83,14 +83,51 @@ function requireBearerToken(req, res, next) {
 }
 
 function createTransporter() {
+  const gmailUser = String(process.env.GMAIL_USER || process.env.SMTP_USER || '').trim();
+  const gmailClientId = String(process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim();
+  const gmailClientSecret = String(process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '').trim();
+  const gmailRefreshToken = String(process.env.GMAIL_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN || '').trim();
+  const gmailValues = {
+    GMAIL_USER: gmailUser,
+    GMAIL_CLIENT_ID: gmailClientId,
+    GMAIL_CLIENT_SECRET: gmailClientSecret,
+    GMAIL_REFRESH_TOKEN: gmailRefreshToken
+  };
+  const gmailKeys = Object.keys(gmailValues);
+  const hasAnyGmail = gmailKeys.some((key) => !!gmailValues[key]);
+  const missingGmail = gmailKeys.filter((key) => !gmailValues[key]);
+
+  if (hasAnyGmail && !missingGmail.length) {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: gmailUser,
+        clientId: gmailClientId,
+        clientSecret: gmailClientSecret,
+        refreshToken: gmailRefreshToken
+      }
+    });
+  }
+
+  if (hasAnyGmail && missingGmail.length) {
+    throw new Error('Incomplete Gmail OAuth2 configuration. Missing: ' + missingGmail.join(', '));
+  }
+
   const host = String(process.env.SMTP_HOST || '').trim();
   const user = String(process.env.SMTP_USER || '').trim();
   const pass = String(process.env.SMTP_PASS || '').trim();
   const portValue = Number(process.env.SMTP_PORT || 587);
   const secureValue = String(process.env.SMTP_SECURE || 'false').trim().toLowerCase() === 'true';
+  const smtpValues = {
+    SMTP_HOST: host,
+    SMTP_USER: user,
+    SMTP_PASS: pass
+  };
+  const missingSmtp = Object.keys(smtpValues).filter((key) => !smtpValues[key]);
 
-  if (!host || !user || !pass) {
-    throw new Error('SMTP configuration is incomplete.');
+  if (missingSmtp.length) {
+    throw new Error('SMTP configuration is incomplete. Missing: ' + missingSmtp.join(', ') + '. Or set Gmail OAuth2 vars (GMAIL_USER, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN).');
   }
 
   return nodemailer.createTransport({
@@ -164,6 +201,12 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
       fileName: fileName
     });
   } catch (error) {
+    console.error('[spip-send-email-local] Failed to send email', {
+      code: error && error.code,
+      responseCode: error && error.responseCode,
+      command: error && error.command,
+      message: error && error.message
+    });
     return res.status(500).json({
       message: error && error.message ? error.message : 'Failed to send email.'
     });

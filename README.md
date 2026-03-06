@@ -139,6 +139,34 @@ Set variable berikut pada project Vercel:
 - `SMTP_FROM`
 - `EMAIL_API_BEARER_TOKEN` (opsional, jika dipakai isi juga `window.AIOS_SPIP_EMAIL_API.token`)
 
+Alternatif untuk Gmail API (OAuth2), tanpa `SMTP_PASS`:
+
+- `GMAIL_USER`
+- `GMAIL_CLIENT_ID`
+- `GMAIL_CLIENT_SECRET`
+- `GMAIL_REFRESH_TOKEN`
+
+Catatan: `GMAIL_CLIENT_ID` saja belum cukup. Wajib ada `GMAIL_CLIENT_SECRET` dan `GMAIL_REFRESH_TOKEN` agar server bisa meminta access token otomatis.
+
+#### Cara mendapatkan `GMAIL_REFRESH_TOKEN` (otomatis via script)
+
+1. Isi dulu di `.env` (folder `email-api`) atau env shell:
+	- `GMAIL_CLIENT_ID`
+	- `GMAIL_CLIENT_SECRET`
+	- opsional `GMAIL_REDIRECT_URI` (default: `http://localhost`)
+2. Jalankan:
+
+```bash
+cd email-api
+npm run oauth:gmail
+```
+
+3. Script akan menampilkan URL consent Google.
+4. Login dengan akun Gmail pengirim, lalu approve consent.
+5. Setelah redirect, copy URL lengkap dari address bar dan paste ke terminal.
+6. Script akan menampilkan nilai `GMAIL_REFRESH_TOKEN`.
+7. Simpan nilai tersebut ke env Vercel/local.
+
 ### 3) Konfigurasi frontend SPIP
 
 Tambahkan script global sebelum `scripts/pages/spip.js` dimuat (contoh di `pages/spip.html`):
