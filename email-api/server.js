@@ -178,7 +178,7 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
     const body = String(req.body.body || '').trim() || 'Terlampir file SPIP.';
 
     const rawBase64 = String(req.body.fileBase64 || '').trim();
-    const normalizedBase64 = rawBase64.replace(/^data:application\/pdf;base64,/i, '');
+    const normalizedBase64 = rawBase64.replace(/^data:[^;]+;base64,/i, '');
     const attachmentFromJson = normalizedBase64
       ? Buffer.from(normalizedBase64, 'base64')
       : null;
@@ -188,12 +188,18 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
       : attachmentFromJson;
 
     if (!attachmentBuffer || !attachmentBuffer.length) {
-      return res.status(400).json({ message: 'PDF attachment is required (multipart file or fileBase64).' });
+      return res.status(400).json({ message: 'Attachment is required (multipart file or fileBase64).' });
     }
+
+    const requestedMime = String(req.body.fileMime || '').trim().toLowerCase();
+    const supportedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    const resolvedMime = supportedMimes.indexOf(requestedMime) >= 0
+      ? (requestedMime === 'image/jpg' ? 'image/jpeg' : requestedMime)
+      : 'application/pdf';
 
     const fileName = String(req.body.fileName || '').trim()
       || (req.file && req.file.originalname)
-      || 'SPIP-Komisioning.pdf';
+      || ('SPIP-Komisioning.' + (resolvedMime === 'image/jpeg' ? 'jpg' : (resolvedMime === 'image/png' ? 'png' : 'pdf')));
 
     const transporter = createTransporter();
     const fromAddress = readEnv('SMTP_FROM') || readEnv('SMTP_USER');
@@ -207,7 +213,7 @@ app.post('/api/spip/send-email', requireBearerToken, upload.single('file'), asyn
         {
           filename: fileName,
           content: attachmentBuffer,
-          contentType: 'application/pdf'
+          contentType: resolvedMime
         }
       ]
     });

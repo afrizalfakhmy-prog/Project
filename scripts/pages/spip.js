@@ -533,21 +533,31 @@
     ].join('\n');
   }
 
-  function loadImageAsDataUrl(url) {
+  function loadImageAsDataUrl(url, maxWidth, maxHeight) {
     return new Promise(function (resolve, reject) {
       const img = new Image();
       img.onload = function () {
         try {
+          const naturalWidth = img.naturalWidth || img.width || 1;
+          const naturalHeight = img.naturalHeight || img.height || 1;
+          const limitWidth = Number(maxWidth || naturalWidth);
+          const limitHeight = Number(maxHeight || naturalHeight);
+
+          const ratio = Math.min(limitWidth / naturalWidth, limitHeight / naturalHeight, 1);
+          const targetWidth = Math.max(1, Math.round(naturalWidth * ratio));
+          const targetHeight = Math.max(1, Math.round(naturalHeight * ratio));
+
           const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || img.width || 1;
-          canvas.height = img.naturalHeight || img.height || 1;
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
             reject(new Error('Canvas context tidak tersedia.'));
             return;
           }
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+          // JPEG with medium quality keeps logo readable while reducing request payload size.
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
         } catch (error) {
           reject(error);
         }
@@ -559,49 +569,53 @@
     });
   }
 
-  async function createSpipPdfBlob(record) {
+  async function createSpipJpgBlob(record) {
     const target = record || {};
-    const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
-    if (!jsPdfApi) {
-      throw new Error('Library PDF belum tersedia.');
+    const canvas = document.createElement('canvas');
+    canvas.width = 1100;
+    canvas.height = 1600;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas context tidak tersedia.');
     }
 
-    const doc = new jsPdfApi({ unit: 'pt', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const left = 40;
-    const right = pageWidth - 40;
-    let y = 30;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    doc.setFillColor(9, 46, 122);
-    doc.roundedRect(left, y, right - left, 100, 12, 12, 'F');
+    ctx.fillStyle = '#092e7a';
+    ctx.fillRect(40, 30, canvas.width - 80, 130);
 
     try {
       const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
-      const logoDataUrl = await loadImageAsDataUrl(logoUrl);
-      doc.addImage(logoDataUrl, 'PNG', left + 18, y + 18, 140, 56);
+      const logoDataUrl = await loadImageAsDataUrl(logoUrl, 420, 140);
+      await new Promise(function (resolve, reject) {
+        const logo = new Image();
+        logo.onload = function () {
+          ctx.drawImage(logo, 58, 52, 240, 90);
+          resolve();
+        };
+        logo.onerror = reject;
+        logo.src = logoDataUrl;
+      });
     } catch (_error) {
-      // Keep PDF generation working even if logo cannot be loaded.
+      // Ignore logo load failure.
     }
 
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('Stiker Komisioning SPIP', right - 18, y + 42, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.text('PT. Maruwai Coal', right - 18, y + 66, { align: 'right' });
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 38px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText('Stiker Komisioning SPIP', canvas.width - 64, 90);
+    ctx.font = '24px Arial';
+    ctx.fillText('PT. Maruwai Coal', canvas.width - 64, 128);
 
-    y += 120;
-    doc.setTextColor(15, 23, 42);
-    doc.setDrawColor(203, 213, 225);
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(left, y, right - left, 640, 10, 10, 'FD');
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#f8fafc';
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.fillRect(40, 185, canvas.width - 80, 1360);
+    ctx.strokeRect(40, 185, canvas.width - 80, 1360);
 
-    let lineY = y + 26;
-    const lineHeight = 28;
-    doc.setFontSize(11);
-
-    const lines = [
+    const rows = [
       ['No Unit / Register', target.noUnitRegister || '-'],
       ['Kategori', target.kategori || '-'],
       ['Jenis', target.jenis || '-'],
@@ -620,25 +634,52 @@
       ['Keterangan', target.keterangan || '-']
     ];
 
-    lines.forEach(function (entry) {
+    function wrap(text, maxWidth) {
+      const words = String(text || '-').split(/\s+/);
+      const lines = [];
+      let current = '';
+      words.forEach(function (word) {
+        const candidate = current ? (current + ' ' + word) : word;
+        if (ctx.measureText(candidate).width <= maxWidth) {
+          current = candidate;
+        } else {
+          if (current) lines.push(current);
+          current = word;
+        }
+      });
+      if (current) lines.push(current);
+      return lines.length ? lines : ['-'];
+    }
+
+    let y = 235;
+    rows.forEach(function (entry) {
       const label = String(entry[0] || '').trim();
-      const value = String(entry[1] || '-').trim() || '-';
+      const valueLines = wrap(String(entry[1] || '-').trim() || '-', 560);
 
-      doc.setFont('helvetica', 'bold');
-      doc.text(label, left + 18, lineY);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText(label, 70, y);
 
-      doc.setFont('helvetica', 'normal');
-      const wrapped = doc.splitTextToSize(value, 280);
-      doc.text(': ' + wrapped[0], left + 185, lineY);
-      for (let i = 1; i < wrapped.length; i += 1) {
-        lineY += 14;
-        doc.text(wrapped[i], left + 196, lineY);
-      }
+      ctx.font = '24px Arial';
+      ctx.fillText(':', 360, y);
+      valueLines.forEach(function (line, index) {
+        ctx.fillText(line, 385, y + (index * 30));
+      });
 
-      lineY += lineHeight;
+      y += Math.max(52, 26 + (valueLines.length * 30));
     });
 
-    return doc.output('blob');
+    const jpgBlob = await new Promise(function (resolve, reject) {
+      canvas.toBlob(function (blob) {
+        if (!blob) {
+          reject(new Error('Gagal membuat file JPG.'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/jpeg', 0.76);
+    });
+
+    return jpgBlob;
   }
 
   function blobToBase64(blob) {
@@ -654,23 +695,24 @@
         resolve(result.slice(commaIndex + 1));
       };
       reader.onerror = function () {
-        reject(new Error('Gagal mengubah PDF ke base64.'));
+        reject(new Error('Gagal mengubah lampiran ke base64.'));
       };
       reader.readAsDataURL(blob);
     });
   }
 
-  async function sendSpipPdfToEmailApi(record, recipients, pdfBlob) {
+  async function sendSpipAttachmentToEmailApi(record, recipients, attachmentBlob) {
     const config = getSpipEmailApiConfig();
     if (!config.endpoint) {
       throw new Error('Endpoint API email belum dikonfigurasi.');
     }
 
     const target = record || {};
-    const fileName = 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf';
-    const fileBase64 = await blobToBase64(pdfBlob);
+    const fileName = 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.jpg';
+    const fileMime = 'image/jpeg';
+    const fileBase64 = await blobToBase64(attachmentBlob);
     if (!fileBase64) {
-      throw new Error('File PDF tidak valid untuk dikirim.');
+      throw new Error('File JPG tidak valid untuk dikirim.');
     }
 
     const headers = {};
@@ -687,7 +729,7 @@
         recipients: recipients,
         subject: buildSpipEmailSubject(target),
         body: buildSpipEmailBody(target),
-        payload: target,
+        fileMime: fileMime,
         fileName: fileName,
         fileBase64: fileBase64
       })
@@ -710,8 +752,8 @@
     exportSpipToPdf(target);
 
     try {
-      const pdfBlob = await createSpipPdfBlob(target);
-      await sendSpipPdfToEmailApi(target, recipients, pdfBlob);
+      const attachmentBlob = await createSpipJpgBlob(target);
+      await sendSpipAttachmentToEmailApi(target, recipients, attachmentBlob);
       return true;
     } catch (error) {
       alert('Pengiriman email otomatis gagal. Data komisioning tidak disimpan. Detail: ' + String((error && error.message) || 'Unknown error'));

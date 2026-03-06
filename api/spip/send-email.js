@@ -139,14 +139,21 @@ module.exports = async function handler(req, res) {
     const subject = String((req.body && req.body.subject) || '').trim() || 'SPIP Komisioning';
     const body = String((req.body && req.body.body) || '').trim() || 'Terlampir file SPIP.';
     const rawBase64 = String((req.body && req.body.fileBase64) || '').trim();
-    const normalizedBase64 = rawBase64.replace(/^data:application\/pdf;base64,/i, '');
+    const normalizedBase64 = rawBase64.replace(/^data:[^;]+;base64,/i, '');
     const fileBuffer = normalizedBase64 ? Buffer.from(normalizedBase64, 'base64') : null;
 
     if (!fileBuffer || !fileBuffer.length) {
-      return res.status(400).json({ message: 'PDF attachment is required in fileBase64.' });
+      return res.status(400).json({ message: 'Attachment is required in fileBase64.' });
     }
 
-    const fileName = String((req.body && req.body.fileName) || '').trim() || 'SPIP-Komisioning.pdf';
+    const requestedMime = String((req.body && req.body.fileMime) || '').trim().toLowerCase();
+    const supportedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    const resolvedMime = supportedMimes.indexOf(requestedMime) >= 0
+      ? (requestedMime === 'image/jpg' ? 'image/jpeg' : requestedMime)
+      : 'application/pdf';
+
+    const defaultExt = resolvedMime === 'image/jpeg' ? 'jpg' : (resolvedMime === 'image/png' ? 'png' : 'pdf');
+    const fileName = String((req.body && req.body.fileName) || '').trim() || ('SPIP-Komisioning.' + defaultExt);
 
     const transporter = createTransporter();
     const fromAddress = readEnv('SMTP_FROM') || readEnv('SMTP_USER');
@@ -160,7 +167,7 @@ module.exports = async function handler(req, res) {
         {
           filename: fileName,
           content: fileBuffer,
-          contentType: 'application/pdf'
+          contentType: resolvedMime
         }
       ]
     });
