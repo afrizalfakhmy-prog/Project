@@ -601,8 +601,8 @@
   async function createSpipJpgBlob(record) {
     const target = record || {};
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1800;
+    canvas.width = 760;
+    canvas.height = 1320;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Canvas context tidak tersedia.');
@@ -611,53 +611,62 @@
     ctx.fillStyle = '#e5e7eb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const cardX = 18;
-    const cardY = 14;
-    const cardW = canvas.width - 36;
-    const cardH = canvas.height - 28;
+    const cardX = 10;
+    const cardY = 8;
+    const cardW = canvas.width - 20;
+    const cardH = canvas.height - 16;
 
     ctx.fillStyle = '#f3f4f6';
     ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 20);
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 16);
     ctx.fill();
     ctx.stroke();
 
     const centerX = canvas.width / 2;
-    let y = 70;
+    let y = 30;
 
     try {
-      const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
-      const logoDataUrl = await loadImageAsDataUrl(logoUrl, 360, 120);
-      const logo = await loadImageElement(logoDataUrl);
-      const lw = 220;
-      const lh = 78;
+      let logo = null;
+      try {
+        const logoSvgUrl = new URL('../assets/alamtri-logo.svg', window.location.href).href;
+        logo = await loadImageElement(logoSvgUrl);
+      } catch (_svgError) {
+        const logoPngUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
+        logo = await loadImageElement(logoPngUrl);
+      }
+
+      const maxLogoWidth = 170;
+      const maxLogoHeight = 54;
+      const logoRatio = Math.min(maxLogoWidth / (logo.naturalWidth || logo.width || maxLogoWidth), maxLogoHeight / (logo.naturalHeight || logo.height || maxLogoHeight));
+      const lw = Math.max(1, Math.round((logo.naturalWidth || logo.width || maxLogoWidth) * logoRatio));
+      const lh = Math.max(1, Math.round((logo.naturalHeight || logo.height || maxLogoHeight) * logoRatio));
       ctx.drawImage(logo, centerX - (lw / 2), y, lw, lh);
     } catch (_error) {
       // Ignore logo load failure.
     }
-    y += 110;
+    y += 84;
 
     ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 56px Arial';
+    ctx.font = 'bold 48px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('Stiker Komisioning', centerX, y);
 
-    y += 42;
+    y += 30;
     ctx.fillStyle = '#334155';
-    ctx.font = '36px Arial';
+    ctx.font = '32px Arial';
     ctx.fillText('PT. Alamtri Minerals Indonesia', centerX, y);
 
-    y += 34;
-    const qrBoxX = 36;
+    y += 22;
+    const qrBoxX = 24;
     const qrBoxY = y;
-    const qrBoxW = canvas.width - 72;
-    const qrBoxH = 940;
+    const qrBoxW = canvas.width - 48;
+    const qrBoxH = 690;
 
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxH, 22);
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxH, 16);
     ctx.fill();
     ctx.stroke();
 
@@ -666,7 +675,7 @@
 
     try {
       const qrImage = await loadImageElement(qrUrl);
-      const margin = 18;
+      const margin = 14;
       const size = Math.min(qrBoxW - (margin * 2), qrBoxH - (margin * 2));
       ctx.drawImage(qrImage, qrBoxX + margin, qrBoxY + margin, size, size);
     } catch (_error) {
@@ -674,23 +683,23 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(qrBoxX + 20, qrBoxY + 20, qrBoxW - 40, qrBoxH - 40);
       ctx.fillStyle = '#64748b';
-      ctx.font = '28px Arial';
+      ctx.font = '20px Arial';
       ctx.fillText('QR gagal dimuat', centerX, qrBoxY + (qrBoxH / 2));
     }
 
-    y = qrBoxY + qrBoxH + 52;
+    y = qrBoxY + qrBoxH + 36;
 
     const leftCompany = String(target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
     const rightCompany = String(target.ccow || target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
-    ctx.font = 'bold 44px Arial';
+    ctx.font = 'bold 17px Arial';
     ctx.fillStyle = '#0f172a';
     ctx.textAlign = 'left';
-    ctx.fillText(leftCompany, 34, y);
+    ctx.fillText(leftCompany, 22, y);
     ctx.textAlign = 'right';
-    ctx.fillText(rightCompany, canvas.width - 34, y);
+    ctx.fillText(rightCompany, canvas.width - 22, y);
 
     ctx.textAlign = 'left';
-    y += 56;
+    y += 28;
 
     const rows = [
       ['No Unit / Register', target.noUnitRegister || '-'],
@@ -723,20 +732,20 @@
 
     rows.forEach(function (entry) {
       const label = String(entry[0] || '').trim();
-      const valueLines = wrap(String(entry[1] || '-').trim() || '-', 470);
+      const valueLines = wrap(String(entry[1] || '-').trim() || '-', 430);
 
       ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 48px Arial';
-      ctx.fillText(label + ':', 32, y);
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText(label + ':', 22, y);
 
-      ctx.font = '48px Arial';
+      ctx.font = '18px Arial';
+      const valueX = 250;
       valueLines.forEach(function (line, index) {
-        const offsetY = y + (index * 54);
-        const valueX = 32 + ctx.measureText(label + ': ').width;
+        const offsetY = y + (index * 24);
         ctx.fillText(line, valueX, offsetY);
       });
 
-      y += Math.max(74, 20 + (valueLines.length * 54));
+      y += Math.max(28, 8 + (valueLines.length * 24));
     });
 
     const jpgBlob = await new Promise(function (resolve, reject) {
@@ -746,7 +755,7 @@
           return;
         }
         resolve(blob);
-      }, 'image/jpeg', 0.7);
+      }, 'image/jpeg', 0.72);
     });
 
     return jpgBlob;
