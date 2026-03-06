@@ -627,14 +627,8 @@
     let y = 30;
 
     try {
-      let logo = null;
-      try {
-        const logoSvgUrl = new URL('../assets/alamtri-logo.svg', window.location.href).href;
-        logo = await loadImageElement(logoSvgUrl);
-      } catch (_svgError) {
-        const logoPngUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
-        logo = await loadImageElement(logoPngUrl);
-      }
+      const logoPngUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
+      const logo = await loadImageElement(logoPngUrl);
 
       const maxLogoWidth = 170;
       const maxLogoHeight = 54;
@@ -699,7 +693,7 @@
     ctx.fillText(rightCompany, canvas.width - 22, y);
 
     ctx.textAlign = 'left';
-    y += 28;
+    y += 22;
 
     const rows = [
       ['No Unit / Register', target.noUnitRegister || '-'],
@@ -712,6 +706,10 @@
       ['Tanggal Komisioning', target.tanggalKomisioning || '-'],
       ['Tanggal Expired', target.tanggalExpired || '-']
     ];
+
+    const detailTop = y;
+    const detailBottom = cardY + cardH - 20;
+    const detailHeight = Math.max(120, detailBottom - detailTop);
 
     function wrap(text, maxWidth) {
       const words = String(text || '-').split(/\s+/);
@@ -730,22 +728,70 @@
       return lines.length ? lines : ['-'];
     }
 
-    rows.forEach(function (entry) {
-      const label = String(entry[0] || '').trim();
-      const valueLines = wrap(String(entry[1] || '-').trim() || '-', 430);
-
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText(label + ':', 22, y);
-
-      ctx.font = '18px Arial';
-      const valueX = 250;
-      valueLines.forEach(function (line, index) {
-        const offsetY = y + (index * 24);
-        ctx.fillText(line, valueX, offsetY);
+    function calcLayout(fontSize) {
+      ctx.font = 'bold ' + String(fontSize) + 'px Arial';
+      let maxLabelWidth = 0;
+      rows.forEach(function (entry) {
+        const label = String(entry[0] || '').trim() + ':';
+        const width = ctx.measureText(label).width;
+        if (width > maxLabelWidth) maxLabelWidth = width;
       });
 
-      y += Math.max(28, 8 + (valueLines.length * 24));
+      const labelX = 22;
+      const valueX = Math.round(labelX + maxLabelWidth + 12);
+      const valueMaxWidth = Math.max(160, canvas.width - valueX - 22);
+      const rowGap = Math.max(4, Math.round(fontSize * 0.35));
+      const lineGap = Math.max(2, Math.round(fontSize * 0.28));
+
+      let totalHeight = 0;
+      const wrappedRows = rows.map(function (entry) {
+        const valueLines = wrap(String(entry[1] || '-').trim() || '-', valueMaxWidth);
+        const rowHeight = (valueLines.length * (fontSize + lineGap)) + rowGap;
+        totalHeight += rowHeight;
+        return {
+          label: String(entry[0] || '').trim() + ':',
+          valueLines: valueLines,
+          rowHeight: rowHeight
+        };
+      });
+
+      return {
+        labelX: labelX,
+        valueX: valueX,
+        rowGap: rowGap,
+        lineGap: lineGap,
+        rows: wrappedRows,
+        totalHeight: totalHeight
+      };
+    }
+
+    let chosenFont = 22;
+    let chosenLayout = calcLayout(chosenFont);
+    for (let size = 28; size >= 14; size -= 1) {
+      const candidate = calcLayout(size);
+      if (candidate.totalHeight <= detailHeight) {
+        chosenFont = size;
+        chosenLayout = candidate;
+        break;
+      }
+    }
+
+    const extraSpace = Math.max(0, detailHeight - chosenLayout.totalHeight);
+    const extraPerRow = Math.floor(extraSpace / Math.max(1, chosenLayout.rows.length));
+
+    ctx.fillStyle = '#0f172a';
+    let cursorY = detailTop;
+    chosenLayout.rows.forEach(function (row) {
+      ctx.font = 'bold ' + String(chosenFont) + 'px Arial';
+      ctx.fillText(row.label, chosenLayout.labelX, cursorY);
+
+      ctx.font = String(chosenFont) + 'px Arial';
+      row.valueLines.forEach(function (line, index) {
+        const lineY = cursorY + (index * (chosenFont + chosenLayout.lineGap));
+        ctx.fillText(line, chosenLayout.valueX, lineY);
+      });
+
+      cursorY += row.rowHeight + extraPerRow;
     });
 
     const jpgBlob = await new Promise(function (resolve, reject) {
