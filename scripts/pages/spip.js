@@ -395,102 +395,32 @@
     return '<strong>' + escapeHtml(label || '') + ':</strong> ' + escapeHtml(value || '-') + '<br>';
   }
 
+  function getSpipPdfFileName(record) {
+    const target = record || {};
+    return 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf';
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 500);
+  }
+
   function exportSpipToPdf(record) {
     const target = record || {};
-    const qrPayload = String(target.qrPayload || buildQrPayloadTextFromRecord(target) || '').trim();
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' + encodeURIComponent(qrPayload || '-');
-    const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
-
-    const html =
-      '<!doctype html>' +
-      '<html><head><meta charset="utf-8" />' +
-      '<title>SPIP Export - ' + escapeHtml(target.noUnitRegister || '-') + '</title>' +
-      '<style>' +
-      '@page{size:A4;margin:10mm;}' +
-      'body{font-family:Arial,sans-serif;color:#0f172a;font-size:12px;background:#ffffff;}' +
-      '.sticker{position:relative;width:88mm;min-height:130mm;border:1px solid #bfc8d4;border-radius:8px;padding:8px;box-sizing:border-box;}' +
-      '.sticker-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-bottom:6px;text-align:center;}' +
-      '.sticker-title{font-size:16px;font-weight:700;line-height:1.1;margin:0;white-space:nowrap;}' +
-      '.sticker-subtitle{font-size:9px;line-height:1.2;color:#334155;margin:2px 0 0;white-space:nowrap;}' +
-      '.sticker-logo{width:176px;max-height:68px;object-fit:contain;display:block;margin:0 auto 6px;}' +
-      '.qr-wrap{border:1px solid #bfc8d4;border-radius:8px;padding:4px;width:100%;box-sizing:border-box;margin-bottom:6px;}' +
-      '.qr{width:100%;aspect-ratio:1/1;display:block;object-fit:contain;}' +
-      '.meta-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;line-height:1.2;margin:0 0 6px;}' +
-      '.meta-cell{max-width:48%;word-break:break-word;}' +
-      '.line{font-size:12px;line-height:1.15;margin:0;white-space:normal;word-break:break-word;}' +
-      '</style></head><body>' +
-      '<section class="sticker">' +
-      '<img class="sticker-logo" src="' + logoUrl + '" alt="Logo Alamtri" />' +
-      '<div class="sticker-head">' +
-      '<div><h1 class="sticker-title">Stiker Komisioning</h1><p class="sticker-subtitle">PT. Alamtri Minerals Indonesia</p></div>' +
-      '</div>' +
-      '<div class="qr-wrap">' +
-      '<img class="qr" src="' + qrUrl + '" alt="QR Komisioning" />' +
-      '</div>' +
-      '<div class="meta-row">' +
-      '<div class="meta-cell"><strong>' + escapeHtml(target.perusahaan || '') + '</strong></div>' +
-      '<div class="meta-cell" style="text-align:right;"><strong>' + escapeHtml(target.ccow || '') + '</strong></div>' +
-      '</div>' +
-      '<p class="line"><strong>No Unit / Register:</strong> ' + escapeHtml(target.noUnitRegister || '') + '</p>' +
-      '<p class="line"><strong>Nama SPIP:</strong> ' + escapeHtml(target.namaSpip || '') + '</p>' +
-      '<p class="line"><strong>Kategori:</strong> ' + escapeHtml(target.kategori || '') + '</p>' +
-      '<p class="line"><strong>Jenis:</strong> ' + escapeHtml(target.jenis || '') + '</p>' +
-      '<p class="line"><strong>Merk:</strong> ' + escapeHtml(target.merk || '') + '</p>' +
-      '<p class="line"><strong>Model:</strong> ' + escapeHtml(target.model || '') + '</p>' +
-      '<p class="line"><strong>Tahun Pembuatan:</strong> ' + escapeHtml(target.tahunPembuatan || '') + '</p>' +
-      '<p class="line"><strong>Tanggal Komisioning:</strong> ' + escapeHtml(target.tanggalKomisioning || '') + '</p>' +
-      '<p class="line"><strong>Tanggal Expired:</strong> ' + escapeHtml(target.tanggalExpired || '') + '</p>' +
-      '</section>' +
-      '</body></html>';
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Popup diblokir browser. Izinkan popup lalu coba ekspor lagi.');
-      return;
+    try {
+      const pdfBlob = createSpipPdfBlob(target);
+      downloadBlob(pdfBlob, getSpipPdfFileName(target));
+    } catch (error) {
+      alert('Gagal membuat file ekspor PDF: ' + String((error && error.message) || 'Unknown error'));
     }
-
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-
-    const images = Array.from(printWindow.document.images || []);
-    if (!images.length) {
-      printWindow.print();
-      return;
-    }
-
-    let loadedCount = 0;
-    let hasPrinted = false;
-    function tryPrint() {
-      if (hasPrinted) return;
-      if (loadedCount < images.length) return;
-      hasPrinted = true;
-      printWindow.print();
-    }
-
-    images.forEach(function (img) {
-      if (img.complete) {
-        loadedCount += 1;
-        tryPrint();
-        return;
-      }
-
-      img.onload = function () {
-        loadedCount += 1;
-        tryPrint();
-      };
-      img.onerror = function () {
-        loadedCount += 1;
-        tryPrint();
-      };
-    });
-
-    setTimeout(function () {
-      if (hasPrinted) return;
-      hasPrinted = true;
-      printWindow.print();
-    }, 2200);
   }
 
   function getSpipEmailApiConfig() {
@@ -613,7 +543,7 @@
     }
 
     const target = record || {};
-    const fileName = 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf';
+    const fileName = getSpipPdfFileName(target);
     const fileBase64 = await blobToBase64(pdfBlob);
     if (!fileBase64) {
       throw new Error('File PDF tidak valid untuk dikirim.');
