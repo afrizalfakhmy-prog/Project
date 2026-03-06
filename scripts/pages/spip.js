@@ -630,8 +630,8 @@
       const logoPngUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
       const logo = await loadImageElement(logoPngUrl);
 
-      const maxLogoWidth = 170;
-      const maxLogoHeight = 54;
+      const maxLogoWidth = 340;
+      const maxLogoHeight = 108;
       const logoRatio = Math.min(maxLogoWidth / (logo.naturalWidth || logo.width || maxLogoWidth), maxLogoHeight / (logo.naturalHeight || logo.height || maxLogoHeight));
       const lw = Math.max(1, Math.round((logo.naturalWidth || logo.width || maxLogoWidth) * logoRatio));
       const lh = Math.max(1, Math.round((logo.naturalHeight || logo.height || maxLogoHeight) * logoRatio));
@@ -639,23 +639,23 @@
     } catch (_error) {
       // Ignore logo load failure.
     }
-    y += 84;
+    y += 138;
 
     ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 48px Arial';
+    ctx.font = 'bold 52px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('Stiker Komisioning', centerX, y);
 
-    y += 30;
+    y += 34;
     ctx.fillStyle = '#334155';
-    ctx.font = '32px Arial';
+    ctx.font = '34px Arial';
     ctx.fillText('PT. Alamtri Minerals Indonesia', centerX, y);
 
-    y += 22;
+    y += 18;
     const qrBoxX = 24;
     const qrBoxY = y;
     const qrBoxW = canvas.width - 48;
-    const qrBoxH = 690;
+    const qrBoxH = 620;
 
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#94a3b8';
@@ -685,7 +685,7 @@
 
     const leftCompany = String(target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
     const rightCompany = String(target.ccow || target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
-    ctx.font = 'bold 17px Arial';
+    ctx.font = 'bold 22px Arial';
     ctx.fillStyle = '#0f172a';
     ctx.textAlign = 'left';
     ctx.fillText(leftCompany, 22, y);
@@ -765,9 +765,9 @@
       };
     }
 
-    let chosenFont = 22;
+    let chosenFont = 18;
     let chosenLayout = calcLayout(chosenFont);
-    for (let size = 28; size >= 14; size -= 1) {
+    for (let size = 20; size >= 12; size -= 1) {
       const candidate = calcLayout(size);
       if (candidate.totalHeight <= detailHeight) {
         chosenFont = size;
