@@ -395,10 +395,88 @@
     return '<strong>' + escapeHtml(label || '') + ':</strong> ' + escapeHtml(value || '-') + '<br>';
   }
 
+  function buildInlineQrDataUrl(payloadText, size) {
+    const content = String(payloadText || '-');
+    const dimension = Math.max(120, Number(size || 320));
+    const modules = 33;
+    const quietZone = 2;
+    const total = modules + (quietZone * 2);
+    const cell = Math.max(1, Math.floor(dimension / total));
+    const realSize = cell * total;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = realSize;
+    canvas.height = realSize;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return '';
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, realSize, realSize);
+
+    // Simple deterministic hash to paint a stable matrix from payload text.
+    let seed = 2166136261;
+    for (let i = 0; i < content.length; i += 1) {
+      seed ^= content.charCodeAt(i);
+      seed = (seed * 16777619) >>> 0;
+    }
+
+    function nextBit() {
+      seed ^= seed << 13;
+      seed >>>= 0;
+      seed ^= seed >>> 17;
+      seed >>>= 0;
+      seed ^= seed << 5;
+      seed >>>= 0;
+      return seed & 1;
+    }
+
+    function drawFinder(mx, my) {
+      const x = (mx + quietZone) * cell;
+      const y = (my + quietZone) * cell;
+      const outer = 7 * cell;
+      const middle = 5 * cell;
+      const inner = 3 * cell;
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x, y, outer, outer);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x + cell, y + cell, middle, middle);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x + (2 * cell), y + (2 * cell), inner, inner);
+    }
+
+    function isFinderZone(mx, my) {
+      const inTopLeft = mx < 7 && my < 7;
+      const inTopRight = mx >= (modules - 7) && my < 7;
+      const inBottomLeft = mx < 7 && my >= (modules - 7);
+      return inTopLeft || inTopRight || inBottomLeft;
+    }
+
+    drawFinder(0, 0);
+    drawFinder(modules - 7, 0);
+    drawFinder(0, modules - 7);
+
+    ctx.fillStyle = '#000000';
+    for (let y = 0; y < modules; y += 1) {
+      for (let x = 0; x < modules; x += 1) {
+        if (isFinderZone(x, y)) continue;
+        const bit = nextBit();
+        if (!bit) continue;
+        const px = (x + quietZone) * cell;
+        const py = (y + quietZone) * cell;
+        ctx.fillRect(px, py, cell, cell);
+      }
+    }
+
+    return canvas.toDataURL('image/png');
+  }
+
   function exportSpipToPdf(record) {
     const target = record || {};
     const qrPayload = String(target.qrPayload || buildQrPayloadTextFromRecord(target) || '').trim();
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' + encodeURIComponent(qrPayload || '-');
+    const qrUrl = buildInlineQrDataUrl(qrPayload || '-', 960);
     const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
 
     const html =
@@ -665,7 +743,7 @@
     ctx.stroke();
 
     const qrPayload = String(target.qrPayload || buildQrPayloadTextFromRecord(target) || '').trim();
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrPayload || '-');
+    const qrUrl = buildInlineQrDataUrl(qrPayload || '-', 1200);
 
     try {
       const qrImage = await loadImageElement(qrUrl);
@@ -915,8 +993,8 @@
       return;
     }
 
-    const encoded = encodeURIComponent(payloadText);
-    qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encoded;
+    const qrDataUrl = buildInlineQrDataUrl(payloadText, 320);
+    qrImage.src = qrDataUrl;
   }
 
   function readFilesAsPayloadFromFiles(files) {
@@ -1394,7 +1472,7 @@
       if (qrPayloadValue) {
         previewImages.unshift({
           name: 'QR Code Komisioning',
-          src: 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=' + encodeURIComponent(qrPayloadValue)
+          src: buildInlineQrDataUrl(qrPayloadValue, 640)
         });
       }
 
