@@ -61,6 +61,27 @@
     localStorage.setItem(USER_KEY, JSON.stringify(users));
   }
 
+  function readFirstNonEmptyString(values) {
+    for (let index = 0; index < values.length; index += 1) {
+      const value = String(values[index] || '').trim();
+      if (value) return value;
+    }
+    return '';
+  }
+
+  function getCanonicalUserPassword(user) {
+    const target = user || {};
+    return readFirstNonEmptyString([
+      target.password,
+      target.kataSandi,
+      target.katasandi,
+      target.sandi,
+      target.passwd,
+      target.pass,
+      target.userPassword
+    ]);
+  }
+
   function ensureDefaultUsers() {
     const current = readUsers();
     if (Array.isArray(current) && current.length > 0) return;
@@ -97,6 +118,29 @@
     writeUsers(seeded);
   }
 
+  function migrateLegacyUserPasswords() {
+    const users = readUsers();
+    if (!Array.isArray(users) || users.length === 0) return;
+
+    let changed = false;
+    const nextUsers = users.map(function (user) {
+      const target = Object.assign({}, user || {});
+      const canonicalPassword = getCanonicalUserPassword(target);
+      const currentPassword = String(target.password || '').trim();
+
+      if (!currentPassword && canonicalPassword) {
+        target.password = canonicalPassword;
+        changed = true;
+      }
+
+      return target;
+    });
+
+    if (changed) {
+      writeUsers(nextUsers);
+    }
+  }
+
   function normalizeRole(user) {
     const roleRaw = String((user && (user.kategori || user.role)) || '').trim().toLowerCase();
     if (roleRaw === 'super admin' || roleRaw === 'superadmin') return 'Super Admin';
@@ -112,9 +156,20 @@
     return users.find(function (user) {
       const username = String((user && user.username) || '').trim().toLowerCase();
       const email = String((user && user.email) || '').trim().toLowerCase();
-      const userPassword = String((user && user.password) || '');
+      const userPassword = getCanonicalUserPassword(user);
       const identifierMatch = normalizedIdentifier === username || normalizedIdentifier === email;
       return identifierMatch && normalizedPassword === userPassword;
+    }) || null;
+  }
+
+  function findUserByIdentifier(identifier) {
+    const users = readUsers();
+    const normalizedIdentifier = String(identifier || '').trim().toLowerCase();
+
+    return users.find(function (user) {
+      const username = String((user && user.username) || '').trim().toLowerCase();
+      const email = String((user && user.email) || '').trim().toLowerCase();
+      return normalizedIdentifier === username || normalizedIdentifier === email;
     }) || null;
   }
 
@@ -246,6 +301,11 @@
 
       const account = authenticateUser(username, password);
       if (!account) {
+        const existingAccount = findUserByIdentifier(username);
+        if (existingAccount && !getCanonicalUserPassword(existingAccount)) {
+          setLoginMessage('Akun ditemukan tetapi password belum tersimpan. Hubungi Super Admin untuk reset password.', 'error');
+          return;
+        }
         setLoginMessage('Login gagal. Periksa username/email atau password.', 'error');
         return;
       }
@@ -325,6 +385,7 @@
   }
 
   ensureDefaultUsers();
+  migrateLegacyUserPasswords();
 
   const existingSession = readSession();
   if (existingSession && existingSession.role) {
