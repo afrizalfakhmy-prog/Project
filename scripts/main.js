@@ -82,6 +82,27 @@
     ]);
   }
 
+  function getCanonicalUsername(user) {
+    const target = user || {};
+    return readFirstNonEmptyString([
+      target.username,
+      target.userName,
+      target.Username,
+      target.login,
+      target.user
+    ]);
+  }
+
+  function getCanonicalEmail(user) {
+    const target = user || {};
+    return readFirstNonEmptyString([
+      target.email,
+      target.Email,
+      target.emailAddress,
+      target.mail
+    ]);
+  }
+
   function ensureDefaultUsers() {
     const current = readUsers();
     if (Array.isArray(current) && current.length > 0) return;
@@ -125,11 +146,29 @@
     let changed = false;
     const nextUsers = users.map(function (user) {
       const target = Object.assign({}, user || {});
+      const canonicalUsername = getCanonicalUsername(target);
+      const canonicalEmail = getCanonicalEmail(target);
       const canonicalPassword = getCanonicalUserPassword(target);
       const currentPassword = String(target.password || '').trim();
 
+      if (canonicalUsername && String(target.username || '').trim() !== canonicalUsername) {
+        target.username = canonicalUsername;
+        changed = true;
+      }
+
+      if (canonicalEmail && String(target.email || '').trim() !== canonicalEmail) {
+        target.email = canonicalEmail;
+        changed = true;
+      }
+
       if (!currentPassword && canonicalPassword) {
         target.password = canonicalPassword;
+        changed = true;
+      }
+
+      // Legacy safety net: if User account has no stored password, use username as default password.
+      if (!String(target.password || '').trim() && normalizeRole(target) === 'User' && canonicalUsername) {
+        target.password = canonicalUsername;
         changed = true;
       }
 
@@ -154,8 +193,8 @@
     const normalizedPassword = String(password || '');
 
     return users.find(function (user) {
-      const username = String((user && user.username) || '').trim().toLowerCase();
-      const email = String((user && user.email) || '').trim().toLowerCase();
+      const username = getCanonicalUsername(user).toLowerCase();
+      const email = getCanonicalEmail(user).toLowerCase();
       const userPassword = getCanonicalUserPassword(user);
       const identifierMatch = normalizedIdentifier === username || normalizedIdentifier === email;
       return identifierMatch && normalizedPassword === userPassword;
@@ -167,8 +206,8 @@
     const normalizedIdentifier = String(identifier || '').trim().toLowerCase();
 
     return users.find(function (user) {
-      const username = String((user && user.username) || '').trim().toLowerCase();
-      const email = String((user && user.email) || '').trim().toLowerCase();
+      const username = getCanonicalUsername(user).toLowerCase();
+      const email = getCanonicalEmail(user).toLowerCase();
       return normalizedIdentifier === username || normalizedIdentifier === email;
     }) || null;
   }
