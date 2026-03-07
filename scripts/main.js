@@ -177,8 +177,8 @@
         changed = true;
       }
 
-      // Legacy safety net: if User account has no stored password, use username as default password.
-      if (!String(target.password || '').trim() && normalizeRole(target) === 'User' && canonicalUsername) {
+      // Legacy safety net: if account has no stored password, use username as default password.
+      if (!String(target.password || '').trim() && canonicalUsername) {
         target.password = canonicalUsername;
         changed = true;
       }
