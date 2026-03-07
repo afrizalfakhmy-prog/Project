@@ -66,6 +66,102 @@
     localStorage.setItem(USER_KEY, JSON.stringify(users));
   }
 
+  async function pushUsersToCloud(users) {
+    if (!window.aiosCloudSync || typeof window.aiosCloudSync.pushOne !== 'function') {
+      return { ok: false, reason: 'Cloud sync module tidak tersedia.' };
+    }
+
+    try {
+      if (typeof window.aiosCloudSync.loadRemoteConfig === 'function') {
+        await window.aiosCloudSync.loadRemoteConfig();
+      }
+
+      if (!window.aiosCloudSync.isEnabled || !window.aiosCloudSync.isEnabled()) {
+        return { ok: false, reason: 'Cloud sync belum dikonfigurasi.' };
+      }
+
+      await window.aiosCloudSync.pushOne(USER_KEY, users);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, reason: String((error && error.message) || 'Push cloud gagal.') };
+    }
+  }
+
+  function getUserIdentity(user) {
+    const target = user || {};
+    const byId = String(target.id || '').trim().toLowerCase();
+    if (byId) return 'id:' + byId;
+
+    const byUsername = String(target.username || '').trim().toLowerCase();
+    if (byUsername) return 'username:' + byUsername;
+
+    const byEmail = String(target.email || '').trim().toLowerCase();
+    if (byEmail) return 'email:' + byEmail;
+
+    return '';
+  }
+
+  function mergeUsers(localUsers, remoteUsers) {
+    const localList = Array.isArray(localUsers) ? localUsers : [];
+    const remoteList = Array.isArray(remoteUsers) ? remoteUsers : [];
+    const mergedByKey = {};
+
+    remoteList.forEach(function (user) {
+      const key = getUserIdentity(user);
+      if (!key) return;
+      mergedByKey[key] = Object.assign({}, user || {});
+    });
+
+    // Local data takes precedence to avoid losing recently created/edited users.
+    localList.forEach(function (user) {
+      const key = getUserIdentity(user);
+      if (!key) return;
+      mergedByKey[key] = Object.assign({}, mergedByKey[key] || {}, user || {});
+    });
+
+    return Object.keys(mergedByKey).map(function (key) { return mergedByKey[key]; });
+  }
+
+  async function syncUsersBidirectional() {
+    if (!window.aiosCloudSync || typeof window.aiosCloudSync.pullOne !== 'function') {
+      return { ok: false, reason: 'Cloud sync module tidak tersedia.' };
+    }
+
+    try {
+      if (typeof window.aiosCloudSync.loadRemoteConfig === 'function') {
+        await window.aiosCloudSync.loadRemoteConfig();
+      }
+
+      if (!window.aiosCloudSync.isEnabled || !window.aiosCloudSync.isEnabled()) {
+        return { ok: false, reason: 'Cloud sync belum dikonfigurasi.' };
+      }
+
+      const localUsers = readUsers();
+      const remote = await window.aiosCloudSync.pullOne(USER_KEY);
+      const remoteUsers = remote && remote.found && Array.isArray(remote.value) ? remote.value : [];
+      const mergedUsers = mergeUsers(localUsers, remoteUsers);
+
+      const localRaw = JSON.stringify(localUsers);
+      const remoteRaw = JSON.stringify(remoteUsers);
+      const mergedRaw = JSON.stringify(mergedUsers);
+
+      if (localRaw !== mergedRaw) {
+        writeUsers(mergedUsers);
+      }
+
+      if (remoteRaw !== mergedRaw) {
+        const pushResult = await pushUsersToCloud(mergedUsers);
+        if (!pushResult.ok) {
+          return { ok: false, reason: pushResult.reason };
+        }
+      }
+
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, reason: String((error && error.message) || 'Sinkronisasi dua arah gagal.') };
+    }
+  }
+
   function readMaster(key) {
     try {
       const raw = localStorage.getItem(key);
@@ -226,7 +322,7 @@
     form.classList.add('hidden');
   }
 
-  form.addEventListener('submit', function (event) {
+  form.addEventListener('submit', async function (event) {
     event.preventDefault();
 
     const id = idInput.value || 'u-' + Date.now();
@@ -274,12 +370,17 @@
     }
 
     writeUsers(users);
+    const cloudResult = await pushUsersToCloud(users);
     renderRows();
     resetForm();
     closeForm();
+
+    if (!cloudResult.ok) {
+      alert('User tersimpan di browser ini, tetapi sinkronisasi cloud gagal. Login lintas browser bisa gagal. Detail: ' + cloudResult.reason);
+    }
   });
 
-  tbody.addEventListener('click', function (event) {
+  tbody.addEventListener('click', async function (event) {
     const button = event.target.closest('button[data-action]');
     if (!button) return;
 
@@ -359,9 +460,14 @@
       if (!confirm('Hapus user ini?')) return;
       const nextUsers = users.filter(function (item) { return item.id !== id; });
       writeUsers(nextUsers);
+      const cloudResult = await pushUsersToCloud(nextUsers);
       renderRows();
       resetForm();
       closeForm();
+
+      if (!cloudResult.ok) {
+        alert('Penghapusan user tersimpan di browser ini, tetapi sinkronisasi cloud gagal. Detail: ' + cloudResult.reason);
+      }
     }
   });
 
@@ -410,10 +516,20 @@
     }
   });
 
-  if (!guardAccess()) return;
-  fillDropdowns();
-  applyRoleRestriction();
-  resetForm();
-  closeForm();
-  renderRows();
+  async function bootstrap() {
+    if (!guardAccess()) return;
+
+    const syncResult = await syncUsersBidirectional();
+    fillDropdowns();
+    applyRoleRestriction();
+    resetForm();
+    closeForm();
+    renderRows();
+
+    if (!syncResult.ok) {
+      alert('Sinkronisasi user ke cloud gagal. Login lintas browser mungkin belum konsisten. Detail: ' + syncResult.reason);
+    }
+  }
+
+  bootstrap();
 })();
