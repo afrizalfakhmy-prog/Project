@@ -212,6 +212,38 @@
     }) || null;
   }
 
+  async function syncUsersFromCloudNow() {
+    if (!window.aiosCloudSync || typeof window.aiosCloudSync.pullOne !== 'function') {
+      return false;
+    }
+
+    try {
+      if (typeof window.aiosCloudSync.loadRemoteConfig === 'function') {
+        await window.aiosCloudSync.loadRemoteConfig();
+      }
+
+      if (!window.aiosCloudSync.isEnabled || !window.aiosCloudSync.isEnabled()) {
+        return false;
+      }
+
+      const remote = await window.aiosCloudSync.pullOne(USER_KEY);
+      if (!remote || !remote.found || !Array.isArray(remote.value)) {
+        return false;
+      }
+
+      const currentRaw = localStorage.getItem(USER_KEY);
+      const remoteRaw = JSON.stringify(remote.value);
+      if (currentRaw !== remoteRaw) {
+        writeUsers(remote.value);
+      }
+
+      migrateLegacyUserPasswords();
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function saveSession(session) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
@@ -327,7 +359,7 @@
   }
 
   if (loginForm) {
-    loginForm.addEventListener('submit', function (event) {
+    loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
 
       const username = String(usernameInput && usernameInput.value ? usernameInput.value : '').trim();
@@ -338,7 +370,13 @@
         return;
       }
 
-      const account = authenticateUser(username, password);
+      let account = authenticateUser(username, password);
+      if (!account) {
+        // Browser baru bisa belum sempat menarik user dari cloud saat login pertama.
+        await syncUsersFromCloudNow();
+        account = authenticateUser(username, password);
+      }
+
       if (!account) {
         const existingAccount = findUserByIdentifier(username);
         if (existingAccount && !getCanonicalUserPassword(existingAccount)) {
@@ -425,6 +463,7 @@
 
   ensureDefaultUsers();
   migrateLegacyUserPasswords();
+  syncUsersFromCloudNow();
 
   const existingSession = readSession();
   if (existingSession && existingSession.role) {
