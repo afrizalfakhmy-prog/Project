@@ -210,3 +210,41 @@ Jika endpoint tidak diisi / gagal, pengiriman email otomatis akan gagal dan sist
 	- matikan backend / kosongkan `endpoint`
 	- klik `Simpan Komisioning`
 	- pastikan muncul pesan error pengiriman email otomatis.
+
+## Pemulihan warning "Dangerous site" (Google Safe Browsing)
+
+Jika domain Vercel masih muncul warning merah di Chrome, biasanya domain masih berada dalam daftar Safe Browsing walau source sudah bersih.
+
+### 1) Deploy ulang dengan hardening header
+
+Project ini sudah memakai `vercel.json` untuk menambah security headers. Pastikan deployment terbaru sudah aktif:
+
+```bash
+npx vercel --prod
+```
+
+### 2) Gunakan domain baru sebagai jalur cepat (disarankan)
+
+Agar user bisa akses tanpa warning sambil menunggu review Google, pakai domain baru (custom domain atau subdomain Vercel baru).
+
+Contoh alur cepat:
+
+1. Buka Vercel Dashboard -> Project -> Settings -> Domains.
+2. Tambahkan domain baru.
+3. Set domain baru sebagai domain utama.
+4. Arahkan user ke domain baru.
+
+### 3) Ajukan review Google Safe Browsing
+
+1. Buka Google Search Console.
+2. Tambahkan property URL-prefix: `https://project-xi-kohl-22.vercel.app/`.
+3. Verifikasi kepemilikan domain (HTML meta tag atau metode lain).
+4. Masuk menu Security Issues, lalu klik `Request Review`.
+
+### 4) Cek status blacklist
+
+Pantau status publik di:
+
+`https://transparencyreport.google.com/safe-browsing/search?url=project-xi-kohl-22.vercel.app`
+
+Status biasanya berubah setelah proses review dan propagation selesai.
