@@ -73,12 +73,17 @@
     const target = user || {};
     return readFirstNonEmptyString([
       target.password,
+      target.Password,
+      target.PASSWORD,
       target.kataSandi,
       target.katasandi,
+      target.kata_sandi,
       target.sandi,
       target.passwd,
       target.pass,
-      target.userPassword
+      target.userPassword,
+      target.loginPassword,
+      target.credentials && target.credentials.password
     ]);
   }
 
@@ -88,8 +93,11 @@
       target.username,
       target.userName,
       target.Username,
+      target.USERNAME,
+      target.user_name,
       target.login,
-      target.user
+      target.user,
+      target.credentials && target.credentials.username
     ]);
   }
 
@@ -98,8 +106,11 @@
     return readFirstNonEmptyString([
       target.email,
       target.Email,
+      target.EMAIL,
       target.emailAddress,
-      target.mail
+      target.mail,
+      target.e_mail,
+      target.credentials && target.credentials.email
     ]);
   }
 
@@ -363,7 +374,7 @@
       event.preventDefault();
 
       const username = String(usernameInput && usernameInput.value ? usernameInput.value : '').trim();
-      const password = String(passwordInput && passwordInput.value ? passwordInput.value : '');
+      const password = String(passwordInput && passwordInput.value ? passwordInput.value : '').trim();
 
       if (!username || !password) {
         setLoginMessage('Username/email dan password wajib diisi.', 'error');
