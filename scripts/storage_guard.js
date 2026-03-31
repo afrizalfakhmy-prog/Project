@@ -178,4 +178,16 @@
 
   syncFromCloud();
   setInterval(syncFromCloud, 8000);
+
+  // Clean up duplicate rows in Supabase that may have accumulated due to
+  // previous missing primary key constraint. Runs once per page load.
+  if (window.aiosCloudSync && typeof window.aiosCloudSync.deduplicateAll === 'function') {
+    window.aiosCloudSync.deduplicateAll(DATA_KEYS).catch(function () {});
+  } else {
+    window.addEventListener('load', function () {
+      if (window.aiosCloudSync && typeof window.aiosCloudSync.deduplicateAll === 'function') {
+        window.aiosCloudSync.deduplicateAll(DATA_KEYS).catch(function () {});
+      }
+    }, { once: true });
+  }
 })();
