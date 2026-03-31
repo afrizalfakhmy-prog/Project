@@ -737,29 +737,38 @@
     const centerX = canvas.width / 2;
     let y = 30;
 
+    const logoScale = 1.5;
+    const titleScale = 0.8;
+    let logoDrawHeight = 108;
+
     try {
       const logoPngUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
       const logo = await loadImageElement(logoPngUrl);
 
-      const maxLogoWidth = 340;
-      const maxLogoHeight = 108;
+      const maxLogoWidth = Math.round(340 * logoScale);
+      const maxLogoHeight = Math.round(108 * logoScale);
       const logoRatio = Math.min(maxLogoWidth / (logo.naturalWidth || logo.width || maxLogoWidth), maxLogoHeight / (logo.naturalHeight || logo.height || maxLogoHeight));
       const lw = Math.max(1, Math.round((logo.naturalWidth || logo.width || maxLogoWidth) * logoRatio));
       const lh = Math.max(1, Math.round((logo.naturalHeight || logo.height || maxLogoHeight) * logoRatio));
+      logoDrawHeight = lh;
       ctx.drawImage(logo, centerX - (lw / 2), y, lw, lh);
     } catch (_error) {
       // Ignore logo load failure.
     }
-    y += 138;
+
+    y += Math.round(logoDrawHeight + 30);
+
+    const titleFontSize = Math.max(1, Math.round(52 * titleScale));
+    const subtitleFontSize = Math.max(1, Math.round(34 * titleScale));
 
     ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 52px Arial';
+    ctx.font = 'bold ' + String(titleFontSize) + 'px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('Stiker Komisioning', centerX, y);
 
-    y += 34;
+    y += Math.round(subtitleFontSize + 7);
     ctx.fillStyle = '#334155';
-    ctx.font = '34px Arial';
+    ctx.font = String(subtitleFontSize) + 'px Arial';
     ctx.fillText('PT. Alamtri Minerals Indonesia', centerX, y);
 
     y += 18;
