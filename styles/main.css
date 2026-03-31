@@ -491,6 +491,82 @@ button.ghost:hover {
   text-align: center;
 }
 
+.spip-chart-section {
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 12px;
+}
+
+.spip-chart-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.spip-chart-card {
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.spip-chart-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.spip-chart-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.spip-chart-bars {
+  display: grid;
+  gap: 6px;
+}
+
+.spip-chart-bar {
+  width: 100%;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #0f172a;
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.spip-chart-bar:hover {
+  background: #dbeafe;
+}
+
+.spip-chart-bar.is-active {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.spip-chart-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.spip-chart-bar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spip-chart-bar-count {
+  font-weight: 700;
+}
+
 .task-card {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
@@ -1240,6 +1316,10 @@ button.ghost:hover {
   }
 
   .spip-qr-box {
+    grid-template-columns: 1fr;
+  }
+
+  .spip-chart-grid {
     grid-template-columns: 1fr;
   }
 

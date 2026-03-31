@@ -122,6 +122,9 @@
   const readOnlyCancelButton = document.getElementById('spip-readonly-cancel-btn');
   const komisioningOpenButton = document.getElementById('spip-komisioning-open-btn');
   const formActions = document.getElementById('spip-form-actions');
+  const spipChartGrid = document.getElementById('spip-chart-grid');
+  const spipChartResetButton = document.getElementById('spip-chart-reset-btn');
+  const spipChartActiveFilters = document.getElementById('spip-chart-active-filters');
   const tbody = document.getElementById('spip-tbody');
   const emptyText = document.getElementById('spip-empty');
 
@@ -175,6 +178,27 @@
   let isReadOnlyView = false;
   let komisioningRecordId = '';
   let draftKomisioningHistory = [];
+  let spipFilterState = {
+    kategori: '',
+    jenis: '',
+    deptInCharge: '',
+    perusahaan: '',
+    perusahaanCustodian: '',
+    ccow: '',
+    areaKerja: '',
+    status: ''
+  };
+
+  const SPIP_FILTER_META = [
+    { key: 'kategori', title: 'Kategori' },
+    { key: 'jenis', title: 'Jenis' },
+    { key: 'deptInCharge', title: 'Dept In Charge' },
+    { key: 'perusahaan', title: 'Perusahaan' },
+    { key: 'perusahaanCustodian', title: 'Perusahaan Custodian' },
+    { key: 'ccow', title: 'CCOW' },
+    { key: 'areaKerja', title: 'Area Kerja' },
+    { key: 'status', title: 'Status' }
+  ];
 
   function todayValue() {
     return new Date().toISOString().slice(0, 10);
@@ -361,6 +385,140 @@
       return String(jenisCustomInput.value || '').trim();
     }
     return selectedJenis;
+  }
+
+  function getFilterValuesByKey(record, key) {
+    const target = record || {};
+    if (key === 'areaKerja') {
+      const values = Array.isArray(target.areaKerja) ? target.areaKerja : [];
+      return values
+        .map(function (item) { return String(item || '').trim(); })
+        .filter(function (item) { return item.length > 0; });
+    }
+
+    const raw = String(target[key] || '').trim();
+    return raw ? [raw] : [];
+  }
+
+  function hasActiveSpipFilters() {
+    return Object.keys(spipFilterState).some(function (key) {
+      return String(spipFilterState[key] || '').trim().length > 0;
+    });
+  }
+
+  function getFilteredSpipRows(rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    if (!hasActiveSpipFilters()) return list;
+
+    return list.filter(function (record) {
+      return Object.keys(spipFilterState).every(function (key) {
+        const selected = String(spipFilterState[key] || '').trim();
+        if (!selected) return true;
+        const values = getFilterValuesByKey(record, key);
+        return values.indexOf(selected) >= 0;
+      });
+    });
+  }
+
+  function getCountsByFilterKey(rows, key) {
+    const list = Array.isArray(rows) ? rows : [];
+    const counts = {};
+
+    list.forEach(function (record) {
+      const values = getFilterValuesByKey(record, key);
+      values.forEach(function (value) {
+        counts[value] = (counts[value] || 0) + 1;
+      });
+    });
+
+    return Object.keys(counts)
+      .map(function (value) {
+        return { value: value, count: counts[value] };
+      })
+      .sort(function (a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.value.localeCompare(b.value);
+      });
+  }
+
+  function renderActiveFilterSummary() {
+    if (!spipChartActiveFilters) return;
+
+    const activeParts = SPIP_FILTER_META
+      .filter(function (meta) {
+        return String(spipFilterState[meta.key] || '').trim().length > 0;
+      })
+      .map(function (meta) {
+        return meta.title + ': ' + spipFilterState[meta.key];
+      });
+
+    if (!activeParts.length) {
+      spipChartActiveFilters.textContent = 'Filter aktif: (semua data)';
+      return;
+    }
+
+    spipChartActiveFilters.textContent = 'Filter aktif: ' + activeParts.join(' | ');
+  }
+
+  function renderSpipCharts(allRows) {
+    if (!spipChartGrid) return;
+
+    const baseRows = Array.isArray(allRows) ? allRows : [];
+    spipChartGrid.innerHTML = '';
+
+    SPIP_FILTER_META.forEach(function (meta) {
+      const card = document.createElement('article');
+      card.className = 'spip-chart-card';
+
+      const title = document.createElement('h4');
+      title.className = 'spip-chart-title';
+      title.textContent = meta.title;
+      card.appendChild(title);
+
+      const rows = getCountsByFilterKey(baseRows, meta.key);
+      if (!rows.length) {
+        const empty = document.createElement('p');
+        empty.className = 'spip-chart-empty';
+        empty.textContent = 'Belum ada data.';
+        card.appendChild(empty);
+      } else {
+        const barsWrap = document.createElement('div');
+        barsWrap.className = 'spip-chart-bars';
+
+        rows.forEach(function (entry) {
+          const bar = document.createElement('button');
+          bar.type = 'button';
+          bar.className = 'spip-chart-bar';
+          bar.dataset.filterKey = meta.key;
+          bar.dataset.filterValue = entry.value;
+          if (String(spipFilterState[meta.key] || '') === entry.value) {
+            bar.classList.add('is-active');
+          }
+
+          const inner = document.createElement('span');
+          inner.className = 'spip-chart-bar-inner';
+
+          const label = document.createElement('span');
+          label.className = 'spip-chart-bar-label';
+          label.textContent = entry.value;
+
+          const count = document.createElement('span');
+          count.className = 'spip-chart-bar-count';
+          count.textContent = String(entry.count);
+
+          inner.appendChild(label);
+          inner.appendChild(count);
+          bar.appendChild(inner);
+          barsWrap.appendChild(bar);
+        });
+
+        card.appendChild(barsWrap);
+      }
+
+      spipChartGrid.appendChild(card);
+    });
+
+    renderActiveFilterSummary();
   }
 
   function buildQrPayloadTextFromRecord(record) {
@@ -1373,14 +1531,24 @@
   }
 
   function renderTable() {
-    const rows = readList(SPIP_KEY);
+    const allRows = readList(SPIP_KEY);
+    const rows = getFilteredSpipRows(allRows);
     const roleFlags = getRoleFlags();
     if (!tbody || !emptyText) return;
 
+    renderSpipCharts(allRows);
+
     tbody.innerHTML = '';
+
+    if (!allRows.length) {
+      emptyText.classList.remove('hidden');
+      emptyText.textContent = 'Belum ada data SPIP.';
+      return;
+    }
 
     if (!rows.length) {
       emptyText.classList.remove('hidden');
+      emptyText.textContent = 'Tidak ada data SPIP yang sesuai filter grafik.';
       return;
     }
 
@@ -1901,6 +2069,34 @@
   if (komisioningCancelButton) {
     komisioningCancelButton.addEventListener('click', function () {
       hideKomisioningPanel();
+    });
+  }
+
+  if (spipChartGrid) {
+    spipChartGrid.addEventListener('click', function (event) {
+      const button = event.target.closest('button.spip-chart-bar[data-filter-key][data-filter-value]');
+      if (!button) return;
+
+      const key = String(button.dataset.filterKey || '').trim();
+      const value = String(button.dataset.filterValue || '').trim();
+      if (!key || !Object.prototype.hasOwnProperty.call(spipFilterState, key)) return;
+
+      if (String(spipFilterState[key] || '') === value) {
+        spipFilterState[key] = '';
+      } else {
+        spipFilterState[key] = value;
+      }
+
+      renderTable();
+    });
+  }
+
+  if (spipChartResetButton) {
+    spipChartResetButton.addEventListener('click', function () {
+      Object.keys(spipFilterState).forEach(function (key) {
+        spipFilterState[key] = '';
+      });
+      renderTable();
     });
   }
 
