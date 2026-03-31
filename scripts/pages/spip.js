@@ -494,6 +494,21 @@
   }
 
   function describeArcPath(cx, cy, radius, startAngle, endAngle) {
+    const tau = Math.PI * 2;
+    const sweep = Math.max(0, endAngle - startAngle);
+
+    // SVG arc command cannot draw a perfect full circle in one arc segment.
+    // Split full-circle slices into two half arcs so single-category pies still render.
+    if (sweep >= (tau - 0.0001)) {
+      return [
+        'M', cx, cy,
+        'L', cx, (cy - radius),
+        'A', radius, radius, 0, 1, 1, cx, (cy + radius),
+        'A', radius, radius, 0, 1, 1, cx, (cy - radius),
+        'Z'
+      ].join(' ');
+    }
+
     const start = {
       x: cx + (radius * Math.cos(startAngle)),
       y: cy + (radius * Math.sin(startAngle))
