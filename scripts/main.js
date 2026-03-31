@@ -114,6 +114,43 @@
     ]);
   }
 
+  function getUserIdentity(user) {
+    const target = user || {};
+    const byId = String(target.id || '').trim().toLowerCase();
+    if (byId) return 'id:' + byId;
+
+    const byUsername = getCanonicalUsername(target).toLowerCase();
+    if (byUsername) return 'username:' + byUsername;
+
+    const byEmail = getCanonicalEmail(target).toLowerCase();
+    if (byEmail) return 'email:' + byEmail;
+
+    return '';
+  }
+
+  function mergeUsers(localUsers, remoteUsers) {
+    const localList = Array.isArray(localUsers) ? localUsers : [];
+    const remoteList = Array.isArray(remoteUsers) ? remoteUsers : [];
+    const mergedByKey = {};
+
+    remoteList.forEach(function (user) {
+      const key = getUserIdentity(user);
+      if (!key) return;
+      mergedByKey[key] = Object.assign({}, user || {});
+    });
+
+    // Keep local edits as source of truth if conflict occurs.
+    localList.forEach(function (user) {
+      const key = getUserIdentity(user);
+      if (!key) return;
+      mergedByKey[key] = Object.assign({}, mergedByKey[key] || {}, user || {});
+    });
+
+    return Object.keys(mergedByKey).map(function (key) {
+      return mergedByKey[key];
+    });
+  }
+
   function ensureDefaultUsers() {
     const current = readUsers();
     if (Array.isArray(current) && current.length > 0) return;
@@ -237,15 +274,21 @@
         return false;
       }
 
+      const localUsers = readUsers();
       const remote = await window.aiosCloudSync.pullOne(USER_KEY);
-      if (!remote || !remote.found || !Array.isArray(remote.value)) {
-        return false;
+      const remoteUsers = remote && remote.found && Array.isArray(remote.value) ? remote.value : [];
+      const mergedUsers = mergeUsers(localUsers, remoteUsers);
+
+      const localRaw = JSON.stringify(localUsers);
+      const remoteRaw = JSON.stringify(remoteUsers);
+      const mergedRaw = JSON.stringify(mergedUsers);
+
+      if (localRaw !== mergedRaw) {
+        writeUsers(mergedUsers);
       }
 
-      const currentRaw = localStorage.getItem(USER_KEY);
-      const remoteRaw = JSON.stringify(remote.value);
-      if (currentRaw !== remoteRaw) {
-        writeUsers(remote.value);
+      if (remoteRaw !== mergedRaw && typeof window.aiosCloudSync.pushOne === 'function') {
+        await window.aiosCloudSync.pushOne(USER_KEY, mergedUsers);
       }
 
       migrateLegacyUserPasswords();
