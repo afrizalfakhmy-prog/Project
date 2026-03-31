@@ -130,43 +130,57 @@
     if (!isEnabled()) return;
 
     const config = getConfig();
+    const baseUrl = endpoint(config.tableName);
+    const filterUrl = baseUrl + '?key=eq.' + encodeURIComponent(key);
 
-    // Strategy 1: UPSERT via ?on_conflict=key (works when key has unique constraint or PK).
-    const upsertUrl = endpoint(config.tableName + '?on_conflict=key');
+    // Strategy 1: UPSERT via ?on_conflict=key (works when key has unique/PK constraint).
     try {
-      const upsertResponse = await fetch(upsertUrl, {
+      const r = await fetch(baseUrl + '?on_conflict=key', {
         method: 'POST',
         headers: Object.assign({}, getHeaders(), {
           Prefer: 'resolution=merge-duplicates,return=minimal'
         }),
         body: JSON.stringify([{ key: key, value: value }])
       });
-      if (upsertResponse.ok) return;
+      if (r.ok) return;
     } catch (_e) { /* fall through */ }
 
-    // Strategy 2: PATCH (update) existing row.
-    const patchUrl = endpoint(config.tableName + '?key=eq.' + encodeURIComponent(key));
-    try {
-      const patchResponse = await fetch(patchUrl, {
-        method: 'PATCH',
-        headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
-        body: JSON.stringify({ value: value })
-      });
-      if (patchResponse.ok) return;
-    } catch (_e) { /* fall through */ }
+    // Strategy 2: Check if row exists, then PATCH or INSERT accordingly.
+    const existingRows = await getAllRowsForKey(key);
 
-    // Strategy 3: DELETE then INSERT.
-    await deleteAllRowsForKey(key);
-    const insertUrl = endpoint(config.tableName);
-    const insertResponse = await fetch(insertUrl, {
-      method: 'POST',
-      headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
-      body: JSON.stringify([{ key: key, value: value }])
-    });
-
-    if (!insertResponse.ok) {
-      throw new Error('Gagal push cloud data (' + key + '): HTTP ' + insertResponse.status);
+    if (existingRows.length > 0) {
+      // Row exists → update via PATCH.
+      try {
+        const r = await fetch(filterUrl, {
+          method: 'PATCH',
+          headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
+          body: JSON.stringify({ value: value })
+        });
+        if (r.ok) return;
+      } catch (_e) { /* fall through */ }
+    } else {
+      // Row does not exist → INSERT.
+      try {
+        const r = await fetch(baseUrl, {
+          method: 'POST',
+          headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
+          body: JSON.stringify([{ key: key, value: value }])
+        });
+        if (r.ok) return;
+        if (r.status === 409) {
+          // Race condition: row was inserted between our check and INSERT → try PATCH.
+          const r2 = await fetch(filterUrl, {
+            method: 'PATCH',
+            headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
+            body: JSON.stringify({ value: value })
+          });
+          if (r2.ok) return;
+        }
+      } catch (_e) { /* fall through */ }
     }
+
+    // All strategies failed — data is safe in localStorage, log silently.
+    console.warn('[AIOS] Cloud sync: pushOne gagal untuk key=' + key + '. Data aman di localStorage.');
   }
 
   // Remove duplicate rows in Supabase for a single key.
