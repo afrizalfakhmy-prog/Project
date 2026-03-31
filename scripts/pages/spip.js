@@ -1931,19 +1931,14 @@
         });
         if (target) {
           komisioningRecordId = activeId;
-          showKomisioningPanel(target);
+          showKomisioningPanel(target, { emptyInputs: true });
           return;
         }
       }
 
       showKomisioningPanel({
-        tanggalKomisioning: String(tanggalKomisioningInput.value || '').trim(),
-        tanggalExpired: String(tanggalExpiredInput.value || '').trim(),
-        email: String((komisioningEmailInput && komisioningEmailInput.value) || '').trim(),
-        komisioner: String(komisionerInput.value || '').trim(),
-        keterangan: String(keteranganInput.value || '').trim(),
         komisioningHistory: draftKomisioningHistory.slice()
-      });
+      }, { emptyInputs: true });
     });
   }
 
