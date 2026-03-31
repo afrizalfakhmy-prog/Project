@@ -376,7 +376,7 @@
     closeForm();
 
     if (!cloudResult.ok) {
-      alert('User tersimpan di browser ini, tetapi sinkronisasi cloud gagal. Login lintas browser bisa gagal. Detail: ' + cloudResult.reason);
+      console.warn('[AIOS] Cloud sync gagal (simpan user):', cloudResult.reason);
     }
   });
 
@@ -466,7 +466,7 @@
       closeForm();
 
       if (!cloudResult.ok) {
-        alert('Penghapusan user tersimpan di browser ini, tetapi sinkronisasi cloud gagal. Detail: ' + cloudResult.reason);
+        console.warn('[AIOS] Cloud sync gagal (hapus user):', cloudResult.reason);
       }
     }
   });
