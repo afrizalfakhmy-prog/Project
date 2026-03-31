@@ -719,7 +719,7 @@
       throw new Error('Canvas context tidak tersedia.');
     }
 
-    ctx.fillStyle = '#e5e7eb';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const cardX = 10;
@@ -727,7 +727,7 @@
     const cardW = canvas.width - 20;
     const cardH = canvas.height - 16;
 
-    ctx.fillStyle = '#f3f4f6';
+    ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 1.5;
     drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 16);
@@ -791,7 +791,9 @@
       const qrImage = await loadImageElement(qrUrl);
       const margin = 14;
       const size = Math.min(qrBoxW - (margin * 2), qrBoxH - (margin * 2));
-      ctx.drawImage(qrImage, qrBoxX + margin, qrBoxY + margin, size, size);
+      const qrX = qrBoxX + Math.round((qrBoxW - size) / 2);
+      const qrY = qrBoxY + margin;
+      ctx.drawImage(qrImage, qrX, qrY, size, size);
     } catch (_error) {
       ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 2;
@@ -803,17 +805,7 @@
 
     y = qrBoxY + qrBoxH + 36;
 
-    const leftCompany = String(target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
-    const rightCompany = String(target.ccow || target.perusahaan || 'PT. Maruwai Coal').trim() || 'PT. Maruwai Coal';
-    ctx.font = 'bold 22px Arial';
-    ctx.fillStyle = '#0f172a';
     ctx.textAlign = 'left';
-    ctx.fillText(leftCompany, 22, y);
-    ctx.textAlign = 'right';
-    ctx.fillText(rightCompany, canvas.width - 22, y);
-
-    ctx.textAlign = 'left';
-    y += 22;
 
     const rows = [
       ['No Unit / Register', target.noUnitRegister || '-'],
@@ -822,6 +814,8 @@
       ['Jenis', target.jenis || '-'],
       ['Merk', target.merk || '-'],
       ['Model', target.model || '-'],
+      ['Perusahaan', target.perusahaan || '-'],
+      ['CCOW', target.ccow || '-'],
       ['Tahun Pembuatan', target.tahunPembuatan || '-'],
       ['Tanggal Komisioning', target.tanggalKomisioning || '-'],
       ['Tanggal Expired', target.tanggalExpired || '-']
