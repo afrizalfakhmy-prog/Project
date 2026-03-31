@@ -1200,18 +1200,34 @@
     }
   }
 
-  function showKomisioningPanel(record) {
+  function clearKomisioningInputs() {
+    if (komisioningTanggalKomisioningInput) komisioningTanggalKomisioningInput.value = '';
+    if (komisioningTanggalExpiredInput) komisioningTanggalExpiredInput.value = '';
+    if (komisioningEmailInput) komisioningEmailInput.value = '';
+    if (komisioningKomisionerInput) komisioningKomisionerInput.value = '';
+    if (komisioningKeteranganInput) komisioningKeteranganInput.value = '';
+  }
+
+  function showKomisioningPanel(record, options) {
     const target = record || {};
+    const panelOptions = options || {};
+    const emptyInputs = !!panelOptions.emptyInputs;
     syncKomisioningInputerIdentity();
     if (Array.isArray(target.komisioningHistory)) {
       draftKomisioningHistory = target.komisioningHistory.slice();
     }
-    const latestKomisioning = getLatestKomisioningSnapshot(target);
-    if (komisioningTanggalKomisioningInput) komisioningTanggalKomisioningInput.value = latestKomisioning.tanggalKomisioning;
-    if (komisioningTanggalExpiredInput) komisioningTanggalExpiredInput.value = latestKomisioning.tanggalExpired;
-    if (komisioningEmailInput) komisioningEmailInput.value = latestKomisioning.email;
-    if (komisioningKomisionerInput) komisioningKomisionerInput.value = latestKomisioning.komisioner;
-    if (komisioningKeteranganInput) komisioningKeteranganInput.value = latestKomisioning.keterangan;
+
+    if (emptyInputs) {
+      clearKomisioningInputs();
+    } else {
+      const latestKomisioning = getLatestKomisioningSnapshot(target);
+      if (komisioningTanggalKomisioningInput) komisioningTanggalKomisioningInput.value = latestKomisioning.tanggalKomisioning;
+      if (komisioningTanggalExpiredInput) komisioningTanggalExpiredInput.value = latestKomisioning.tanggalExpired;
+      if (komisioningEmailInput) komisioningEmailInput.value = latestKomisioning.email;
+      if (komisioningKomisionerInput) komisioningKomisionerInput.value = latestKomisioning.komisioner;
+      if (komisioningKeteranganInput) komisioningKeteranganInput.value = latestKomisioning.keterangan;
+    }
+
     syncMainCommissionFieldsFromSubForm();
     syncStatusFromExpiredDate();
     updateQrCode();
@@ -1333,7 +1349,7 @@
     komisioningRecordId = String(target.id || '').trim();
     editingId = '';
     setMainFormReadOnly(true);
-    showKomisioningPanel(target);
+    showKomisioningPanel(target, { emptyInputs: true });
     if (form) {
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
