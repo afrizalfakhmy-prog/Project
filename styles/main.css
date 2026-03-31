@@ -661,6 +661,24 @@ button.ghost:hover {
   color: #0f172a;
 }
 
+.spip-table-filter-row {
+  display: grid;
+  grid-template-columns: minmax(280px, 420px);
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.spip-table-filter-item {
+  display: grid;
+  gap: 6px;
+}
+
+.spip-table-filter-item label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
 .task-card {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
@@ -1418,6 +1436,10 @@ button.ghost:hover {
   }
 
   .spip-chart-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .spip-table-filter-row {
     grid-template-columns: 1fr;
   }
 

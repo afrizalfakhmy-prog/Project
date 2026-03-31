@@ -126,6 +126,7 @@
   const spipChartResetButton = document.getElementById('spip-chart-reset-btn');
   const spipChartActiveFilters = document.getElementById('spip-chart-active-filters');
   const spipChartFilterGrid = document.getElementById('spip-chart-filter-grid');
+  const spipTableNoUnitFilterInput = document.getElementById('spip-table-filter-no-unit');
   const tbody = document.getElementById('spip-tbody');
   const emptyText = document.getElementById('spip-empty');
 
@@ -180,6 +181,7 @@
   let komisioningRecordId = '';
   let draftKomisioningHistory = [];
   let spipFilterState = {
+    noUnitRegister: '',
     kategori: '',
     jenis: '',
     deptInCharge: '',
@@ -202,6 +204,18 @@
   ];
 
   const SPIP_CHART_FILTER_KEYS = ['kategori', 'jenis', 'deptInCharge', 'perusahaan', 'perusahaanCustodian', 'ccow', 'status'];
+
+  const SPIP_FILTER_LABELS = {
+    noUnitRegister: 'No Unit / Register',
+    kategori: 'Kategori',
+    jenis: 'Jenis',
+    deptInCharge: 'Dept In Charge',
+    perusahaan: 'Perusahaan',
+    perusahaanCustodian: 'Perusahaan Custodian',
+    ccow: 'CCOW',
+    areaKerja: 'Area Kerja',
+    status: 'Status'
+  };
 
   const CHART_COLORS = ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
 
@@ -401,6 +415,11 @@
         .filter(function (item) { return item.length > 0; });
     }
 
+    if (key === 'noUnitRegister') {
+      const rawNoUnit = String(target.noUnitRegister || '').trim();
+      return rawNoUnit ? [rawNoUnit] : [];
+    }
+
     const raw = String(target[key] || '').trim();
     return raw ? [raw] : [];
   }
@@ -420,6 +439,11 @@
         const selected = String(spipFilterState[key] || '').trim();
         if (!selected) return true;
         const values = getFilterValuesByKey(record, key);
+        if (key === 'noUnitRegister') {
+          return values.some(function (value) {
+            return value.toLowerCase().indexOf(selected.toLowerCase()) >= 0;
+          });
+        }
         return values.indexOf(selected) >= 0;
       });
     });
@@ -491,11 +515,15 @@
     if (!spipChartActiveFilters) return;
 
     const activeParts = SPIP_FILTER_META
-      .filter(function (meta) {
-        return String(spipFilterState[meta.key] || '').trim().length > 0;
-      })
       .map(function (meta) {
-        return meta.title + ': ' + spipFilterState[meta.key];
+        return meta.key;
+      })
+      .concat(['noUnitRegister'])
+      .filter(function (key) {
+        return String(spipFilterState[key] || '').trim().length > 0;
+      })
+      .map(function (key) {
+        return (SPIP_FILTER_LABELS[key] || key) + ': ' + spipFilterState[key];
       });
 
     if (!activeParts.length) {
@@ -2329,6 +2357,14 @@
       Object.keys(spipFilterState).forEach(function (key) {
         spipFilterState[key] = '';
       });
+      if (spipTableNoUnitFilterInput) spipTableNoUnitFilterInput.value = '';
+      renderTable();
+    });
+  }
+
+  if (spipTableNoUnitFilterInput) {
+    spipTableNoUnitFilterInput.addEventListener('input', function () {
+      spipFilterState.noUnitRegister = String(spipTableNoUnitFilterInput.value || '').trim();
       renderTable();
     });
   }
