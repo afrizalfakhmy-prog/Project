@@ -1222,6 +1222,7 @@
       '.sig-name{margin-top:12px;font-weight:600;}' +
       '.sig-date{margin-top:8px;}' +
       '.social-gap{height:14px;}' +
+      '.sosialisasi-table tbody td{height:44px;}' +
       '</style></head><body>' +
       '<div class="doc-wrap">' +
       '<div class="doc-header">' +
@@ -1282,7 +1283,7 @@
 
       '<div class="social-gap"></div>' +
       '<h2>Sosialisasi JSA</h2>' +
-      '<table>' +
+      '<table class="sosialisasi-table">' +
         '<thead><tr>' +
           '<th style="width:5%; text-align:center;">No</th>' +
           '<th style="width:24%;">Nama</th>' +
