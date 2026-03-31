@@ -1,6 +1,9 @@
 (function () {
   const SESSION_KEY = 'aios_session';
   const USER_KEY = 'aios_users';
+  const KTA_KEY = 'aios_kta';
+  const TTA_KEY = 'aios_tta';
+  const JSA_KEY = 'aios_jsa';
 
   const loginScreen = document.getElementById('login-screen');
   const dashboardScreen = document.getElementById('dashboard-screen');
@@ -59,6 +62,114 @@
 
   function writeUsers(users) {
     localStorage.setItem(USER_KEY, JSON.stringify(users));
+  }
+
+  function readList(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : [];
+    } catch (_error) {
+      return [];
+    }
+  }
+
+  function getCurrentUserFromSession() {
+    const session = readSession();
+    if (!session || !session.username) return null;
+
+    const users = readUsers();
+    return users.find(function (user) {
+      return String((user && user.username) || '').trim().toLowerCase() === String(session.username || '').trim().toLowerCase();
+    }) || null;
+  }
+
+  function getRoleFlags() {
+    const session = readSession();
+    const role = String((session && session.role) || '').trim();
+    return {
+      isSuperAdmin: role === 'Super Admin',
+      isAdmin: role === 'Admin'
+    };
+  }
+
+  function isOpenOrProgress(status) {
+    return status === 'Open' || status === 'Progress';
+  }
+
+  function isJsaValidationCompleted(stage, row) {
+    const target = row || {};
+    const isHse = stage === 'hse';
+    const status = String(isHse ? target.validasiHse : target.validasiPenyelia || '').trim();
+    const date = String(isHse ? target.tanggalHse : target.tanggalPenyelia || '').trim();
+    const sign = String(isHse ? target.ttdHse : target.ttdPenyelia || '').trim();
+    const note = String(isHse ? target.catatanHse : target.catatanPenyelia || '').trim();
+    if (status === 'Approved') return !!(date && sign);
+    if (status === 'Not Approved') return !!note;
+    return false;
+  }
+
+  function isJsaCreator(row, currentUser) {
+    const target = row || {};
+    const user = currentUser || {};
+    const creatorUsername = String(target.disiapkanUsername || '').trim().toLowerCase();
+    const currentUsername = String(user.username || '').trim().toLowerCase();
+    if (creatorUsername && currentUsername && creatorUsername === currentUsername) return true;
+
+    const creatorName = String(target.disiapkanOleh || '').trim().toLowerCase();
+    const currentName = String((user.nama || user.username) || '').trim().toLowerCase();
+    return !!creatorName && !!currentName && creatorName === currentName;
+  }
+
+  function hasJsaNotification(rows, currentUser, roleFlags) {
+    const list = Array.isArray(rows) ? rows : [];
+    const user = currentUser || {};
+    const currentUserId = String(user.id || '').trim();
+    const isPrivilegedViewer = !!(roleFlags && (roleFlags.isSuperAdmin || roleFlags.isAdmin));
+
+    return list.some(function (row) {
+      const target = row || {};
+      const hseStatus = String(target.validasiHse || '').trim();
+      const penyeliaStatus = String(target.validasiPenyelia || '').trim();
+      const hseApproved = hseStatus === 'Approved' && isJsaValidationCompleted('hse', target);
+      const hseRejected = hseStatus === 'Not Approved' && isJsaValidationCompleted('hse', target);
+      const penyeliaApproved = penyeliaStatus === 'Approved' && isJsaValidationCompleted('penyelia', target);
+      const penyeliaRejected = penyeliaStatus === 'Not Approved' && isJsaValidationCompleted('penyelia', target);
+      const hseAssigneeId = String(target.diperiksaId || '').trim();
+      const penyeliaAssigneeId = String(target.disetujuiId || '').trim();
+      const canViewCreator = isPrivilegedViewer || isJsaCreator(target, user);
+      const canViewHse = isPrivilegedViewer || (hseAssigneeId && hseAssigneeId === currentUserId);
+      const canViewPenyelia = isPrivilegedViewer || (penyeliaAssigneeId && penyeliaAssigneeId === currentUserId);
+
+      if (hseRejected && canViewCreator) return true;
+      if (penyeliaRejected && canViewCreator) return true;
+      if (!hseApproved && !hseRejected && canViewHse && hseAssigneeId) return true;
+      if (!penyeliaApproved && !penyeliaRejected && hseApproved && canViewPenyelia && penyeliaAssigneeId) return true;
+      return false;
+    });
+  }
+
+  function hasTasklistNotification() {
+    const currentUser = getCurrentUserFromSession();
+    if (!currentUser) return false;
+
+    const roleFlags = getRoleFlags();
+    const isPrivilegedViewer = roleFlags.isSuperAdmin || roleFlags.isAdmin;
+    const ktaRows = readList(KTA_KEY);
+    const ttaRows = readList(TTA_KEY);
+    const jsaRows = readList(JSA_KEY);
+    const allRows = ktaRows.concat(ttaRows);
+
+    const hasBase = isPrivilegedViewer
+      ? allRows.length > 0
+      : allRows.some(function (row) {
+        const target = row || {};
+        const reporterMatch = String(target.namaPelapor || '').toLowerCase() === String(currentUser.nama || '').toLowerCase();
+        const pjaMatch = String(target.namaPjaId || '').trim() === String(currentUser.id || '').trim() && isOpenOrProgress(String(target.status || '').trim());
+        return reporterMatch || pjaMatch;
+      });
+
+    if (hasBase) return true;
+    return hasJsaNotification(jsaRows, currentUser, roleFlags);
   }
 
   function readFirstNonEmptyString(values) {
@@ -362,6 +473,13 @@
     closeMobileSidebar();
   }
 
+  function refreshSidebarNotifications() {
+    if (!dashboardScreen || dashboardScreen.classList.contains('hidden')) return;
+    const session = readSession();
+    if (!session || !session.role) return;
+    renderSidebar(session.role);
+  }
+
   function showLogin() {
     if (dashboardScreen) dashboardScreen.classList.add('hidden');
     if (loginScreen) loginScreen.classList.remove('hidden');
@@ -382,6 +500,16 @@
       button.className = 'sidebar-item';
       button.dataset.menu = label;
       button.textContent = label;
+
+      if (label === 'Tasklist' && hasTasklistNotification()) {
+        button.classList.add('sidebar-item-has-alert');
+        const marker = document.createElement('span');
+        marker.className = 'sidebar-item-alert';
+        marker.textContent = '*';
+        marker.setAttribute('aria-label', 'Ada notifikasi tasklist');
+        button.appendChild(marker);
+      }
+
       sidebarMenu.appendChild(button);
     });
   }
@@ -493,16 +621,40 @@
   });
 
   window.addEventListener('storage', function (event) {
-    if (!event || (event.key !== USER_KEY && event.key !== null)) return;
-    syncSessionAgainstUsers();
+    if (!event) return;
+    if (event.key === USER_KEY || event.key === null) {
+      syncSessionAgainstUsers();
+    }
+
+    if (
+      event.key === null ||
+      event.key === USER_KEY ||
+      event.key === KTA_KEY ||
+      event.key === TTA_KEY ||
+      event.key === JSA_KEY
+    ) {
+      refreshSidebarNotifications();
+    }
   });
 
   window.addEventListener('aios:cloud-sync', function (event) {
     const changedKeys = event && event.detail && Array.isArray(event.detail.changedKeys)
       ? event.detail.changedKeys
       : [];
-    if (changedKeys.length > 0 && changedKeys.indexOf(USER_KEY) < 0) return;
-    syncSessionAgainstUsers();
+    const hasUserChange = changedKeys.length === 0 || changedKeys.indexOf(USER_KEY) >= 0;
+    if (hasUserChange) {
+      syncSessionAgainstUsers();
+    }
+
+    const hasTaskChange =
+      changedKeys.length === 0 ||
+      changedKeys.indexOf(USER_KEY) >= 0 ||
+      changedKeys.indexOf(KTA_KEY) >= 0 ||
+      changedKeys.indexOf(TTA_KEY) >= 0 ||
+      changedKeys.indexOf(JSA_KEY) >= 0;
+    if (hasTaskChange) {
+      refreshSidebarNotifications();
+    }
   });
 
   if (mainMenu) {

@@ -187,11 +187,27 @@ button.ghost:hover {
 }
 
 .sidebar-item {
+  position: relative;
   width: 100%;
   text-align: left;
   background: #ffffff;
   color: #1e3a8a;
   border: 1px solid #bfdbfe;
+}
+
+.sidebar-item-has-alert {
+  padding-right: 24px;
+}
+
+.sidebar-item-alert {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  color: #dc2626;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .sidebar-item:hover {
