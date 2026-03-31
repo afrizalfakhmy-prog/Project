@@ -248,3 +248,44 @@ Pantau status publik di:
 `https://transparencyreport.google.com/safe-browsing/search?url=project-xi-kohl-22.vercel.app`
 
 Status biasanya berubah setelah proses review dan propagation selesai.
+
+### Checklist cepat 10 menit (klik-per-klik)
+
+Gunakan urutan ini agar akses user pulih secepat mungkin:
+
+1. Deploy latest:
+	- buka terminal project
+	- jalankan deploy production (`vercel --prod`)
+	- pastikan build sukses
+2. Domain baru (jalur cepat):
+	- Vercel -> Project -> `Settings` -> `Domains`
+	- `Add` domain/subdomain baru
+	- set sebagai `Primary`
+	- uji akses domain baru di Chrome normal mode
+3. Verifikasi Search Console domain lama:
+	- buka `https://search.google.com/search-console`
+	- `Add property` -> `URL prefix`
+	- isi `https://project-xi-kohl-22.vercel.app/`
+	- pilih metode `HTML tag`
+	- copy token lalu isi di `index.html`:
+
+```html
+<meta name="google-site-verification" content="TOKEN_DARI_GOOGLE" />
+```
+
+	- deploy ulang, lalu klik `Verify`
+4. Ajukan review:
+	- Search Console -> `Security issues`
+	- klik `Request Review`
+	- pakai template berikut:
+
+```text
+Kami telah membersihkan seluruh pola redirect pihak ketiga dan menghapus dependensi eksternal yang tidak diperlukan.
+Saat ini aplikasi hanya melayani konten internal yang aman, dengan security headers aktif (CSP, X-Frame-Options, nosniff).
+Mohon dilakukan peninjauan ulang karena indikator phishing sudah ditangani.
+```
+
+5. Monitoring:
+	- cek tiap beberapa jam di:
+	- `https://transparencyreport.google.com/safe-browsing/search?url=project-xi-kohl-22.vercel.app`
+	- setelah status aman, kembalikan trafik dari domain sementara ke domain utama jika diperlukan.

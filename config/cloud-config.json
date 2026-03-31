@@ -1,5 +1,5 @@
 {
-  "supabaseUrl": "https://ozrsedgqffmduabnrpqj.supabase.co",
-  "supabaseAnonKey": "sb_publishable_OjtMfQekpdFYwmynajtZhA_QGR8kkV4",
+  "supabaseUrl": "https://xzakikuncbtbjqthgxgl.supabase.co",
+  "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6YWtpa3VuY2J0YmpxdGhneGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MjUxODYsImV4cCI6MjA5MDUwMTE4Nn0.1UgzkAUE48qKMxD5GRMT1tnniNNJhSytAVVann2VufM",
   "tableName": "aios_kv"
 }
