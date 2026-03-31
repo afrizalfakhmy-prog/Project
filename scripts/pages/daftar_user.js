@@ -191,14 +191,30 @@
 
   function applyRoleRestriction() {
     if (!kategoriInput) return;
-    if (session && session.role === 'Admin') {
+    const currentValue = String(kategoriInput.value || '').trim();
+
+    function setKategoriOptions(values) {
       kategoriInput.innerHTML = '';
-      const onlyUser = document.createElement('option');
-      onlyUser.value = 'User';
-      onlyUser.textContent = 'User';
-      kategoriInput.appendChild(onlyUser);
+      values.forEach(function (value) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        kategoriInput.appendChild(option);
+      });
+    }
+
+    if (session && session.role === 'Admin') {
+      setKategoriOptions(['User']);
       kategoriInput.value = 'User';
       kategoriInput.disabled = true;
+    } else if (session && session.role === 'Super Admin') {
+      setKategoriOptions(['Super Admin', 'Admin', 'User']);
+      if (currentValue && ['Super Admin', 'Admin', 'User'].indexOf(currentValue) >= 0) {
+        kategoriInput.value = currentValue;
+      } else {
+        kategoriInput.value = 'User';
+      }
+      kategoriInput.disabled = false;
     } else {
       kategoriInput.disabled = false;
     }
