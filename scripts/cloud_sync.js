@@ -129,20 +129,43 @@
   async function pushOne(key, value) {
     if (!isEnabled()) return;
 
-    // Always DELETE all existing rows first, then INSERT fresh.
-    // This works regardless of whether a primary key / unique constraint exists.
-    await deleteAllRowsForKey(key);
-
     const config = getConfig();
-    const url = endpoint(config.tableName);
-    const response = await fetch(url, {
+
+    // Strategy 1: UPSERT via ?on_conflict=key (works when key has unique constraint or PK).
+    const upsertUrl = endpoint(config.tableName + '?on_conflict=key');
+    try {
+      const upsertResponse = await fetch(upsertUrl, {
+        method: 'POST',
+        headers: Object.assign({}, getHeaders(), {
+          Prefer: 'resolution=merge-duplicates,return=minimal'
+        }),
+        body: JSON.stringify([{ key: key, value: value }])
+      });
+      if (upsertResponse.ok) return;
+    } catch (_e) { /* fall through */ }
+
+    // Strategy 2: PATCH (update) existing row.
+    const patchUrl = endpoint(config.tableName + '?key=eq.' + encodeURIComponent(key));
+    try {
+      const patchResponse = await fetch(patchUrl, {
+        method: 'PATCH',
+        headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
+        body: JSON.stringify({ value: value })
+      });
+      if (patchResponse.ok) return;
+    } catch (_e) { /* fall through */ }
+
+    // Strategy 3: DELETE then INSERT.
+    await deleteAllRowsForKey(key);
+    const insertUrl = endpoint(config.tableName);
+    const insertResponse = await fetch(insertUrl, {
       method: 'POST',
       headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
       body: JSON.stringify([{ key: key, value: value }])
     });
 
-    if (!response.ok) {
-      throw new Error('Gagal push cloud data (' + key + '): HTTP ' + response.status);
+    if (!insertResponse.ok) {
+      throw new Error('Gagal push cloud data (' + key + '): HTTP ' + insertResponse.status);
     }
   }
 
