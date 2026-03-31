@@ -473,102 +473,135 @@
     return canvas.toDataURL('image/png');
   }
 
-  function exportSpipToPdf(record) {
-    const target = record || {};
-    const qrPayload = String(target.qrPayload || buildQrPayloadTextFromRecord(target) || '').trim();
-    const qrUrl = buildInlineQrDataUrl(qrPayload || '-', 960);
-    const logoUrl = new URL('../assets/Logo Alamtri.png', window.location.href).href;
-
-    const html =
-      '<!doctype html>' +
-      '<html><head><meta charset="utf-8" />' +
-      '<title>SPIP Export - ' + escapeHtml(target.noUnitRegister || '-') + '</title>' +
-      '<style>' +
-      '@page{size:A4;margin:10mm;}' +
-      'body{font-family:Arial,sans-serif;color:#0f172a;font-size:12px;background:#ffffff;}' +
-      '.sticker{position:relative;width:88mm;min-height:130mm;border:1px solid #bfc8d4;border-radius:8px;padding:8px;box-sizing:border-box;}' +
-      '.sticker-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-bottom:6px;text-align:center;}' +
-      '.sticker-title{font-size:16px;font-weight:700;line-height:1.1;margin:0;white-space:nowrap;}' +
-      '.sticker-subtitle{font-size:9px;line-height:1.2;color:#334155;margin:2px 0 0;white-space:nowrap;}' +
-      '.sticker-logo{width:176px;max-height:68px;object-fit:contain;display:block;margin:0 auto 6px;}' +
-      '.qr-wrap{border:1px solid #bfc8d4;border-radius:8px;padding:4px;width:100%;box-sizing:border-box;margin-bottom:6px;}' +
-      '.qr{width:100%;aspect-ratio:1/1;display:block;object-fit:contain;}' +
-      '.meta-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;line-height:1.2;margin:0 0 6px;}' +
-      '.meta-cell{max-width:48%;word-break:break-word;}' +
-      '.line{font-size:12px;line-height:1.15;margin:0;white-space:normal;word-break:break-word;}' +
-      '</style></head><body>' +
-      '<section class="sticker">' +
-      '<img class="sticker-logo" src="' + logoUrl + '" alt="Logo Alamtri" />' +
-      '<div class="sticker-head">' +
-      '<div><h1 class="sticker-title">Stiker Komisioning</h1><p class="sticker-subtitle">PT. Alamtri Minerals Indonesia</p></div>' +
-      '</div>' +
-      '<div class="qr-wrap">' +
-      '<img class="qr" src="' + qrUrl + '" alt="QR Komisioning" />' +
-      '</div>' +
-      '<div class="meta-row">' +
-      '<div class="meta-cell"><strong>' + escapeHtml(target.perusahaan || '') + '</strong></div>' +
-      '<div class="meta-cell" style="text-align:right;"><strong>' + escapeHtml(target.ccow || '') + '</strong></div>' +
-      '</div>' +
-      '<p class="line"><strong>No Unit / Register:</strong> ' + escapeHtml(target.noUnitRegister || '') + '</p>' +
-      '<p class="line"><strong>Nama SPIP:</strong> ' + escapeHtml(target.namaSpip || '') + '</p>' +
-      '<p class="line"><strong>Kategori:</strong> ' + escapeHtml(target.kategori || '') + '</p>' +
-      '<p class="line"><strong>Jenis:</strong> ' + escapeHtml(target.jenis || '') + '</p>' +
-      '<p class="line"><strong>Merk:</strong> ' + escapeHtml(target.merk || '') + '</p>' +
-      '<p class="line"><strong>Model:</strong> ' + escapeHtml(target.model || '') + '</p>' +
-      '<p class="line"><strong>Tahun Pembuatan:</strong> ' + escapeHtml(target.tahunPembuatan || '') + '</p>' +
-      '<p class="line"><strong>Tanggal Komisioning:</strong> ' + escapeHtml(target.tanggalKomisioning || '') + '</p>' +
-      '<p class="line"><strong>Tanggal Expired:</strong> ' + escapeHtml(target.tanggalExpired || '') + '</p>' +
-      '</section>' +
-      '</body></html>';
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Popup diblokir browser. Izinkan popup lalu coba ekspor lagi.');
-      return;
+  function asciiToBytes(text) {
+    const input = String(text || '');
+    const bytes = new Uint8Array(input.length);
+    for (let i = 0; i < input.length; i += 1) {
+      bytes[i] = input.charCodeAt(i) & 0xff;
     }
+    return bytes;
+  }
 
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
+  function concatBytes(chunks) {
+    const list = Array.isArray(chunks) ? chunks : [];
+    const total = list.reduce(function (sum, part) {
+      return sum + (part ? part.length : 0);
+    }, 0);
 
-    const images = Array.from(printWindow.document.images || []);
-    if (!images.length) {
-      printWindow.print();
-      return;
-    }
-
-    let loadedCount = 0;
-    let hasPrinted = false;
-    function tryPrint() {
-      if (hasPrinted) return;
-      if (loadedCount < images.length) return;
-      hasPrinted = true;
-      printWindow.print();
-    }
-
-    images.forEach(function (img) {
-      if (img.complete) {
-        loadedCount += 1;
-        tryPrint();
-        return;
-      }
-
-      img.onload = function () {
-        loadedCount += 1;
-        tryPrint();
-      };
-      img.onerror = function () {
-        loadedCount += 1;
-        tryPrint();
-      };
+    const out = new Uint8Array(total);
+    let offset = 0;
+    list.forEach(function (part) {
+      if (!part || !part.length) return;
+      out.set(part, offset);
+      offset += part.length;
     });
+    return out;
+  }
 
+  function blobToArrayBuffer(blob) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        resolve(reader.result);
+      };
+      reader.onerror = function () {
+        reject(new Error('Gagal membaca data blob.'));
+      };
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+
+  async function buildPdfBlobFromJpeg(jpegBlob, imageWidth, imageHeight) {
+    const imageArrayBuffer = await blobToArrayBuffer(jpegBlob);
+    const imageBytes = new Uint8Array(imageArrayBuffer);
+
+    const safeWidth = Math.max(1, Number(imageWidth || 1));
+    const safeHeight = Math.max(1, Number(imageHeight || 1));
+    const pageWidth = 252; // About 88mm in points.
+    const pageHeight = 369; // About 130mm in points.
+    const scale = Math.min(pageWidth / safeWidth, pageHeight / safeHeight);
+    const drawWidth = Math.max(1, Math.round(safeWidth * scale * 1000) / 1000);
+    const drawHeight = Math.max(1, Math.round(safeHeight * scale * 1000) / 1000);
+    const offsetX = Math.round(((pageWidth - drawWidth) / 2) * 1000) / 1000;
+    const offsetY = Math.round(((pageHeight - drawHeight) / 2) * 1000) / 1000;
+
+    const contentStream = [
+      'q',
+      drawWidth + ' 0 0 ' + drawHeight + ' ' + offsetX + ' ' + offsetY + ' cm',
+      '/Im0 Do',
+      'Q',
+      ''
+    ].join('\n');
+
+    const objects = [];
+    objects[1] = asciiToBytes('<< /Type /Catalog /Pages 2 0 R >>');
+    objects[2] = asciiToBytes('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    objects[3] = asciiToBytes('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+    objects[4] = concatBytes([
+      asciiToBytes('<< /Type /XObject /Subtype /Image /Width ' + Math.round(safeWidth) + ' /Height ' + Math.round(safeHeight) + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + imageBytes.length + ' >>\nstream\n'),
+      imageBytes,
+      asciiToBytes('\nendstream')
+    ]);
+    objects[5] = concatBytes([
+      asciiToBytes('<< /Length ' + contentStream.length + ' >>\nstream\n'),
+      asciiToBytes(contentStream),
+      asciiToBytes('endstream')
+    ]);
+
+    const chunks = [];
+    const offsets = [0];
+    let offset = 0;
+
+    function push(bytes) {
+      chunks.push(bytes);
+      offset += bytes.length;
+    }
+
+    push(asciiToBytes('%PDF-1.4\n'));
+
+    for (let id = 1; id <= 5; id += 1) {
+      offsets[id] = offset;
+      push(asciiToBytes(id + ' 0 obj\n'));
+      push(objects[id]);
+      push(asciiToBytes('\nendobj\n'));
+    }
+
+    const xrefOffset = offset;
+    push(asciiToBytes('xref\n0 6\n'));
+    push(asciiToBytes('0000000000 65535 f \n'));
+    for (let id = 1; id <= 5; id += 1) {
+      const padded = String(offsets[id] || 0).padStart(10, '0');
+      push(asciiToBytes(padded + ' 00000 n \n'));
+    }
+
+    push(asciiToBytes('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF'));
+    return new Blob(chunks, { type: 'application/pdf' });
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
     setTimeout(function () {
-      if (hasPrinted) return;
-      hasPrinted = true;
-      printWindow.print();
-    }, 2200);
+      URL.revokeObjectURL(url);
+    }, 5000);
+  }
+
+  function getSpipPdfFileName(record) {
+    const target = record || {};
+    return 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.pdf';
+  }
+
+  async function exportSpipToPdf(record) {
+    const target = record || {};
+    const imagePack = await createSpipJpgBlob(target);
+    const pdfBlob = await buildPdfBlobFromJpeg(imagePack.blob, imagePack.width, imagePack.height);
+    downloadBlob(pdfBlob, getSpipPdfFileName(target));
+    return pdfBlob;
   }
 
   function getSpipEmailApiConfig() {
@@ -882,7 +915,16 @@
       }, 'image/jpeg', 0.72);
     });
 
-    return jpgBlob;
+    return {
+      blob: jpgBlob,
+      width: canvas.width,
+      height: canvas.height
+    };
+  }
+
+  async function createSpipPdfBlob(record) {
+    const imagePack = await createSpipJpgBlob(record);
+    return buildPdfBlobFromJpeg(imagePack.blob, imagePack.width, imagePack.height);
   }
 
   function blobToBase64(blob) {
@@ -911,11 +953,11 @@
     }
 
     const target = record || {};
-    const fileName = 'SPIP-' + String(target.noUnitRegister || 'Komisioning').replace(/\s+/g, '_') + '.jpg';
-    const fileMime = 'image/jpeg';
+    const fileName = getSpipPdfFileName(target);
+    const fileMime = 'application/pdf';
     const fileBase64 = await blobToBase64(attachmentBlob);
     if (!fileBase64) {
-      throw new Error('File JPG tidak valid untuk dikirim.');
+      throw new Error('File PDF tidak valid untuk dikirim.');
     }
 
     const headers = {};
@@ -951,11 +993,10 @@
       return false;
     }
 
-    const target = record || {};
-    exportSpipToPdf(target);
-
     try {
-      const attachmentBlob = await createSpipJpgBlob(target);
+      const target = record || {};
+      const attachmentBlob = await createSpipPdfBlob(target);
+      downloadBlob(attachmentBlob, getSpipPdfFileName(target));
       await sendSpipAttachmentToEmailApi(target, recipients, attachmentBlob);
       return true;
     } catch (error) {
@@ -1386,7 +1427,9 @@
       }
 
       if (action === 'export') {
-        exportSpipToPdf(target);
+        exportSpipToPdf(target).catch(function (error) {
+          alert('Gagal membuat file ekspor PDF. Detail: ' + String((error && error.message) || 'Unknown error'));
+        });
         return;
       }
 
