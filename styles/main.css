@@ -525,6 +525,28 @@ button.ghost:hover {
   font-size: 13px;
 }
 
+.spip-chart-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.spip-chart-filter-item {
+  display: grid;
+  gap: 6px;
+}
+
+.spip-chart-filter-item label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.spip-chart-filter-item select {
+  background: #ffffff;
+}
+
 .spip-chart-column-wrap {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1392,6 +1414,10 @@ button.ghost:hover {
   }
 
   .spip-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .spip-chart-filter-grid {
     grid-template-columns: 1fr;
   }
 

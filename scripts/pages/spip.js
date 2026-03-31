@@ -125,6 +125,7 @@
   const spipChartGrid = document.getElementById('spip-chart-grid');
   const spipChartResetButton = document.getElementById('spip-chart-reset-btn');
   const spipChartActiveFilters = document.getElementById('spip-chart-active-filters');
+  const spipChartFilterGrid = document.getElementById('spip-chart-filter-grid');
   const tbody = document.getElementById('spip-tbody');
   const emptyText = document.getElementById('spip-empty');
 
@@ -199,6 +200,8 @@
     { key: 'areaKerja', title: 'Area Kerja', chartType: 'pie3d' },
     { key: 'status', title: 'Status', chartType: 'pie3d' }
   ];
+
+  const SPIP_CHART_FILTER_KEYS = ['kategori', 'jenis', 'deptInCharge', 'perusahaan', 'perusahaanCustodian', 'ccow', 'status'];
 
   const CHART_COLORS = ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
 
@@ -440,6 +443,47 @@
       .sort(function (a, b) {
         if (b.count !== a.count) return b.count - a.count;
         return a.value.localeCompare(b.value);
+      });
+  }
+
+  function renderSpipFilterControls(allRows) {
+    if (!spipChartFilterGrid) return;
+
+    const baseRows = Array.isArray(allRows) ? allRows : [];
+    spipChartFilterGrid.innerHTML = '';
+
+    SPIP_FILTER_META
+      .filter(function (meta) {
+        return SPIP_CHART_FILTER_KEYS.indexOf(meta.key) >= 0;
+      })
+      .forEach(function (meta) {
+        const wrap = document.createElement('div');
+        wrap.className = 'spip-chart-filter-item';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', 'spip-chart-filter-' + meta.key);
+        label.textContent = meta.title;
+
+        const select = document.createElement('select');
+        select.id = 'spip-chart-filter-' + meta.key;
+        select.dataset.filterKey = meta.key;
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '(Semua ' + meta.title + ')';
+        select.appendChild(defaultOption);
+
+        getCountsByFilterKey(baseRows, meta.key).forEach(function (entry) {
+          const option = document.createElement('option');
+          option.value = entry.value;
+          option.textContent = entry.value + ' (' + entry.count + ')';
+          select.appendChild(option);
+        });
+
+        select.value = String(spipFilterState[meta.key] || '').trim();
+        wrap.appendChild(label);
+        wrap.appendChild(select);
+        spipChartFilterGrid.appendChild(wrap);
       });
   }
 
@@ -1711,6 +1755,7 @@
     const roleFlags = getRoleFlags();
     if (!tbody || !emptyText) return;
 
+    renderSpipFilterControls(allRows);
     renderSpipCharts(allRows);
 
     tbody.innerHTML = '';
@@ -2262,6 +2307,18 @@
         spipFilterState[key] = value;
       }
 
+      renderTable();
+    });
+  }
+
+  if (spipChartFilterGrid) {
+    spipChartFilterGrid.addEventListener('change', function (event) {
+      const select = event.target.closest('select[data-filter-key]');
+      if (!select) return;
+
+      const key = String(select.dataset.filterKey || '').trim();
+      if (!key || !Object.prototype.hasOwnProperty.call(spipFilterState, key)) return;
+      spipFilterState[key] = String(select.value || '').trim();
       renderTable();
     });
   }
