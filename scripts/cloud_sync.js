@@ -85,7 +85,7 @@
     if (!isEnabled()) return { found: false, key: key };
 
     const config = getConfig();
-    const url = endpoint(config.tableName + '?key=eq.' + encodeURIComponent(key) + '&select=key,value,updated_at&limit=1');
+    const url = endpoint(config.tableName + '?key=eq.' + encodeURIComponent(key) + '&select=key,value,updated_at&order=updated_at.desc&limit=1');
     const response = await fetch(url, {
       method: 'GET',
       headers: getHeaders()
@@ -99,10 +99,14 @@
     if (!Array.isArray(rows) || rows.length === 0) return { found: false, key: key };
 
     const row = rows[0] || {};
+    let parsedValue = row.value;
+    if (typeof parsedValue === 'string') {
+      try { parsedValue = JSON.parse(parsedValue); } catch (_e) { /* keep as string */ }
+    }
     return {
       found: true,
       key: key,
-      value: row.value,
+      value: parsedValue,
       updatedAt: row.updated_at || null
     };
   }
@@ -112,21 +116,32 @@
 
     const config = getConfig();
     const url = endpoint(config.tableName);
-    const response = await fetch(url, {
+
+    // Try UPSERT first (requires key column to be primary key or have unique constraint)
+    const upsertResponse = await fetch(url, {
       method: 'POST',
       headers: Object.assign({}, getHeaders(), {
         Prefer: 'resolution=merge-duplicates,return=minimal'
       }),
-      body: JSON.stringify([
-        {
-          key: key,
-          value: value
-        }
-      ])
+      body: JSON.stringify([{ key: key, value: value }])
     });
 
-    if (!response.ok) {
-      throw new Error('Gagal push cloud data (' + key + '): HTTP ' + response.status);
+    if (upsertResponse.ok) return;
+
+    // Fallback: DELETE existing then INSERT new
+    try {
+      const deleteUrl = endpoint(config.tableName + '?key=eq.' + encodeURIComponent(key));
+      await fetch(deleteUrl, { method: 'DELETE', headers: getHeaders() });
+    } catch (_e) { /* ignore delete errors */ }
+
+    const insertResponse = await fetch(url, {
+      method: 'POST',
+      headers: Object.assign({}, getHeaders(), { Prefer: 'return=minimal' }),
+      body: JSON.stringify([{ key: key, value: value }])
+    });
+
+    if (!insertResponse.ok) {
+      throw new Error('Gagal push cloud data (' + key + '): HTTP ' + insertResponse.status);
     }
   }
 

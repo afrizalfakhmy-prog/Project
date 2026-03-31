@@ -393,6 +393,7 @@
 
     if (!cloudResult.ok) {
       console.warn('[AIOS] Cloud sync gagal (simpan user):', cloudResult.reason);
+      alert('Data user berhasil disimpan secara lokal, namun gagal disinkronkan ke cloud.\nData mungkin tidak tersedia di browser/perangkat lain.\nDetail: ' + cloudResult.reason);
     }
   });
 
@@ -483,6 +484,7 @@
 
       if (!cloudResult.ok) {
         console.warn('[AIOS] Cloud sync gagal (hapus user):', cloudResult.reason);
+        alert('User berhasil dihapus secara lokal, namun gagal disinkronkan ke cloud.\nData mungkin tidak konsisten di browser/perangkat lain.\nDetail: ' + cloudResult.reason);
       }
     }
   });
