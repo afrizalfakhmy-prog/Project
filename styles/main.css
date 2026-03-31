@@ -379,6 +379,22 @@ button.ghost:hover {
   flex-wrap: wrap;
 }
 
+.spip-action-margin-top {
+  margin-top: 12px;
+}
+
+.spip-table-margin-top {
+  margin-top: 12px;
+}
+
+.spip-chart-margin-top {
+  margin-top: 14px;
+}
+
+.spip-table-margin-top-large {
+  margin-top: 14px;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
