@@ -1171,11 +1171,29 @@
     return html;
   }
 
+  function buildSosialisasiJsaRows(totalRows) {
+    const rowCount = Math.max(1, Number(totalRows || 8));
+    let html = '';
+    for (let index = 1; index <= rowCount; index += 1) {
+      html += '<tr>' +
+        '<td style="text-align:center;">' + index + '</td>' +
+        '<td>&nbsp;</td>' +
+        '<td>&nbsp;</td>' +
+        '<td>&nbsp;</td>' +
+        '<td>&nbsp;</td>' +
+        '<td>&nbsp;</td>' +
+        '<td>&nbsp;</td>' +
+        '</tr>';
+    }
+    return html;
+  }
+
   function buildJsaPdfHtml(target) {
     const apdText = Array.isArray(target.apd) ? target.apd.join(', ') : '';
     const langkahRows = buildLangkahKerjaTableRows(target);
     const hseApproved = String(target.validasiHse || '') === 'Approved';
     const penyeliaApproved = String(target.validasiPenyelia || '') === 'Approved';
+    const sosialisasiRows = buildSosialisasiJsaRows(8);
     const pengawasSign = target.ttdPengawas ? '<img src="' + target.ttdPengawas + '" alt="Tanda Tangan Pengawas" style="max-width:220px; max-height:90px;" />' : '-';
     const hseSign = target.ttdHse ? '<img src="' + target.ttdHse + '" alt="Tanda Tangan HSE" style="max-width:220px; max-height:90px;" />' : '-';
     const penyeliaSign = target.ttdPenyelia ? '<img src="' + target.ttdPenyelia + '" alt="Tanda Tangan Penyelia" style="max-width:220px; max-height:90px;" />' : '-';
@@ -1203,6 +1221,7 @@
       '.sig-title{font-weight:600;margin-bottom:8px;}' +
       '.sig-name{margin-top:12px;font-weight:600;}' +
       '.sig-date{margin-top:8px;}' +
+      '.social-gap{height:14px;}' +
       '</style></head><body>' +
       '<div class="doc-wrap">' +
       '<div class="doc-header">' +
@@ -1259,6 +1278,21 @@
             '<div class="sig-date">Tanggal: ' + escapeHtml(printableValue(penyeliaApproved ? target.tanggalPenyelia : '-')) + '</div>' +
           '</td>' +
         '</tr>' +
+      '</table>' +
+
+      '<div class="social-gap"></div>' +
+      '<h2>Sosialisasi JSA</h2>' +
+      '<table>' +
+        '<thead><tr>' +
+          '<th style="width:5%; text-align:center;">No</th>' +
+          '<th style="width:24%;">Nama</th>' +
+          '<th style="width:12%;">NRP</th>' +
+          '<th style="width:18%;">Jabatan</th>' +
+          '<th style="width:20%;">Perusahaan</th>' +
+          '<th style="width:11%;">Tanggal</th>' +
+          '<th style="width:10%;">Tanda Tangan</th>' +
+        '</tr></thead>' +
+        '<tbody>' + sosialisasiRows + '</tbody>' +
       '</table>' +
       '</div>' +
       '</body></html>';
