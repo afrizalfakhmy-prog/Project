@@ -525,46 +525,118 @@ button.ghost:hover {
   font-size: 13px;
 }
 
-.spip-chart-bars {
+.spip-chart-column-wrap {
   display: grid;
-  gap: 6px;
-}
-
-.spip-chart-bar {
-  width: 100%;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  background: #eff6ff;
-  color: #0f172a;
-  padding: 5px 8px;
-  text-align: left;
-}
-
-.spip-chart-bar:hover {
-  background: #dbeafe;
-}
-
-.spip-chart-bar.is-active {
-  background: #2563eb;
-  border-color: #1d4ed8;
-  color: #ffffff;
-}
-
-.spip-chart-bar-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+  align-items: end;
+  min-height: 190px;
 }
 
-.spip-chart-bar-label {
+.spip-chart-column-item {
+  border: 1px solid #bfdbfe;
+  background: #f8fbff;
+  border-radius: 8px;
+  padding: 6px;
+  display: grid;
+  grid-template-rows: 120px auto auto;
+  gap: 4px;
+  align-items: end;
+  text-align: center;
+}
+
+.spip-chart-column-item:hover {
+  background: #eff6ff;
+}
+
+.spip-chart-column-item.is-active {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18) inset;
+}
+
+.spip-chart-column-box {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  height: 120px;
+  background: linear-gradient(to top, #e2e8f0 0%, #f8fafc 100%);
+  border-radius: 6px;
+  padding: 6px;
+}
+
+.spip-chart-column-bar {
+  width: 100%;
+  min-height: 8px;
+  border-radius: 6px 6px 0 0;
+}
+
+.spip-chart-column-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.spip-chart-column-label {
+  font-size: 11px;
+  color: #334155;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.spip-chart-bar-count {
-  font-weight: 700;
+.spip-chart-pie-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.spip-chart-pie-svg {
+  width: 100%;
+  max-width: 240px;
+  justify-self: center;
+}
+
+.spip-chart-pie-slice {
+  cursor: pointer;
+}
+
+.spip-chart-pie-legend {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.spip-chart-legend-btn {
+  border: 1px solid #bfdbfe;
+  background: #f8fbff;
+  border-radius: 8px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.spip-chart-legend-btn:hover {
+  background: #eff6ff;
+}
+
+.spip-chart-legend-btn.is-active {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18) inset;
+}
+
+.spip-chart-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.spip-chart-legend-label {
+  font-size: 12px;
+  color: #0f172a;
 }
 
 .task-card {
@@ -1320,6 +1392,14 @@ button.ghost:hover {
   }
 
   .spip-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .spip-chart-column-wrap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .spip-chart-pie-wrap {
     grid-template-columns: 1fr;
   }
 

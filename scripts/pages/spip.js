@@ -190,15 +190,17 @@
   };
 
   const SPIP_FILTER_META = [
-    { key: 'kategori', title: 'Kategori' },
-    { key: 'jenis', title: 'Jenis' },
-    { key: 'deptInCharge', title: 'Dept In Charge' },
-    { key: 'perusahaan', title: 'Perusahaan' },
-    { key: 'perusahaanCustodian', title: 'Perusahaan Custodian' },
-    { key: 'ccow', title: 'CCOW' },
-    { key: 'areaKerja', title: 'Area Kerja' },
-    { key: 'status', title: 'Status' }
+    { key: 'kategori', title: 'Kategori', chartType: 'column' },
+    { key: 'jenis', title: 'Jenis', chartType: 'column' },
+    { key: 'deptInCharge', title: 'Dept In Charge', chartType: 'column' },
+    { key: 'perusahaan', title: 'Perusahaan', chartType: 'column' },
+    { key: 'perusahaanCustodian', title: 'Perusahaan Custodian', chartType: 'column' },
+    { key: 'ccow', title: 'CCOW', chartType: 'pie3d' },
+    { key: 'areaKerja', title: 'Area Kerja', chartType: 'pie3d' },
+    { key: 'status', title: 'Status', chartType: 'pie3d' }
   ];
+
+  const CHART_COLORS = ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
 
   function todayValue() {
     return new Date().toISOString().slice(0, 10);
@@ -460,6 +462,190 @@
     spipChartActiveFilters.textContent = 'Filter aktif: ' + activeParts.join(' | ');
   }
 
+  function createSvgEl(tagName, attrs) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+    const props = attrs || {};
+    Object.keys(props).forEach(function (key) {
+      element.setAttribute(key, String(props[key]));
+    });
+    return element;
+  }
+
+  function colorByIndex(index) {
+    const palette = CHART_COLORS;
+    return palette[index % palette.length];
+  }
+
+  function darkenHexColor(hex, amount) {
+    const raw = String(hex || '#000000').replace('#', '');
+    const normalized = raw.length === 3
+      ? raw.split('').map(function (c) { return c + c; }).join('')
+      : raw;
+    const delta = Number(amount || 0);
+
+    function clamp(v) {
+      return Math.max(0, Math.min(255, v));
+    }
+
+    const r = clamp(parseInt(normalized.slice(0, 2), 16) - delta);
+    const g = clamp(parseInt(normalized.slice(2, 4), 16) - delta);
+    const b = clamp(parseInt(normalized.slice(4, 6), 16) - delta);
+    return '#' + [r, g, b].map(function (n) { return n.toString(16).padStart(2, '0'); }).join('');
+  }
+
+  function describeArcPath(cx, cy, radius, startAngle, endAngle) {
+    const start = {
+      x: cx + (radius * Math.cos(startAngle)),
+      y: cy + (radius * Math.sin(startAngle))
+    };
+    const end = {
+      x: cx + (radius * Math.cos(endAngle)),
+      y: cy + (radius * Math.sin(endAngle))
+    };
+    const largeArcFlag = (endAngle - startAngle) > Math.PI ? 1 : 0;
+    return [
+      'M', cx, cy,
+      'L', start.x, start.y,
+      'A', radius, radius, 0, largeArcFlag, 1, end.x, end.y,
+      'Z'
+    ].join(' ');
+  }
+
+  function renderColumnChart(card, meta, rows) {
+    const maxCount = rows.reduce(function (max, row) {
+      return Math.max(max, Number(row.count || 0));
+    }, 1);
+
+    const chart = document.createElement('div');
+    chart.className = 'spip-chart-column-wrap';
+
+    rows.forEach(function (entry, index) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'spip-chart-column-item';
+      item.dataset.filterKey = meta.key;
+      item.dataset.filterValue = entry.value;
+      if (String(spipFilterState[meta.key] || '') === entry.value) {
+        item.classList.add('is-active');
+      }
+
+      const barBox = document.createElement('span');
+      barBox.className = 'spip-chart-column-box';
+
+      const bar = document.createElement('span');
+      bar.className = 'spip-chart-column-bar';
+      bar.style.height = Math.max(8, Math.round((entry.count / maxCount) * 100)) + '%';
+      bar.style.background = colorByIndex(index);
+
+      const count = document.createElement('span');
+      count.className = 'spip-chart-column-count';
+      count.textContent = String(entry.count);
+
+      const label = document.createElement('span');
+      label.className = 'spip-chart-column-label';
+      label.textContent = entry.value;
+      label.title = entry.value;
+
+      barBox.appendChild(bar);
+      item.appendChild(barBox);
+      item.appendChild(count);
+      item.appendChild(label);
+      chart.appendChild(item);
+    });
+
+    card.appendChild(chart);
+  }
+
+  function renderPie3DChart(card, meta, rows) {
+    const total = rows.reduce(function (sum, row) {
+      return sum + Number(row.count || 0);
+    }, 0);
+    if (!total) {
+      const empty = document.createElement('p');
+      empty.className = 'spip-chart-empty';
+      empty.textContent = 'Belum ada data.';
+      card.appendChild(empty);
+      return;
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'spip-chart-pie-wrap';
+
+    const svg = createSvgEl('svg', {
+      viewBox: '0 0 260 210',
+      class: 'spip-chart-pie-svg',
+      role: 'img',
+      'aria-label': meta.title + ' 3D pie chart'
+    });
+
+    const cx = 130;
+    const cy = 88;
+    const radius = 68;
+    const depth = 14;
+    let start = -Math.PI / 2;
+
+    rows.forEach(function (entry, index) {
+      const slice = Number(entry.count || 0);
+      const angle = (slice / total) * Math.PI * 2;
+      const end = start + angle;
+      const color = colorByIndex(index);
+      const darker = darkenHexColor(color, 34);
+      const isActive = String(spipFilterState[meta.key] || '') === entry.value;
+
+      const bottom = createSvgEl('path', {
+        d: describeArcPath(cx, cy + depth, radius, start, end),
+        fill: darker,
+        opacity: '0.95'
+      });
+      svg.appendChild(bottom);
+
+      const top = createSvgEl('path', {
+        d: describeArcPath(cx, cy, radius, start, end),
+        fill: color,
+        stroke: isActive ? '#0f172a' : '#ffffff',
+        'stroke-width': isActive ? '2.4' : '1.1',
+        class: 'spip-chart-pie-slice',
+        'data-filter-key': meta.key,
+        'data-filter-value': entry.value,
+        role: 'button',
+        tabindex: '0'
+      });
+      svg.appendChild(top);
+
+      start = end;
+    });
+
+    wrap.appendChild(svg);
+
+    const legend = document.createElement('div');
+    legend.className = 'spip-chart-pie-legend';
+    rows.forEach(function (entry, index) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'spip-chart-legend-btn';
+      item.dataset.filterKey = meta.key;
+      item.dataset.filterValue = entry.value;
+      if (String(spipFilterState[meta.key] || '') === entry.value) {
+        item.classList.add('is-active');
+      }
+
+      const swatch = document.createElement('span');
+      swatch.className = 'spip-chart-legend-swatch';
+      swatch.style.background = colorByIndex(index);
+
+      const label = document.createElement('span');
+      label.className = 'spip-chart-legend-label';
+      label.textContent = entry.value + ' (' + entry.count + ')';
+
+      item.appendChild(swatch);
+      item.appendChild(label);
+      legend.appendChild(item);
+    });
+
+    wrap.appendChild(legend);
+    card.appendChild(wrap);
+  }
+
   function renderSpipCharts(allRows) {
     if (!spipChartGrid) return;
 
@@ -476,43 +662,17 @@
       card.appendChild(title);
 
       const rows = getCountsByFilterKey(baseRows, meta.key);
-      if (!rows.length) {
-        const empty = document.createElement('p');
-        empty.className = 'spip-chart-empty';
-        empty.textContent = 'Belum ada data.';
-        card.appendChild(empty);
+      if (meta.chartType === 'pie3d') {
+        renderPie3DChart(card, meta, rows);
       } else {
-        const barsWrap = document.createElement('div');
-        barsWrap.className = 'spip-chart-bars';
-
-        rows.forEach(function (entry) {
-          const bar = document.createElement('button');
-          bar.type = 'button';
-          bar.className = 'spip-chart-bar';
-          bar.dataset.filterKey = meta.key;
-          bar.dataset.filterValue = entry.value;
-          if (String(spipFilterState[meta.key] || '') === entry.value) {
-            bar.classList.add('is-active');
-          }
-
-          const inner = document.createElement('span');
-          inner.className = 'spip-chart-bar-inner';
-
-          const label = document.createElement('span');
-          label.className = 'spip-chart-bar-label';
-          label.textContent = entry.value;
-
-          const count = document.createElement('span');
-          count.className = 'spip-chart-bar-count';
-          count.textContent = String(entry.count);
-
-          inner.appendChild(label);
-          inner.appendChild(count);
-          bar.appendChild(inner);
-          barsWrap.appendChild(bar);
-        });
-
-        card.appendChild(barsWrap);
+        if (!rows.length) {
+          const empty = document.createElement('p');
+          empty.className = 'spip-chart-empty';
+          empty.textContent = 'Belum ada data.';
+          card.appendChild(empty);
+        } else {
+          renderColumnChart(card, meta, rows);
+        }
       }
 
       spipChartGrid.appendChild(card);
@@ -2074,7 +2234,7 @@
 
   if (spipChartGrid) {
     spipChartGrid.addEventListener('click', function (event) {
-      const button = event.target.closest('button.spip-chart-bar[data-filter-key][data-filter-value]');
+      const button = event.target.closest('[data-filter-key][data-filter-value]');
       if (!button) return;
 
       const key = String(button.dataset.filterKey || '').trim();
