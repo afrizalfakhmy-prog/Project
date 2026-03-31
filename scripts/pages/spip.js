@@ -425,20 +425,6 @@
     });
   }
 
-  function getFilteredSpipRowsExcluding(rows, excludedKey) {
-    const list = Array.isArray(rows) ? rows : [];
-    return list.filter(function (record) {
-      return Object.keys(spipFilterState).every(function (key) {
-        if (key === excludedKey) return true;
-
-        const selected = String(spipFilterState[key] || '').trim();
-        if (!selected) return true;
-        const values = getFilterValuesByKey(record, key);
-        return values.indexOf(selected) >= 0;
-      });
-    });
-  }
-
   function getCountsByFilterKey(rows, key) {
     const list = Array.isArray(rows) ? rows : [];
     const counts = {};
@@ -471,7 +457,6 @@
         return SPIP_CHART_FILTER_KEYS.indexOf(meta.key) >= 0;
       })
       .forEach(function (meta) {
-        const scopedRows = getFilteredSpipRowsExcluding(baseRows, meta.key);
         const wrap = document.createElement('div');
         wrap.className = 'spip-chart-filter-item';
 
@@ -488,7 +473,7 @@
         defaultOption.textContent = '(Semua ' + meta.title + ')';
         select.appendChild(defaultOption);
 
-        getCountsByFilterKey(scopedRows, meta.key).forEach(function (entry) {
+        getCountsByFilterKey(getFilteredSpipRows(baseRows), meta.key).forEach(function (entry) {
           const option = document.createElement('option');
           option.value = entry.value;
           option.textContent = entry.value + ' (' + entry.count + ')';
@@ -724,10 +709,10 @@
     if (!spipChartGrid) return;
 
     const baseRows = Array.isArray(allRows) ? allRows : [];
+    const filteredRows = getFilteredSpipRows(baseRows);
     spipChartGrid.innerHTML = '';
 
     SPIP_FILTER_META.forEach(function (meta) {
-      const scopedRows = getFilteredSpipRowsExcluding(baseRows, meta.key);
       const card = document.createElement('article');
       card.className = 'spip-chart-card';
 
@@ -736,7 +721,7 @@
       title.textContent = meta.title;
       card.appendChild(title);
 
-      const rows = getCountsByFilterKey(scopedRows, meta.key);
+      const rows = getCountsByFilterKey(filteredRows, meta.key);
       if (meta.chartType === 'pie3d') {
         renderPie3DChart(card, meta, rows);
       } else {
