@@ -16,9 +16,55 @@
   const tindakanInput = document.getElementById('task-tindakan');
   const fotoPerbaikanInput = document.getElementById('task-foto-perbaikan');
   const fotoPreview = document.getElementById('task-foto-preview');
+  const detailContent = document.getElementById('task-detail-content');
+  const detailFotoTemuan = document.getElementById('task-detail-foto-temuan');
   const tanggalPerbaikanInput = document.getElementById('task-tanggal-perbaikan');
   const statusInput = document.getElementById('task-status');
   let fotoPerbaikanDraft = [];
+
+  const DETAIL_LABELS = {
+    KTA: {
+      noId: 'No ID',
+      tanggalLaporan: 'Tanggal Laporan',
+      namaPelapor: 'Nama Pelapor',
+      jabatanPelapor: 'Jabatan Pelapor',
+      departemenPelapor: 'Departemen Pelapor',
+      perusahaan: 'Perusahaan Pelaporan',
+      ccow: 'CCOW',
+      tanggalTemuan: 'Tanggal Temuan',
+      kategoriTemuan: 'Kategori Temuan',
+      lokasiTemuan: 'Lokasi Temuan',
+      detailLokasiTemuan: 'Detail Lokasi Temuan',
+      riskLevel: 'Risk Level',
+      namaPjaLabel: 'Nama PJA',
+      detailTemuan: 'Detail Temuan',
+      perbaikanLangsung: 'Perbaikan Langsung',
+      status: 'Status'
+    },
+    TTA: {
+      noId: 'No ID',
+      tanggalLaporan: 'Tanggal Laporan',
+      namaPelapor: 'Nama Pelapor',
+      jabatanPelapor: 'Jabatan Pelapor',
+      departemenPelapor: 'Departemen Pelapor',
+      perusahaan: 'Perusahaan Pelaporan',
+      ccow: 'CCOW',
+      tanggalTemuan: 'Tanggal Temuan',
+      jamTemuan: 'Jam Temuan',
+      kategoriTemuan: 'Kategori Temuan',
+      lokasiTemuan: 'Lokasi Temuan',
+      detailLokasiTemuan: 'Detail Lokasi Temuan',
+      riskLevel: 'Risk Level',
+      namaPjaLabel: 'Nama PJA',
+      namaPelakuLabel: 'Nama Pelaku TTA',
+      jabatanPelaku: 'Jabatan Pelaku TTA',
+      departemenPelaku: 'Departemen Pelaku TTA',
+      perusahaanPelaku: 'Perusahaan Pelaku TTA',
+      detailTemuan: 'Detail Temuan',
+      perbaikanLangsung: 'Perbaikan Langsung',
+      status: 'Status'
+    }
+  };
 
   function readList(key) {
     try {
@@ -207,6 +253,54 @@
     return first && first.dataUrl ? first.dataUrl : '';
   }
 
+  function getDetailFields(sourceType) {
+    const labels = DETAIL_LABELS[sourceType] || {};
+    return Object.keys(labels).map(function (key) {
+      return { key: key, label: labels[key] };
+    });
+  }
+
+  function toDisplayValue(value) {
+    if (value === null || value === undefined) return '-';
+    const text = String(value).trim();
+    return text ? text : '-';
+  }
+
+  function renderDetailView(record, sourceType) {
+    if (!detailContent || !detailFotoTemuan) return;
+
+    const fields = getDetailFields(sourceType);
+    detailContent.innerHTML = '';
+
+    fields.forEach(function (field) {
+      const row = document.createElement('div');
+      row.className = 'task-detail-row';
+
+      const label = document.createElement('span');
+      label.className = 'task-detail-label';
+      label.textContent = field.label;
+
+      const value = document.createElement('span');
+      value.className = 'task-detail-value';
+      value.textContent = toDisplayValue(record[field.key]);
+
+      row.appendChild(label);
+      row.appendChild(value);
+      detailContent.appendChild(row);
+    });
+
+    detailFotoTemuan.innerHTML = '';
+    const fotoTemuan = Array.isArray(record.fotoTemuan) ? record.fotoTemuan : [];
+    fotoTemuan.forEach(function (item) {
+      if (!item || !item.dataUrl) return;
+      const img = document.createElement('img');
+      img.src = item.dataUrl;
+      img.alt = item.name || 'Foto Temuan';
+      img.className = 'ohs-photo-thumb';
+      detailFotoTemuan.appendChild(img);
+    });
+  }
+
   function showEditPanel(record) {
     recordTypeInput.value = record.sourceType;
     recordIdInput.value = record.id;
@@ -215,6 +309,7 @@
     statusInput.value = record.status && record.status !== '-' ? record.status : 'Open';
     fotoPerbaikanInput.value = '';
     fotoPerbaikanDraft = Array.isArray(record.fotoPerbaikan) ? record.fotoPerbaikan.slice() : [];
+    renderDetailView(record, record.sourceType);
     renderPhotoPreview();
     editPanel.classList.remove('hidden');
     editPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -229,6 +324,8 @@
     statusInput.value = 'Open';
     fotoPerbaikanInput.value = '';
     fotoPerbaikanDraft = [];
+    if (detailContent) detailContent.innerHTML = '';
+    if (detailFotoTemuan) detailFotoTemuan.innerHTML = '';
     renderPhotoPreview();
   }
 
@@ -470,9 +567,30 @@
         showEditPanel({
           sourceType: sourceType,
           id: record.id,
+          noId: record.noId || '-',
+          tanggalLaporan: record.tanggalLaporan || '-',
+          namaPelapor: record.namaPelapor || '-',
+          jabatanPelapor: record.jabatanPelapor || '-',
+          departemenPelapor: record.departemenPelapor || '-',
+          perusahaan: record.perusahaan || '-',
+          ccow: record.ccow || '-',
+          tanggalTemuan: record.tanggalTemuan || '-',
+          jamTemuan: record.jamTemuan || '-',
+          kategoriTemuan: record.kategoriTemuan || '-',
+          lokasiTemuan: record.lokasiTemuan || '-',
+          detailLokasiTemuan: record.detailLokasiTemuan || '-',
+          riskLevel: record.riskLevel || '-',
+          namaPjaLabel: record.namaPjaLabel || '-',
+          namaPelakuLabel: record.namaPelakuLabel || '-',
+          jabatanPelaku: record.jabatanPelaku || '-',
+          departemenPelaku: record.departemenPelaku || '-',
+          perusahaanPelaku: record.perusahaanPelaku || '-',
+          detailTemuan: record.detailTemuan || '-',
+          perbaikanLangsung: record.perbaikanLangsung || '-',
           tindakanPerbaikan: record.tindakanPerbaikan || '',
           tanggalPerbaikan: record.tanggalPerbaikan || '',
           status: record.status || 'Open',
+          fotoTemuan: Array.isArray(record.fotoTemuan) ? record.fotoTemuan : [],
           fotoPerbaikan: Array.isArray(record.fotoPerbaikan) ? record.fotoPerbaikan : []
         });
         return;
@@ -499,9 +617,30 @@
     showEditPanel({
       sourceType: sourceType,
       id: record.id,
+      noId: record.noId || '-',
+      tanggalLaporan: record.tanggalLaporan || '-',
+      namaPelapor: record.namaPelapor || '-',
+      jabatanPelapor: record.jabatanPelapor || '-',
+      departemenPelapor: record.departemenPelapor || '-',
+      perusahaan: record.perusahaan || '-',
+      ccow: record.ccow || '-',
+      tanggalTemuan: record.tanggalTemuan || '-',
+      jamTemuan: record.jamTemuan || '-',
+      kategoriTemuan: record.kategoriTemuan || '-',
+      lokasiTemuan: record.lokasiTemuan || '-',
+      detailLokasiTemuan: record.detailLokasiTemuan || '-',
+      riskLevel: record.riskLevel || '-',
+      namaPjaLabel: record.namaPjaLabel || '-',
+      namaPelakuLabel: record.namaPelakuLabel || '-',
+      jabatanPelaku: record.jabatanPelaku || '-',
+      departemenPelaku: record.departemenPelaku || '-',
+      perusahaanPelaku: record.perusahaanPelaku || '-',
+      detailTemuan: record.detailTemuan || '-',
+      perbaikanLangsung: record.perbaikanLangsung || '-',
       tindakanPerbaikan: record.tindakanPerbaikan || '',
       tanggalPerbaikan: record.tanggalPerbaikan || '',
       status: record.status || 'Open',
+      fotoTemuan: Array.isArray(record.fotoTemuan) ? record.fotoTemuan : [],
       fotoPerbaikan: Array.isArray(record.fotoPerbaikan) ? record.fotoPerbaikan : []
     });
   });

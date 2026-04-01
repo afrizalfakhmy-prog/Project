@@ -779,6 +779,39 @@ button.ghost:hover {
   background: #f8fbff;
 }
 
+.task-detail-title {
+  margin: 0 0 8px;
+  color: #1e3a8a;
+  font-size: 15px;
+}
+
+.task-detail-content {
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.task-detail-row {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.task-detail-label {
+  font-weight: 700;
+  color: #334155;
+}
+
+.task-detail-value {
+  color: #0f172a;
+  white-space: pre-wrap;
+}
+
 .achievement-legend {
   display: flex;
   flex-wrap: wrap;
