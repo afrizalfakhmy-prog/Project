@@ -12,6 +12,7 @@
   const passwordInput = document.getElementById('password');
   const loginMessage = document.getElementById('login-message');
   const activeRole = document.getElementById('active-role');
+  const welcomeUser = document.getElementById('welcome-user');
   const sidebarMenu = document.getElementById('sidebar-menu');
   const sidebar = document.getElementById('role-sidebar');
   const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
@@ -465,8 +466,27 @@
     if (mobileSidebarToggle) mobileSidebarToggle.setAttribute('aria-expanded', opened ? 'true' : 'false');
   }
 
+  function updateWelcomeMessage() {
+    if (!welcomeUser) return;
+
+    const session = readSession();
+    if (!session || !session.username) {
+      welcomeUser.textContent = 'Selamat datang -';
+      return;
+    }
+
+    const users = readUsers();
+    const account = users.find(function (user) {
+      return String((user && user.username) || '').trim().toLowerCase() === String(session.username || '').trim().toLowerCase();
+    }) || null;
+
+    const fullName = String((account && account.nama) || session.username || '').trim();
+    welcomeUser.textContent = fullName ? ('Selamat datang ' + fullName) : 'Selamat datang -';
+  }
+
   function showDashboard(role) {
     if (activeRole) activeRole.textContent = role;
+    updateWelcomeMessage();
     if (loginScreen) loginScreen.classList.add('hidden');
     if (dashboardScreen) dashboardScreen.classList.remove('hidden');
     renderSidebar(role);
@@ -485,6 +505,7 @@
     if (loginScreen) loginScreen.classList.remove('hidden');
     if (usernameInput) usernameInput.value = '';
     if (passwordInput) passwordInput.value = '';
+    if (welcomeUser) welcomeUser.textContent = 'Selamat datang -';
     setLoginMessage('');
     closeMobileSidebar();
   }
