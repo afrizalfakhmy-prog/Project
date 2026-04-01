@@ -25,6 +25,13 @@
   const departemenInput = document.getElementById('user-departemen');
   const perusahaanInput = document.getElementById('user-perusahaan');
   const ccowInput = document.getElementById('user-ccow');
+  const CCOW_OPTIONS = [
+    'PT. Maruwai Coal',
+    'PT. Lahai Coal',
+    'PT. Juloi Coal',
+    'PT. Kalteng Coal',
+    'PT. Sumber Barito Coal'
+  ];
   const tbody = document.getElementById('user-tbody');
   const session = getSession();
   const isSuperAdmin = !!(session && session.role === 'Super Admin');
@@ -236,6 +243,25 @@
     if (selectedCompany) perusahaanInput.value = selectedCompany;
   }
 
+  function fillCcowOptions() {
+    if (!ccowInput) return;
+    const selected = String(ccowInput.value || '').trim();
+
+    ccowInput.innerHTML = '';
+    CCOW_OPTIONS.forEach(function (name) {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      ccowInput.appendChild(option);
+    });
+
+    if (selected && CCOW_OPTIONS.indexOf(selected) >= 0) {
+      ccowInput.value = selected;
+    } else {
+      ccowInput.value = 'PT. Maruwai Coal';
+    }
+  }
+
   function isEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
@@ -309,6 +335,7 @@
   }
 
   function resetForm() {
+    fillCcowOptions();
     idInput.value = '';
     usernameInput.value = '';
     passwordInput.value = '';
@@ -537,6 +564,7 @@
 
     const syncResult = await syncUsersBidirectional();
     fillDropdowns();
+    fillCcowOptions();
     applyRoleRestriction();
     resetForm();
     closeForm();
