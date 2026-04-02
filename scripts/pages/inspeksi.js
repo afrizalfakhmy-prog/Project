@@ -58,13 +58,14 @@
     const selected = getSelectedPengawas();
     if (selected.length === 0) {
       pengawasDropdownToggle.textContent = '(Pilih Tim Inspeksi)';
+      pengawasDropdownToggle.title = '(Pilih Tim Inspeksi)';
       return;
     }
 
     const labels = selected.map(function (item) { return item.label; });
-    pengawasDropdownToggle.textContent = labels.length <= 2
-      ? labels.join(', ')
-      : labels.slice(0, 2).join(', ') + ' +' + String(labels.length - 2);
+    const labelText = labels.join(', ');
+    pengawasDropdownToggle.textContent = labelText;
+    pengawasDropdownToggle.title = labelText;
   }
 
   function renderPengawasCheckboxDropdownOptions() {
