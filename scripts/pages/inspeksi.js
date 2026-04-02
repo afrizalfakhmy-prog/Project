@@ -55,14 +55,25 @@
 
   function updatePengawasDropdownLabel() {
     if (!pengawasDropdownToggle) return;
-    const selected = getSelectedPengawas();
-    if (selected.length === 0) {
+    let labels = [];
+
+    if (pengawasDropdownPanel) {
+      labels = Array.from(pengawasDropdownPanel.querySelectorAll('input[type="checkbox"]:checked')).map(function (checkbox) {
+        const textNode = checkbox.parentElement && checkbox.parentElement.querySelector('span');
+        return String((textNode && textNode.textContent) || '').trim();
+      }).filter(function (label) { return !!label; });
+    }
+
+    if (labels.length === 0) {
+      labels = getSelectedPengawas().map(function (item) { return item.label; });
+    }
+
+    if (labels.length === 0) {
       pengawasDropdownToggle.textContent = '(Pilih Tim Inspeksi)';
       pengawasDropdownToggle.title = '(Pilih Tim Inspeksi)';
       return;
     }
 
-    const labels = selected.map(function (item) { return item.label; });
     const labelText = labels.join(', ');
     pengawasDropdownToggle.textContent = labelText;
     pengawasDropdownToggle.title = labelText;
@@ -85,6 +96,11 @@
       checkbox.checked = !!option.selected;
       checkbox.addEventListener('change', function () {
         option.selected = checkbox.checked;
+        if (checkbox.checked) {
+          option.setAttribute('selected', 'selected');
+        } else {
+          option.removeAttribute('selected');
+        }
         updatePengawasDropdownLabel();
       });
 
