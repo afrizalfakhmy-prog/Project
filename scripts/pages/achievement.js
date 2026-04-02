@@ -282,6 +282,43 @@
     return raw.includes(' - ') ? raw.split(' - ')[0].trim() : raw;
   }
 
+  function getInspeksiTeamNames(row, users) {
+    const target = row || {};
+    const userRows = Array.isArray(users) ? users : [];
+    const nameById = {};
+
+    userRows.forEach(function (user) {
+      const id = String((user && user.id) || '').trim();
+      if (!id) return;
+      nameById[id] = toNameOnlyLabel(user.nama || user.username || '-');
+    });
+
+    const namesByIds = (Array.isArray(target.namaPengawasIds) ? target.namaPengawasIds : [])
+      .map(function (id) { return String(nameById[String(id || '').trim()] || '').trim(); })
+      .filter(function (name) { return !!name && name !== '-'; });
+
+    const namesByLabels = (Array.isArray(target.namaPengawasLabels) ? target.namaPengawasLabels : [])
+      .map(function (value) { return toNameOnlyLabel(value); })
+      .filter(function (name) { return !!name && name !== '-'; });
+
+    const fallbackLabel = String(target.namaPengawasLabel || '').trim();
+    const namesByFallback = fallbackLabel
+      ? fallbackLabel.split(',').map(function (part) { return toNameOnlyLabel(part); }).filter(function (name) { return !!name && name !== '-'; })
+      : [];
+
+    const inspectorName = toNameOnlyLabel(target.namaInspektor || '-');
+    const merged = namesByIds.concat(namesByLabels, namesByFallback, inspectorName && inspectorName !== '-' ? [inspectorName] : []);
+    const uniqueMap = {};
+
+    merged.forEach(function (name) {
+      const key = String(name || '').trim().toLowerCase();
+      if (!key) return;
+      uniqueMap[key] = name;
+    });
+
+    return Object.keys(uniqueMap).map(function (key) { return uniqueMap[key]; });
+  }
+
   function normalizeRows(rows) {
     return rows.map(function (row) {
       const monthMeta = toMonthMeta(row.tanggalLaporan);
@@ -339,16 +376,22 @@
   }
 
   function normalizeInspeksiRows(rows) {
+    const users = readList(USER_KEY);
+
     return rows.map(function (row) {
       const reportDate = String(row.tanggalLaporan || row.tanggalInspeksi || '').trim();
       const monthMeta = toMonthMeta(reportDate);
+      const timInspeksiNames = getInspeksiTeamNames(row, users);
+      const executionKey = String((row && (row.id || row.noId || (reportDate + '|' + (row.jenisInspeksi || '-')))) || '').trim();
       return {
         id: row.id || '',
+        executionKey: executionKey,
         monthKey: monthMeta ? monthMeta.key : '',
         noId: row.noId || '-',
         tanggalLaporan: row.tanggalLaporan || row.tanggalInspeksi || '-',
         nama: row.namaInspektor || '-',
         namaInspektor: row.namaInspektor || '-',
+        timInspeksiNames: timInspeksiNames,
         jenisInspeksi: row.jenisInspeksi || '-',
         departemenInspektor: row.departemenInspektor || '-',
         perusahaanInspektor: row.perusahaanInspektor || '-'
@@ -552,14 +595,19 @@
   function aggregateMonthlyInspeksiForUser(rows, session, currentUser) {
     const sessionUsername = String((session && session.username) || '').trim().toLowerCase();
     const currentName = String((currentUser && currentUser.nama) || '').trim().toLowerCase();
+    const users = readList(USER_KEY);
     const map = {};
 
     rows.forEach(function (row) {
       const rowCreatedBy = String((row && row.createdBy) || '').trim().toLowerCase();
       const rowInspector = String((row && row.namaInspektor) || '').trim().toLowerCase();
+      const teamNames = getInspeksiTeamNames(row, users);
+      const isOwnerByTeam = teamNames.some(function (name) {
+        return String(name || '').trim().toLowerCase() === currentName;
+      });
       const isOwnerByCreatedBy = sessionUsername && rowCreatedBy && rowCreatedBy === sessionUsername;
       const isOwnerByInspector = currentName && rowInspector && rowInspector === currentName;
-      if (!isOwnerByCreatedBy && !isOwnerByInspector) return;
+      if (!isOwnerByCreatedBy && !isOwnerByInspector && !isOwnerByTeam) return;
 
       const monthMeta = toMonthMeta(row.tanggalLaporan || row.tanggalInspeksi);
       if (!monthMeta) return;
@@ -923,7 +971,22 @@
 
   function countByDimension(rows, dimension) {
     const counter = {};
+
     rows.forEach(function (row) {
+      if (activeModule === 'INS' && dimension === 'nama') {
+        const names = Array.isArray(row.timInspeksiNames) && row.timInspeksiNames.length > 0
+          ? row.timInspeksiNames
+          : [row.namaInspektor || '-'];
+        const uniqueNames = Array.from(new Set(names.map(function (value) {
+          return String(value || '-').trim() || '-';
+        })));
+        uniqueNames.forEach(function (name) {
+          if (!counter[name]) counter[name] = 0;
+          counter[name] += 1;
+        });
+        return;
+      }
+
       const value = String(row[dimension] || '-').trim() || '-';
       if (!counter[value]) counter[value] = 0;
       counter[value] += 1;
@@ -962,6 +1025,16 @@
 
       return dimensions.every(function (dimension) {
         if (!activeFilters[dimension]) return true;
+
+        if (activeModule === 'INS' && dimension === 'nama') {
+          const names = Array.isArray(row.timInspeksiNames) && row.timInspeksiNames.length > 0
+            ? row.timInspeksiNames
+            : [row.namaInspektor || '-'];
+          return names.some(function (name) {
+            return String(name || '').trim() === String(activeFilters[dimension]);
+          });
+        }
+
         return String(row[dimension] || '') === String(activeFilters[dimension]);
       });
     });
@@ -1310,9 +1383,22 @@
     if (!nameFilterInput || !nameFilterList) return;
 
     const rowsForOptions = applyFiltersWithoutNama(rows);
-    const options = Array.from(new Set(rowsForOptions.map(function (item) {
-      return String(item.nama || '-').trim();
-    }).filter(function (value) {
+    const optionSource = [];
+
+    rowsForOptions.forEach(function (item) {
+      if (activeModule === 'INS') {
+        const names = Array.isArray(item.timInspeksiNames) && item.timInspeksiNames.length > 0
+          ? item.timInspeksiNames
+          : [item.namaInspektor || '-'];
+        names.forEach(function (name) {
+          optionSource.push(String(name || '-').trim());
+        });
+      } else {
+        optionSource.push(String(item.nama || '-').trim());
+      }
+    });
+
+    const options = Array.from(new Set(optionSource.filter(function (value) {
       return !!value;
     })));
 
