@@ -44,6 +44,10 @@
     return 'aios_backup__' + key;
   }
 
+  function getSnapshotKey(key) {
+    return 'aios_snapshot__' + key;
+  }
+
   function parseJsonSafe(value) {
     try {
       return JSON.parse(value);
@@ -62,23 +66,80 @@
     }
   }
 
+  function getItemIdentity(item) {
+    const target = item || {};
+    const candidateKeys = [
+      'id',
+      'username',
+      'key',
+      'noId',
+      'noLaporan',
+      'nomor',
+      'kode',
+      'nik',
+      'nama'
+    ];
+
+    for (let index = 0; index < candidateKeys.length; index += 1) {
+      const field = candidateKeys[index];
+      const value = String(target[field] || '').trim().toLowerCase();
+      if (value) return field + ':' + value;
+    }
+
+    try {
+      return 'json:' + JSON.stringify(target);
+    } catch (_error) {
+      return 'raw:' + String(target);
+    }
+  }
+
+  function rememberSnapshotIfNotEmpty(key, rawValue) {
+    const parsed = parseJsonSafe(rawValue);
+    if (!Array.isArray(parsed) || parsed.length === 0) return;
+    localStorage.setItem(getSnapshotKey(key), rawValue);
+  }
+
   function restoreFromBackupIfNeeded(key) {
     const backupKey = getBackupKey(key);
+    const snapshotKey = getSnapshotKey(key);
     const currentValue = localStorage.getItem(key);
     const backupValue = localStorage.getItem(backupKey);
+    const snapshotValue = localStorage.getItem(snapshotKey);
 
     const currentValid = isJsonParsable(currentValue);
     const backupValid = isJsonParsable(backupValue);
+    const snapshotValid = isJsonParsable(snapshotValue);
 
     if (currentValid) {
       if (backupValue !== currentValue) {
         localStorage.setItem(backupKey, currentValue);
       }
+
+      rememberSnapshotIfNotEmpty(key, currentValue);
+
+      const parsedCurrent = parseJsonSafe(currentValue);
+      const parsedSnapshot = parseJsonSafe(snapshotValue);
+      const currentIsEmptyArray = Array.isArray(parsedCurrent) && parsedCurrent.length === 0;
+      const snapshotHasData = Array.isArray(parsedSnapshot) && parsedSnapshot.length > 0;
+
+      // Protect against accidental wipes: restore latest non-empty snapshot.
+      if (currentIsEmptyArray && snapshotHasData && snapshotValue) {
+        localStorage.setItem(key, snapshotValue);
+        localStorage.setItem(backupKey, snapshotValue);
+      }
+
       return;
     }
 
     if (backupValid) {
       localStorage.setItem(key, backupValue);
+      rememberSnapshotIfNotEmpty(key, backupValue);
+      return;
+    }
+
+    if (snapshotValid) {
+      localStorage.setItem(key, snapshotValue);
+      localStorage.setItem(backupKey, snapshotValue);
     }
   }
 
@@ -106,17 +167,11 @@
   function mergeArrayByIdentity(localArr, remoteArr) {
     const byKey = {};
     remoteArr.forEach(function (item) {
-      const id = String((item && item.id) || '').trim().toLowerCase();
-      const username = String((item && (item.username || item.key || item.nama)) || '').trim().toLowerCase();
-      const k = id ? ('id:' + id) : (username ? ('u:' + username) : '');
-      if (!k) return;
+      const k = getItemIdentity(item);
       byKey[k] = Object.assign({}, item);
     });
     localArr.forEach(function (item) {
-      const id = String((item && item.id) || '').trim().toLowerCase();
-      const username = String((item && (item.username || item.key || item.nama)) || '').trim().toLowerCase();
-      const k = id ? ('id:' + id) : (username ? ('u:' + username) : '');
-      if (!k) return;
+      const k = getItemIdentity(item);
       byKey[k] = Object.assign({}, byKey[k] || {}, item);
     });
     return Object.keys(byKey).map(function (k) { return byKey[k]; });
@@ -124,10 +179,10 @@
 
   function applyRemoteValueToLocal(key, remoteValue) {
     const currentRaw = localStorage.getItem(key);
+    const currentParsed = parseJsonSafe(currentRaw);
 
     // For array data: merge local + remote so local additions are never lost.
     if (Array.isArray(remoteValue)) {
-      const currentParsed = parseJsonSafe(currentRaw);
       const localArr = Array.isArray(currentParsed) ? currentParsed : [];
       const merged = mergeArrayByIdentity(localArr, remoteValue);
       const mergedRaw = JSON.stringify(merged);
@@ -146,7 +201,17 @@
         window.aiosCloudSync.pushOne(key, merged).catch(function () {});
       }
 
+      rememberSnapshotIfNotEmpty(key, mergedRaw);
+
       return true;
+    }
+
+    // Ignore malformed remote payload for array-based keys to avoid accidental wipes.
+    if (Array.isArray(currentParsed) && currentParsed.length > 0) {
+      if (window.aiosCloudSync && typeof window.aiosCloudSync.pushOne === 'function') {
+        window.aiosCloudSync.pushOne(key, currentParsed).catch(function () {});
+      }
+      return false;
     }
 
     const remoteRaw = JSON.stringify(remoteValue);
@@ -204,15 +269,26 @@
   }
 
   Storage.prototype.setItem = function (key, value) {
+    if (DATA_KEYS.indexOf(key) >= 0 && !isJsonParsable(value)) {
+      console.warn('[AIOS] Menolak setItem non-JSON untuk key data: ' + key);
+      return;
+    }
+
     originalSetItem.call(this, key, value);
 
     if (DATA_KEYS.indexOf(key) >= 0) {
       originalSetItem.call(this, getBackupKey(key), value);
+      rememberSnapshotIfNotEmpty(key, value);
       pushCloudKeyIfNeeded(key, value);
     }
   };
 
   Storage.prototype.removeItem = function (key) {
+    if (DATA_KEYS.indexOf(key) >= 0 && !window.__AIOS_ALLOW_DATA_REMOVE__) {
+      console.warn('[AIOS] Hapus data diblok untuk key: ' + key);
+      return;
+    }
+
     originalRemoveItem.call(this, key);
 
     if (DATA_KEYS.indexOf(key) >= 0) {
