@@ -307,11 +307,13 @@
 
   function openForm() {
     if (!form) return;
+    closePengawasDropdown();
     form.classList.remove('hidden');
   }
 
   function closeForm() {
     if (!form) return;
+    closePengawasDropdown();
     form.classList.add('hidden');
   }
 
