@@ -103,8 +103,52 @@
     }
   }
 
+  function mergeArrayByIdentity(localArr, remoteArr) {
+    const byKey = {};
+    remoteArr.forEach(function (item) {
+      const id = String((item && item.id) || '').trim().toLowerCase();
+      const username = String((item && (item.username || item.key || item.nama)) || '').trim().toLowerCase();
+      const k = id ? ('id:' + id) : (username ? ('u:' + username) : '');
+      if (!k) return;
+      byKey[k] = Object.assign({}, item);
+    });
+    localArr.forEach(function (item) {
+      const id = String((item && item.id) || '').trim().toLowerCase();
+      const username = String((item && (item.username || item.key || item.nama)) || '').trim().toLowerCase();
+      const k = id ? ('id:' + id) : (username ? ('u:' + username) : '');
+      if (!k) return;
+      byKey[k] = Object.assign({}, byKey[k] || {}, item);
+    });
+    return Object.keys(byKey).map(function (k) { return byKey[k]; });
+  }
+
   function applyRemoteValueToLocal(key, remoteValue) {
     const currentRaw = localStorage.getItem(key);
+
+    // For array data: merge local + remote so local additions are never lost.
+    if (Array.isArray(remoteValue)) {
+      const currentParsed = parseJsonSafe(currentRaw);
+      const localArr = Array.isArray(currentParsed) ? currentParsed : [];
+      const merged = mergeArrayByIdentity(localArr, remoteValue);
+      const mergedRaw = JSON.stringify(merged);
+      if (currentRaw === mergedRaw) return false;
+
+      isApplyingRemoteData = true;
+      try {
+        originalSetItem.call(localStorage, key, mergedRaw);
+        originalSetItem.call(localStorage, getBackupKey(key), mergedRaw);
+      } finally {
+        isApplyingRemoteData = false;
+      }
+
+      // Push merged result back to cloud so it catches up.
+      if (window.aiosCloudSync && typeof window.aiosCloudSync.pushOne === 'function') {
+        window.aiosCloudSync.pushOne(key, merged).catch(function () {});
+      }
+
+      return true;
+    }
+
     const remoteRaw = JSON.stringify(remoteValue);
     if (currentRaw === remoteRaw) return false;
 
