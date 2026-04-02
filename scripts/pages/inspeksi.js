@@ -29,18 +29,140 @@
 
   let selectedJenis = fixedJenis;
   let editingId = '';
+  let pengawasDropdownRoot = null;
+  let pengawasDropdownToggle = null;
+  let pengawasDropdownPanel = null;
+  let pengawasDropdownDocBound = false;
 
   function normalizePengawasField() {
     if (!pengawasInput) return;
     pengawasInput.multiple = true;
     pengawasInput.setAttribute('multiple', 'multiple');
-    if (!pengawasInput.size || pengawasInput.size < 4) {
-      pengawasInput.size = 4;
-    }
 
     const label = document.querySelector('label[for="inspeksi-pengawas"]');
     if (label) {
       label.textContent = 'Tim Inspeksi';
+    }
+
+    ensurePengawasCheckboxDropdown();
+  }
+
+  function closePengawasDropdown() {
+    if (!pengawasDropdownRoot || !pengawasDropdownPanel || !pengawasDropdownToggle) return;
+    pengawasDropdownRoot.classList.remove('open');
+    pengawasDropdownPanel.hidden = true;
+    pengawasDropdownToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function updatePengawasDropdownLabel() {
+    if (!pengawasDropdownToggle) return;
+    const selected = getSelectedPengawas();
+    if (selected.length === 0) {
+      pengawasDropdownToggle.textContent = '(Pilih Tim Inspeksi)';
+      return;
+    }
+
+    const labels = selected.map(function (item) { return item.label; });
+    pengawasDropdownToggle.textContent = labels.length <= 2
+      ? labels.join(', ')
+      : labels.slice(0, 2).join(', ') + ' +' + String(labels.length - 2);
+  }
+
+  function renderPengawasCheckboxDropdownOptions() {
+    if (!pengawasDropdownPanel || !pengawasInput) return;
+    pengawasDropdownPanel.innerHTML = '';
+
+    Array.from(pengawasInput.options || []).forEach(function (option) {
+      const optionValue = String(option.value || '').trim();
+      if (!optionValue) return;
+
+      const item = document.createElement('label');
+      item.className = 'inspeksi-checkbox-option';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = optionValue;
+      checkbox.checked = !!option.selected;
+      checkbox.addEventListener('change', function () {
+        option.selected = checkbox.checked;
+        updatePengawasDropdownLabel();
+      });
+
+      const text = document.createElement('span');
+      text.textContent = String(option.textContent || '').trim();
+
+      item.appendChild(checkbox);
+      item.appendChild(text);
+      pengawasDropdownPanel.appendChild(item);
+    });
+
+    updatePengawasDropdownLabel();
+  }
+
+  function syncPengawasSelectionToDropdown() {
+    if (!pengawasDropdownPanel || !pengawasInput) return;
+    const selectedMap = {};
+    Array.from(pengawasInput.options || []).forEach(function (option) {
+      selectedMap[String(option.value || '').trim()] = !!option.selected;
+    });
+
+    Array.from(pengawasDropdownPanel.querySelectorAll('input[type="checkbox"]')).forEach(function (checkbox) {
+      checkbox.checked = !!selectedMap[String(checkbox.value || '').trim()];
+    });
+
+    updatePengawasDropdownLabel();
+  }
+
+  function ensurePengawasCheckboxDropdown() {
+    if (!pengawasInput) return;
+
+    if (!pengawasDropdownRoot) {
+      pengawasInput.classList.add('inspeksi-pengawas-native-hidden');
+
+      pengawasDropdownRoot = document.createElement('div');
+      pengawasDropdownRoot.className = 'inspeksi-checkbox-dropdown';
+
+      pengawasDropdownToggle = document.createElement('button');
+      pengawasDropdownToggle.type = 'button';
+      pengawasDropdownToggle.className = 'inspeksi-checkbox-dropdown-toggle';
+      pengawasDropdownToggle.setAttribute('aria-haspopup', 'true');
+      pengawasDropdownToggle.setAttribute('aria-expanded', 'false');
+      pengawasDropdownToggle.textContent = '(Pilih Tim Inspeksi)';
+      pengawasDropdownToggle.addEventListener('click', function () {
+        const isOpen = pengawasDropdownRoot.classList.contains('open');
+        if (isOpen) {
+          closePengawasDropdown();
+          return;
+        }
+
+        pengawasDropdownRoot.classList.add('open');
+        pengawasDropdownPanel.hidden = false;
+        pengawasDropdownToggle.setAttribute('aria-expanded', 'true');
+      });
+
+      pengawasDropdownPanel = document.createElement('div');
+      pengawasDropdownPanel.className = 'inspeksi-checkbox-dropdown-panel';
+      pengawasDropdownPanel.hidden = true;
+
+      pengawasDropdownRoot.appendChild(pengawasDropdownToggle);
+      pengawasDropdownRoot.appendChild(pengawasDropdownPanel);
+      pengawasInput.insertAdjacentElement('afterend', pengawasDropdownRoot);
+    }
+
+    renderPengawasCheckboxDropdownOptions();
+
+    if (!pengawasDropdownDocBound) {
+      document.addEventListener('click', function (event) {
+        if (!pengawasDropdownRoot) return;
+        if (pengawasDropdownRoot.contains(event.target)) return;
+        closePengawasDropdown();
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closePengawasDropdown();
+        }
+      });
+      pengawasDropdownDocBound = true;
     }
   }
 
@@ -147,6 +269,8 @@
     Array.from(pengawasInput.options || []).forEach(function (option) {
       option.selected = !!selectedMap[String(option.value || '').trim()];
     });
+
+    syncPengawasSelectionToDropdown();
   }
 
   function fillPjaDropdown() {

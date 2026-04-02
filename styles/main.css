@@ -373,6 +373,66 @@ button.ghost:hover {
   grid-column: 1 / -1;
 }
 
+.inspeksi-pengawas-native-hidden {
+  display: none !important;
+}
+
+.inspeksi-checkbox-dropdown {
+  position: relative;
+}
+
+.inspeksi-checkbox-dropdown-toggle {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 400;
+  text-align: left;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.inspeksi-checkbox-dropdown-toggle:hover {
+  background: #ffffff;
+}
+
+.inspeksi-checkbox-dropdown.open .inspeksi-checkbox-dropdown-toggle {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.inspeksi-checkbox-dropdown-panel {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.12);
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.inspeksi-checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 14px;
+}
+
+.inspeksi-checkbox-option input[type='checkbox'] {
+  width: auto;
+  min-width: 16px;
+}
+
 .form-inline-actions {
   display: flex;
   gap: 10px;
