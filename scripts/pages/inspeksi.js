@@ -233,7 +233,7 @@
       if (!id) return;
       const option = document.createElement('option');
       option.value = id;
-      option.textContent = String((user.nama || user.username || '-') + ' - ' + (user.username || '-')).trim();
+      option.textContent = String(user.nama || user.username || '-').trim();
       pengawasInput.appendChild(option);
     });
   }
@@ -261,9 +261,30 @@
   }
 
   function getPengawasLabelText(row) {
+    const selectedIds = getPengawasIdsFromRow(row);
+    if (selectedIds.length > 0) {
+      const users = readList(USER_KEY);
+      const nameById = {};
+      users.forEach(function (user) {
+        const id = String((user && user.id) || '').trim();
+        if (!id) return;
+        nameById[id] = String((user.nama || user.username || '-') || '-').trim();
+      });
+
+      const resolved = selectedIds
+        .map(function (id) { return String(nameById[id] || '').trim(); })
+        .filter(function (value) { return !!value; });
+
+      if (resolved.length > 0) return resolved.join(', ');
+    }
+
     const labels = row && Array.isArray(row.namaPengawasLabels) ? row.namaPengawasLabels : [];
     const normalized = labels
-      .map(function (value) { return String(value || '').trim(); })
+      .map(function (value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        return raw.replace(/\s+-\s+.+$/, '').trim();
+      })
       .filter(function (value) { return !!value; });
     if (normalized.length > 0) return normalized.join(', ');
 
