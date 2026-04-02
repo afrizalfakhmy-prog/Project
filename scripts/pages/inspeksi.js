@@ -30,6 +30,20 @@
   let selectedJenis = fixedJenis;
   let editingId = '';
 
+  function normalizePengawasField() {
+    if (!pengawasInput) return;
+    pengawasInput.multiple = true;
+    pengawasInput.setAttribute('multiple', 'multiple');
+    if (!pengawasInput.size || pengawasInput.size < 4) {
+      pengawasInput.size = 4;
+    }
+
+    const label = document.querySelector('label[for="inspeksi-pengawas"]');
+    if (label) {
+      label.textContent = 'Tim Inspeksi';
+    }
+  }
+
   function todayValue() {
     return new Date().toISOString().slice(0, 10);
   }
@@ -74,8 +88,9 @@
   }
 
   function fillUserDropdown() {
+    normalizePengawasField();
     const users = readList(USER_KEY);
-    pengawasInput.innerHTML = '<option value="">(Pilih Nama Pengawas)</option>';
+    pengawasInput.innerHTML = '';
 
     users.forEach(function (user) {
       const id = String(user.id || '').trim();
@@ -84,6 +99,53 @@
       option.value = id;
       option.textContent = String((user.nama || user.username || '-') + ' - ' + (user.username || '-')).trim();
       pengawasInput.appendChild(option);
+    });
+  }
+
+  function getSelectedPengawas() {
+    return Array.from(pengawasInput.selectedOptions || [])
+      .map(function (option) {
+        return {
+          id: String(option.value || '').trim(),
+          label: String(option.textContent || '').trim()
+        };
+      })
+      .filter(function (item) { return !!item.id; });
+  }
+
+  function getPengawasIdsFromRow(row) {
+    const ids = row && Array.isArray(row.namaPengawasIds) ? row.namaPengawasIds : [];
+    const normalized = ids
+      .map(function (value) { return String(value || '').trim(); })
+      .filter(function (value) { return !!value; });
+    if (normalized.length > 0) return normalized;
+
+    const fallbackId = String((row && row.namaPengawasId) || '').trim();
+    return fallbackId ? [fallbackId] : [];
+  }
+
+  function getPengawasLabelText(row) {
+    const labels = row && Array.isArray(row.namaPengawasLabels) ? row.namaPengawasLabels : [];
+    const normalized = labels
+      .map(function (value) { return String(value || '').trim(); })
+      .filter(function (value) { return !!value; });
+    if (normalized.length > 0) return normalized.join(', ');
+
+    const fallbackLabel = String((row && row.namaPengawasLabel) || '').trim();
+    return fallbackLabel || '-';
+  }
+
+  function setSelectedPengawas(ids) {
+    const selectedIds = Array.isArray(ids) ? ids : [];
+    const selectedMap = {};
+    selectedIds.forEach(function (value) {
+      const id = String(value || '').trim();
+      if (!id) return;
+      selectedMap[id] = true;
+    });
+
+    Array.from(pengawasInput.options || []).forEach(function (option) {
+      option.selected = !!selectedMap[String(option.value || '').trim()];
     });
   }
 
@@ -151,7 +213,7 @@
 
     fillUserDropdown();
     fillPjaDropdown();
-    pengawasInput.value = '';
+    setSelectedPengawas([]);
     pjaInput.value = '';
   }
 
@@ -176,7 +238,7 @@
 
     fillUserDropdown();
     fillPjaDropdown();
-    pengawasInput.value = target.namaPengawasId || '';
+    setSelectedPengawas(getPengawasIdsFromRow(target));
     pjaInput.value = target.namaPjaId || '';
   }
 
@@ -192,7 +254,7 @@
     if (!payload.departemenInspektor) return 'Departemen Inspektor tidak valid.';
     if (!payload.perusahaanInspektor) return 'Perusahaan Inspektor tidak valid.';
     if (!payload.ccow) return 'CCOW tidak valid.';
-    if (!payload.namaPengawasId) return 'Nama Pengawas wajib dipilih.';
+    if (!Array.isArray(payload.namaPengawasIds) || payload.namaPengawasIds.length === 0) return 'Tim Inspeksi wajib dipilih.';
     if (!payload.namaPjaId) return 'Nama PJA wajib dipilih.';
     return '';
   }
@@ -219,7 +281,7 @@
         '<td>' + (item.jenisInspeksi || '-') + '</td>' +
         '<td>' + (item.areaLokasi || '-') + '</td>' +
         '<td>' + (item.namaInspektor || '-') + '</td>' +
-        '<td>' + (item.namaPengawasLabel || '-') + '</td>' +
+        '<td>' + getPengawasLabelText(item) + '</td>' +
         '<td>' + (item.namaPjaLabel || '-') + '</td>' +
         '<td>' +
           '<button type="button" class="table-btn" data-action="detail" data-id="' + item.id + '">Detail</button>' +
@@ -244,7 +306,7 @@
       return;
     }
 
-    const pengawasOption = pengawasInput.options[pengawasInput.selectedIndex];
+    const selectedPengawas = getSelectedPengawas();
     const pjaOption = pjaInput.options[pjaInput.selectedIndex];
 
     const payload = {
@@ -260,8 +322,10 @@
       departemenInspektor: String(departemenInspektorInput.value || '').trim(),
       perusahaanInspektor: String(perusahaanInspektorInput.value || '').trim(),
       ccow: String(ccowInput.value || '').trim(),
-      namaPengawasId: String(pengawasInput.value || '').trim(),
-      namaPengawasLabel: String(pengawasOption ? pengawasOption.textContent : '').trim(),
+      namaPengawasIds: selectedPengawas.map(function (item) { return item.id; }),
+      namaPengawasLabels: selectedPengawas.map(function (item) { return item.label; }),
+      namaPengawasId: selectedPengawas.length > 0 ? selectedPengawas[0].id : '',
+      namaPengawasLabel: selectedPengawas.map(function (item) { return item.label; }).join(', '),
       namaPjaId: String(pjaInput.value || '').trim(),
       namaPjaLabel: String(pjaOption ? pjaOption.textContent : '').trim(),
       createdBy: String(user.username || '').trim()
@@ -309,7 +373,7 @@
           'Departemen Inspektor: ' + (target.departemenInspektor || '-'),
           'Perusahaan Inspektor: ' + (target.perusahaanInspektor || '-'),
           'CCOW: ' + (target.ccow || '-'),
-          'Nama Pengawas: ' + (target.namaPengawasLabel || '-'),
+          'Tim Inspeksi: ' + getPengawasLabelText(target),
           'Nama PJA: ' + (target.namaPjaLabel || '-')
         ].join('\n');
         if (typeof window.aiosShowDetailModal === 'function') {
@@ -396,6 +460,7 @@
 
   const session = requireSession();
   if (!session) return;
+  normalizePengawasField();
   if (fixedJenis && jenisInput) {
     jenisInput.value = fixedJenis;
     jenisInput.readOnly = true;
