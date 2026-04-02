@@ -48,9 +48,8 @@
   }
 
   function closePengawasDropdown() {
-    if (!pengawasDropdownRoot || !pengawasDropdownPanel || !pengawasDropdownToggle) return;
+    if (!pengawasDropdownRoot || !pengawasDropdownToggle) return;
     pengawasDropdownRoot.classList.remove('open');
-    pengawasDropdownPanel.hidden = true;
     pengawasDropdownToggle.setAttribute('aria-expanded', 'false');
   }
 
@@ -136,13 +135,11 @@
         }
 
         pengawasDropdownRoot.classList.add('open');
-        pengawasDropdownPanel.hidden = false;
         pengawasDropdownToggle.setAttribute('aria-expanded', 'true');
       });
 
       pengawasDropdownPanel = document.createElement('div');
       pengawasDropdownPanel.className = 'inspeksi-checkbox-dropdown-panel';
-      pengawasDropdownPanel.hidden = true;
 
       pengawasDropdownRoot.appendChild(pengawasDropdownToggle);
       pengawasDropdownRoot.appendChild(pengawasDropdownPanel);

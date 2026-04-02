@@ -416,8 +416,11 @@ button.ghost:hover {
   background: #ffffff;
   box-shadow: 0 14px 24px rgba(15, 23, 42, 0.12);
   padding: 8px;
-  display: grid;
+  display: none;
   gap: 4px;
+}
+.inspeksi-checkbox-dropdown.open .inspeksi-checkbox-dropdown-panel {
+  display: grid;
 }
 
 .inspeksi-checkbox-option {
