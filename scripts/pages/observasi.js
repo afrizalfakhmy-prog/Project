@@ -23,6 +23,11 @@
   const pengawasInput = document.getElementById('obs-pengawas');
   const pekerjaList = document.getElementById('obs-pekerja-list');
 
+  let pekerjaDropdownRoot = null;
+  let pekerjaDropdownToggle = null;
+  let pekerjaDropdownPanel = null;
+  let pekerjaDropdownDocBound = false;
+
   const aktivitasInput = document.getElementById('obs-aktivitas');
   const noSopInput = document.getElementById('obs-no-sop');
   const apresiasiInput = document.getElementById('obs-apresiasi');
@@ -34,11 +39,97 @@
   let editingLampiran = [];
 
   function openForm() {
+    closePekerjaDropdown();
     form.classList.remove('hidden');
   }
 
   function closeForm() {
+    closePekerjaDropdown();
     form.classList.add('hidden');
+  }
+
+  function closePekerjaDropdown() {
+    if (!pekerjaDropdownRoot || !pekerjaDropdownToggle) return;
+    pekerjaDropdownRoot.classList.remove('open');
+    pekerjaDropdownToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function updatePekerjaDropdownLabel() {
+    if (!pekerjaDropdownToggle || !pekerjaList) return;
+
+    const selectedNames = Array.from(pekerjaList.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(function (checkbox) {
+        return String((checkbox.dataset && checkbox.dataset.nama) || '').trim();
+      })
+      .filter(function (name) { return !!name; });
+
+    if (selectedNames.length === 0) {
+      pekerjaDropdownToggle.textContent = '(Pilih Nama Pekerja)';
+      pekerjaDropdownToggle.title = '(Pilih Nama Pekerja)';
+      return;
+    }
+
+    const labelText = selectedNames.join(', ');
+    pekerjaDropdownToggle.textContent = labelText;
+    pekerjaDropdownToggle.title = labelText;
+  }
+
+  function ensurePekerjaCheckboxDropdown() {
+    if (!pekerjaList) return;
+
+    if (!pekerjaDropdownRoot) {
+      pekerjaDropdownRoot = document.createElement('div');
+      pekerjaDropdownRoot.className = 'inspeksi-checkbox-dropdown';
+
+      pekerjaDropdownToggle = document.createElement('button');
+      pekerjaDropdownToggle.type = 'button';
+      pekerjaDropdownToggle.className = 'inspeksi-checkbox-dropdown-toggle';
+      pekerjaDropdownToggle.setAttribute('aria-haspopup', 'true');
+      pekerjaDropdownToggle.setAttribute('aria-expanded', 'false');
+      pekerjaDropdownToggle.textContent = '(Pilih Nama Pekerja)';
+      pekerjaDropdownToggle.addEventListener('click', function () {
+        const isOpen = pekerjaDropdownRoot.classList.contains('open');
+        if (isOpen) {
+          closePekerjaDropdown();
+          return;
+        }
+
+        pekerjaDropdownRoot.classList.add('open');
+        pekerjaDropdownToggle.setAttribute('aria-expanded', 'true');
+      });
+
+      pekerjaDropdownPanel = document.createElement('div');
+      pekerjaDropdownPanel.className = 'inspeksi-checkbox-dropdown-panel';
+
+      pekerjaDropdownRoot.appendChild(pekerjaDropdownToggle);
+      pekerjaDropdownRoot.appendChild(pekerjaDropdownPanel);
+
+      const pekerjaListParent = pekerjaList.parentElement;
+      if (pekerjaListParent) {
+        pekerjaListParent.insertBefore(pekerjaDropdownRoot, pekerjaList);
+      }
+
+      pekerjaList.classList.add('observasi-pekerja-dropdown-list');
+      pekerjaDropdownPanel.appendChild(pekerjaList);
+    }
+
+    updatePekerjaDropdownLabel();
+
+    if (!pekerjaDropdownDocBound) {
+      document.addEventListener('click', function (event) {
+        if (!pekerjaDropdownRoot) return;
+        if (pekerjaDropdownRoot.contains(event.target)) return;
+        closePekerjaDropdown();
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          closePekerjaDropdown();
+        }
+      });
+
+      pekerjaDropdownDocBound = true;
+    }
   }
 
   function readList(key) {
@@ -143,12 +234,15 @@
     pekerjaList.innerHTML = '';
     users.forEach(function (user) {
       const label = document.createElement('label');
-      label.className = 'multi-check-item';
+      label.className = 'inspeksi-checkbox-option';
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = user.id || '';
       checkbox.dataset.nama = toNameOnlyLabel(user.nama || user.username || '');
+      checkbox.addEventListener('change', function () {
+        updatePekerjaDropdownLabel();
+      });
 
       const span = document.createElement('span');
       span.textContent = toNameOnlyLabel(user.nama || user.username || '-');
@@ -157,6 +251,8 @@
       label.appendChild(span);
       pekerjaList.appendChild(label);
     });
+
+    ensurePekerjaCheckboxDropdown();
   }
 
   function getQuestionElements(key) {
@@ -337,6 +433,7 @@
     Array.from(pekerjaList.querySelectorAll('input[type="checkbox"]')).forEach(function (checkbox) {
       checkbox.checked = false;
     });
+    updatePekerjaDropdownLabel();
 
     QUESTION_KEYS.forEach(function (key) {
       const fields = getQuestionElements(key);
@@ -408,6 +505,7 @@
     Array.from(pekerjaList.querySelectorAll('input[type="checkbox"]')).forEach(function (checkbox) {
       checkbox.checked = !!selectedMap[String(checkbox.value || '')];
     });
+    updatePekerjaDropdownLabel();
 
     const questions = target.questions || {};
     applyQuestionData('sop', questions.sop);
